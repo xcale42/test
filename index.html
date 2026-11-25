@@ -947,7 +947,7 @@
 
       const STORAGE_HOSTED_URL = 'team14_hosted_url_v3';
       const STORAGE_LIBS       = 'team14_custom_libs_v4';
-      const STORAGE_FULL_INO   = 'team14_full_sketch_v4';
+      const STORAGE_FULL_INO   = 'team14_full_sketch_v5';
 
       // Encapsulated private closure for the 4-digit Host PIN (never logged, stored, or rendered)
       const hostPinVault = (() => {
@@ -1173,10 +1173,11 @@
         'constexpr uint8_t PKT_BATTERY = 0xBB;',
         'constexpr uint8_t PKT_CONTROL = 0xCC;',
         '',
-        'constexpr int PIN_    = 19;',
+        'constexpr int PIN_FIRE    = 19;',
         'constexpr int PIN_DEFEND  = 13;',
         'constexpr int BAT_ADC_PIN = 34;',
         '',
+        'constexpr uint32_t FIRE_INTERVAL_MS    = 140;',
         'constexpr uint32_t FAILSAFE_TIMEOUT_MS = 400;',
         'constexpr uint32_t PWM_FREQ_HZ         = 1000;',
         'constexpr uint8_t  PWM_RES_BITS        = 8;',
@@ -1804,6 +1805,7 @@
               brakeRR: MOTOR_D.isBraking,
               firePin,
               defendPin,
+              fireIntervalMs: (typeof FIRE_INTERVAL_MS !== "undefined") ? Math.max(20, Number(FIRE_INTERVAL_MS)) : 140,
               maxPwm: (typeof MAX_PWM !== "undefined") ? MAX_PWM : 150
             };
           `;
@@ -2508,6 +2510,7 @@
         isAlive: false,
         firePin: false,
         defendPin: false,
+        fireIntervalMs: 140,
         tgt: { fl: 0, fr: 0, rl: 0, rr: 0 },
         cur: { fl: 0, fr: 0, rl: 0, rr: 0 },
         braking: { fl: false, fr: false, rl: false, rr: false }
@@ -2849,9 +2852,9 @@
             core1.braking.fr = Boolean(out.brakeFR);
             core1.braking.rl = Boolean(out.brakeRL);
             core1.braking.rr = Boolean(out.brakeRR);
-
-            core1.firePin   = Boolean(out.firePin);
-            core1.defendPin = Boolean(out.defendPin);
+            core1.firePin        = Boolean(out.firePin);
+            core1.defendPin      = Boolean(out.defendPin);
+            core1.fireIntervalMs = Math.max(20, Number(out.fireIntervalMs) || 140);
           } catch {
             core1.cur = { fl: 0, fr: 0, rl: 0, rr: 0 };
             core1.braking = { fl: true, fr: true, rl: true, rr: true };
@@ -2934,7 +2937,7 @@
         robot.wheelPhase.rr += nRR * spinScale * dt;
 
         // Fire pulse projectiles
-        if (core1.firePin && now - robot.lastFireMs >= 500) {
+        if (core1.firePin && now - robot.lastFireMs >= core1.fireIntervalMs) {
           robot.lastFireMs = now;
           robot.projectiles.push({
             x: robot.x + sinT * 32,
