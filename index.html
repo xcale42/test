@@ -138,45 +138,6 @@
       gap: 6px;
     }
 
-    .arduino-tab.lib-tab {
-      border-top-color: #d35400;
-    }
-
-    .ard-tool-btn {
-      background: #ffffff;
-      color: #374151;
-      border: 1px solid #d1d5db;
-      border-radius: 5px;
-      padding: 2px 7px;
-      font-size: 10px;
-      font-weight: 700;
-      letter-spacing: 0.03em;
-      cursor: pointer;
-      transition: all 0.1s ease;
-    }
-    .ard-tool-btn:hover {
-      border-color: #00979c;
-      color: #00979c;
-    }
-    .ard-tool-btn.primary {
-      background: #00979c;
-      color: #ffffff;
-      border-color: #00979c;
-    }
-    .ard-tool-btn.primary:hover {
-      background: #007f84;
-      color: #ffffff;
-    }
-    .ard-tool-btn.danger:hover {
-      border-color: #dc2626;
-      color: #dc2626;
-    }
-    .ard-tool-btn.inc-on {
-      background: #e0f7fa;
-      color: #006669;
-      border-color: #00979c;
-    }
-
     .arduino-editor {
       background: #ffffff;
       overflow-x: auto;
@@ -719,41 +680,20 @@
           </div>
         </section>
 
-        <!-- RIGHT PANE: CUSTOM LIBRARIES (.h) + AUTO-SPLITTING FULL ARDUINO SKETCH (.ino) -->
+        <!-- RIGHT PANE: AUTO-SPLITTING FULL ARDUINO SKETCH (.ino) -->
         <section id="arduinoBlocksColumn" class="flex flex-col gap-2 min-h-0 overflow-y-auto pr-0.5">
-
-          <!-- CUSTOM LIBRARIES (.h) MANAGER BAR & CARDS -->
-          <div class="min-panel p-2 flex flex-col gap-2 shrink-0">
-            <div class="flex flex-wrap items-center justify-between gap-2">
-              <div class="flex items-center gap-2">
-                <span class="text-[11px] font-extrabold tracking-wider text-white">CUSTOM LIBRARIES (.h)</span>
-                <span id="compileStatusPill" class="mono text-[10px] font-bold px-2 py-0.5 rounded bg-[#052e16] border border-[#22c55e] text-[#4ade80]">
-                  COMPILED OK
-                </span>
-              </div>
-              <div class="flex items-center gap-1.5">
-                <button id="openNewLibModalBtn" class="min-btn">+ NEW LIB (.h)</button>
-                <button id="resetAllCodeBtn" class="min-btn" title="Restore all .h libraries and full .ino sketch to default firmware">
-                  RESET ALL CODE
-                </button>
-              </div>
-            </div>
-
-            <!-- Compile Error Output Banner (Shown only if user introduces a syntax/runtime error) -->
-            <div id="compileErrorBanner" class="hidden px-2.5 py-1.5 rounded bg-[#1f0909] border border-[#ef4444] mono text-[10.5px] text-[#fca5a5] break-words"></div>
-
-            <!-- Container for Custom .h Library Cards -->
-            <div id="customLibsContainer" class="flex flex-col gap-2"></div>
-          </div>
 
           <!-- ARDUINO SKETCH WORKSPACE BAR (STANDBY: FULL SKETCH | MOVING: AUTO-SPLIT) -->
           <div class="min-panel p-2 flex flex-col gap-2 shrink-0">
             <div class="flex flex-wrap items-center justify-between gap-2">
               <div class="flex flex-wrap items-center gap-2">
                 <span class="text-[11px] font-extrabold tracking-wider text-white">ARDUINO FIRMWARE</span>
+                <span id="compileStatusPill" class="mono text-[10px] font-bold px-2 py-0.5 rounded bg-[#052e16] border border-[#22c55e] text-[#4ade80]">
+                  COMPILED OK
+                </span>
                 <span id="sketchLayoutBadge" class="ard-mode-pill mono">STANDBY · FULL SKETCH</span>
               </div>
-              <div class="flex items-center gap-1.5">
+              <div class="flex flex-wrap items-center gap-1.5">
                 <button id="sketchLayoutModeBtn" class="min-btn mono" title="Toggle Auto-Split behavior (AUTO / FULL / SPLIT)">
                   LAYOUT: AUTO
                 </button>
@@ -766,8 +706,14 @@
                 <button id="cancelFullSketchBtn" class="hidden min-btn mono">
                   CANCEL
                 </button>
+                <button id="resetAllCodeBtn" class="min-btn mono" title="Restore full .ino sketch to default firmware">
+                  RESET CODE
+                </button>
               </div>
             </div>
+
+            <!-- Compile Error Output Banner (Shown only if user introduces a syntax/runtime error) -->
+            <div id="compileErrorBanner" class="hidden px-2.5 py-1.5 rounded bg-[#1f0909] border border-[#ef4444] mono text-[10.5px] text-[#fca5a5] break-words"></div>
 
             <!-- Container for Full Sketch Card (Standby) OR Auto-Split Active Function Cards (Moving) -->
             <div id="inoCardsContainer" class="flex flex-col gap-2 shrink-0"></div>
@@ -813,56 +759,6 @@
       <div class="flex items-center justify-end gap-2">
         <button id="cancelHostPinBtn" class="min-btn">CANCEL</button>
         <button id="confirmHostPinBtn" class="min-btn active">ACTIVATE HOST LOCK</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- ========================================================================= -->
-  <!-- MODAL C++ HEADER EDITOR (.h)                                              -->
-  <!-- ========================================================================= -->
-  <div id="libEditorModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/85 backdrop-blur-sm p-4">
-    <div class="min-panel w-full max-w-lg p-5 shadow-2xl border border-[#333333] flex flex-col gap-3">
-      <div class="flex items-center justify-between border-b border-[#262626] pb-3">
-        <div>
-          <h2 id="libModalTitle" class="text-sm font-extrabold text-white tracking-wide">CUSTOM C++ HEADER (.h)</h2>
-          <p class="text-[11px] text-[#8a8a8a] mt-0.5">Define macros and inline C++ helper functions for movement blocks</p>
-        </div>
-        <button id="closeLibModalBtn" class="min-btn">CLOSE</button>
-      </div>
-
-      <div>
-        <label for="libModalNameInput" class="block text-[10.5px] font-bold tracking-wider text-[#a3a3a3] mb-1 mono">
-          HEADER FILENAME (.h)
-        </label>
-        <input
-          id="libModalNameInput"
-          type="text"
-          maxlength="32"
-          placeholder="CustomKinematics.h"
-          class="selectable-input w-full bg-black border border-[#2e2e2e] focus:border-white rounded-lg px-3 py-1.5 text-xs mono text-white outline-none"
-        />
-      </div>
-
-      <div>
-        <label for="libModalCodeInput" class="block text-[10.5px] font-bold tracking-wider text-[#a3a3a3] mb-1 mono">
-          C++ HEADER SOURCE
-        </label>
-        <div class="rounded-lg overflow-hidden border border-[#d1d5db]">
-          <textarea
-            id="libModalCodeInput"
-            rows="11"
-            class="arduino-textarea"
-            spellcheck="false"
-          ></textarea>
-        </div>
-      </div>
-
-      <div class="flex items-center justify-between pt-1">
-        <button id="deleteLibModalBtn" class="hidden min-btn mode-closed-on mono">DELETE LIBRARY</button>
-        <div class="flex items-center gap-2 ml-auto">
-          <button id="cancelLibModalBtn" class="min-btn">CANCEL</button>
-          <button id="saveLibModalBtn" class="min-btn active">SAVE &amp; COMPILE</button>
-        </div>
       </div>
     </div>
   </div>
@@ -934,20 +830,20 @@
     (() => {
       'use strict';
 
-      // ==================== FIRMWARE & STORAGE CONSTANTS ====================
+      // ==================== BACKEND SIMULATOR & FIRMWARE CONFIG ====================
       const PKT_CONTROL        = 0xCC; // [0xCC, x, y, r, flags]
       const WEB_LOOP_MS        = 33;   // ~30Hz controller loop
       const HEARTBEAT_MS       = 150;  // Keep-alive interval
       const CORE1_PERIOD_MS    = 20;   // 50Hz deterministic control loop
       const FAILSAFE_MS        = 400;  // 400ms heartbeat timeout
+      const FIRE_INTERVAL_MS   = 140;  // 後台直接設定：發射間隔 (ms)
 
       const SLIDER_MAX         = 100.0;
       const MAX_PWM            = 150;
       const MIN_PWM            = 20;
 
       const STORAGE_HOSTED_URL = 'team14_hosted_url_v3';
-      const STORAGE_LIBS       = 'team14_custom_libs_v4';
-      const STORAGE_FULL_INO   = 'team14_full_sketch_v5';
+      const STORAGE_FULL_INO   = 'team14_full_sketch_v6';
 
       // Encapsulated private closure for the 4-digit Host PIN (never logged, stored, or rendered)
       const hostPinVault = (() => {
@@ -1089,8 +985,6 @@
           splitPhoneHdr.classList.remove('hidden');
           splitPhoneHdr.classList.add('flex');
 
-          // In OPEN mode, embedded Split View controller connects automatically;
-          // in HOST mode, presenter enters their private 4-digit PIN in the masked input.
           if (accessMode === 'OPEN' && !ctrlConnected) {
             connectControllerToRoom(simRoomDigits, cEl.pinInput.value);
           }
@@ -1133,29 +1027,8 @@
       }
 
       // =========================================================================
-      // PART A: COMPLETE ARDUINO SKETCH, CUSTOM LIBRARIES (.h) & AUTO-SPLIT
+      // PART A: COMPLETE ARDUINO SKETCH & AUTO-SPLIT
       // =========================================================================
-      const DEFAULT_CUSTOM_LIBS = [
-        {
-          id: 'lib_mecanum_curves',
-          name: 'MecanumCurves.h',
-          enabled: true,
-          builtIn: true,
-          code: [
-            '#ifndef MECANUM_CURVES_H',
-            '#define MECANUM_CURVES_H',
-            '',
-            '#define CUSTOM_MAX_PWM 150',
-            '',
-            'float applyCurve(float v) {',
-            '  return v;',
-            '}',
-            '',
-            '#endif'
-          ].join('\n')
-        }
-      ];
-
       const DEFAULT_FULL_SKETCH = [
         '#include <BLEDevice.h>',
         '#include <BLEServer.h>',
@@ -1163,7 +1036,6 @@
         '#include <BLE2902.h>',
         '#include <atomic>',
         '#include <math.h>',
-        '#include "MecanumCurves.h"',
         '',
         '#define DEVICE_NAME   "team14"',
         '#define SERVICE_UUID  "6E400001-B5A3-F393-E0A9-E50E24DCCA9E"',
@@ -1177,13 +1049,12 @@
         'constexpr int PIN_DEFEND  = 13;',
         'constexpr int BAT_ADC_PIN = 34;',
         '',
-        'constexpr uint32_t FIRE_INTERVAL_MS    = 140;',
         'constexpr uint32_t FAILSAFE_TIMEOUT_MS = 400;',
         'constexpr uint32_t PWM_FREQ_HZ         = 1000;',
         'constexpr uint8_t  PWM_RES_BITS        = 8;',
         '',
         'constexpr float SLIDER_MAX  = 100.0f;',
-        'constexpr int   MAX_PWM     = CUSTOM_MAX_PWM;',
+        'constexpr int   MAX_PWM     = 150;',
         'constexpr int   STEP_MIN    = 3;',
         'constexpr int   STEP_MAX    = 10;',
         'constexpr int   STEP_DECEL  = 15;',
@@ -1285,8 +1156,6 @@
         '      float x = constrain(activeCmd.x / SLIDER_MAX, -1.0f, 1.0f);',
         '      float y = constrain(activeCmd.y / SLIDER_MAX, -1.0f, 1.0f);',
         '      float r = constrain(activeCmd.r / SLIDER_MAX, -1.0f, 1.0f);',
-        '      x = applyCurve(x);',
-        '      y = applyCurve(y);',
         '      int tgtFL = 0, tgtFR = 0, tgtRL = 0, tgtRR = 0;',
         '      bool isMoving = (x != 0.0f || y != 0.0f || r != 0.0f);',
         '      if (isMoving) {',
@@ -1331,16 +1200,6 @@
         '}'
       ].join('\n');
 
-      function loadLibsFromStorage() {
-        try {
-          const raw = localStorage.getItem(STORAGE_LIBS);
-          if (!raw) return JSON.parse(JSON.stringify(DEFAULT_CUSTOM_LIBS));
-          const parsed = JSON.parse(raw);
-          if (Array.isArray(parsed) && parsed.length > 0) return parsed;
-        } catch {}
-        return JSON.parse(JSON.stringify(DEFAULT_CUSTOM_LIBS));
-      }
-
       function loadFullSketchFromStorage() {
         try {
           const raw = localStorage.getItem(STORAGE_FULL_INO);
@@ -1349,8 +1208,7 @@
         return DEFAULT_FULL_SKETCH;
       }
 
-      let customLibs      = loadLibsFromStorage();
-      let fullSketchCode  = loadFullSketchFromStorage();
+      let fullSketchCode = loadFullSketchFromStorage();
 
       // Sketch Display State:
       // layoutMode: 'AUTO' (Standby -> Full Sketch, Moving -> Split Active Blocks) | 'FULL' | 'SPLIT'
@@ -1362,7 +1220,6 @@
 
       function saveArduinoCodeToStorage() {
         try {
-          localStorage.setItem(STORAGE_LIBS, JSON.stringify(customLibs));
           localStorage.setItem(STORAGE_FULL_INO, fullSketchCode);
         } catch {}
       }
@@ -1528,7 +1385,7 @@
         }
 
         // Typed for-loop headers
-        line = line.replace(/for\s*\(\s*(?:const\s+)?(?:int|long|float|double|size_t|uint8_t|int8_t|uint16_t|int16_t|uint32_t|int32_t)\s+/g, 'for (let ');
+        line = line.replace(/for\s*\(\s*(?:const\s+)?(?:int|long|float|double|size_t|uint8_t|int8_t|uint16_t|int16_t|uint32_t|uint32_t)\s+/g, 'for (let ');
 
         // C++ typed variable declarations
         let declaredVarName = null;
@@ -1591,26 +1448,17 @@
         const errBanner  = document.getElementById('compileErrorBanner');
 
         try {
-          // 1. Collect #define macros from enabled .h libraries and full .ino sketch
+          // 1. Collect #define macros from full .ino sketch
           const macrosMap = new Map();
-          macrosMap.set('CUSTOM_MAX_PWM', '150');
-
-          const collectMacros = (code) => {
-            for (const raw of code.split('\n')) {
-              const noCm = raw.split('//')[0].trim();
-              const m = noCm.match(/^#define\s+([A-Za-z_]\w*)\s+(.+)$/);
-              if (m) {
-                const name = m[1];
-                let val = m[2].trim().replace(/\b(\d+\.\d+|\d+\.|\.\d+)f\b/g, '$1');
-                if (!val.startsWith('"')) macrosMap.set(name, val);
-              }
+          for (const raw of fullSketchCode.split('\n')) {
+            const noCm = raw.split('//')[0].trim();
+            const m = noCm.match(/^#define\s+([A-Za-z_]\w*)\s+(.+)$/);
+            if (m) {
+              const name = m[1];
+              const val = m[2].trim().replace(/\b(\d+\.\d+|\d+\.|\.\d+)f\b/g, '$1');
+              if (!val.startsWith('"')) macrosMap.set(name, val);
             }
-          };
-
-          for (const lib of customLibs) {
-            if (lib.enabled) collectMacros(lib.code);
           }
-          collectMacros(fullSketchCode);
 
           // 2. Parse Motor A/B/C/D struct initializers from fullSketchCode
           const nextMotorConfigs = {
@@ -1630,18 +1478,8 @@
             };
           }
 
-          // 3. Transpile enabled custom .h libraries
-          const jsChunks = [];
-          for (const lib of customLibs) {
-            if (!lib.enabled) continue;
-            const libLines = lib.code.split('\n');
-            jsChunks.push(
-              libLines.map((lnText, idx) => transpileLineWithTrace(lib.id, idx + 1, lnText, macrosMap)).join('\n')
-            );
-          }
-
-          // 4. Transpile top-level constexpr constants and helper functions (ratioToPWM, rampPWM, etc.)
-          //    plus the 50Hz loop body inside motorControlTask() with exact 1:1 line numbers from fullSketchCode!
+          // 3. Transpile top-level constexpr constants and helper functions (ratioToPWM, rampPWM, etc.)
+          //    plus the 50Hz loop body inside motorControlTask() with exact 1:1 line numbers from fullSketchCode
           const sketchLines = fullSketchCode.split('\n');
           const taskBlk = extractBraceBlock(sketchLines, /^\s*void\s+motorControlTask\s*\(/);
           if (!taskBlk) {
@@ -1652,7 +1490,6 @@
           const setupBlk       = extractBraceBlock(sketchLines, /^\s*void\s+setup\s*\(/);
           const loopBlk        = extractBraceBlock(sketchLines, /^\s*void\s+loop\s*\(/);
 
-          // Collect top-level constexprs & helper functions outside motorControlTask / struct Motor / setup / loop
           const excludedRanges = [taskBlk, motorStructBlk, setupBlk, loopBlk].filter(Boolean);
           const isLineExcluded = (lineNo) =>
             excludedRanges.some((rng) => lineNo >= rng.startLine && lineNo <= rng.endLine);
@@ -1684,7 +1521,6 @@
             const raw = taskBlk.lines[k];
             const trimmed = raw.trim();
 
-            // Skip FreeRTOS scheduler/queue boilerplate lines; simulator injects activeCmd & isAlive
             if (
               trimmed.startsWith('ControlCmd incoming') ||
               trimmed.startsWith('if (xQueueReceive') ||
@@ -1789,7 +1625,6 @@
             const isAlive   = __alive;
             let curFL = __state.curFL, curFR = __state.curFR, curRL = __state.curRL, curRR = __state.curRR;
 
-            ${jsChunks.join('\n')}
             ${topLevelJs.join('\n')}
             ${taskBodyJs.join('\n')}
 
@@ -1805,7 +1640,6 @@
               brakeRR: MOTOR_D.isBraking,
               firePin,
               defendPin,
-              fireIntervalMs: (typeof FIRE_INTERVAL_MS !== "undefined") ? Math.max(20, Number(FIRE_INTERVAL_MS)) : 140,
               maxPwm: (typeof MAX_PWM !== "undefined") ? MAX_PWM : 150
             };
           `;
@@ -1842,14 +1676,14 @@
         }
       }
 
-      // ==================== RENDER .h LIBRARIES & STANDBY FULL / MOVING SPLIT CARDS ====================
-      const customLibsContainer = document.getElementById('customLibsContainer');
+      // ==================== RENDER STANDBY FULL / MOVING SPLIT CARDS ====================
       const inoCardsContainer   = document.getElementById('inoCardsContainer');
       const sketchLayoutBadge   = document.getElementById('sketchLayoutBadge');
       const sketchLayoutModeBtn = document.getElementById('sketchLayoutModeBtn');
       const editFullSketchBtn   = document.getElementById('editFullSketchBtn');
       const applyFullSketchBtn  = document.getElementById('applyFullSketchBtn');
       const cancelFullSketchBtn = document.getElementById('cancelFullSketchBtn');
+      const resetAllCodeBtn     = document.getElementById('resetAllCodeBtn');
 
       function attachTabIndentation(textareaEl, onSaveShortcut) {
         textareaEl.addEventListener('keydown', (e) => {
@@ -1871,14 +1705,6 @@
           const lineNo = startLineNo + idx;
           const highlighted = highlightArduinoLine(lineText);
           return `<div data-ino-line="${lineNo}" class="ard-row"><span class="ard-gutter">${lineNo}</span><span class="ard-code">${highlighted || ' '}</span><span class="ard-val" data-ino-val="${lineNo}">-</span></div>`;
-        }).join('');
-      }
-
-      function renderLibTraceRows(libId, code) {
-        return code.split('\n').map((lineText, idx) => {
-          const lineNo = idx + 1;
-          const highlighted = highlightArduinoLine(lineText);
-          return `<div id="${libId}_l${lineNo}" class="ard-row"><span class="ard-gutter">${lineNo}</span><span class="ard-code">${highlighted || ' '}</span><span class="ard-val" id="v_${libId}_l${lineNo}">-</span></div>`;
         }).join('');
       }
 
@@ -1906,82 +1732,11 @@
         }
       }
 
-      function renderCustomLibsCards() {
-        customLibsContainer.innerHTML = '';
-        customLibs.forEach((lib) => {
-          const card = document.createElement('div');
-          card.className = 'arduino-card shrink-0';
-
-          const tabBar = document.createElement('div');
-          tabBar.className = 'arduino-tabbar';
-
-          const leftTab = document.createElement('div');
-          leftTab.className = 'arduino-tab lib-tab mono';
-          leftTab.innerHTML = `<span>${escapeHtml(lib.name)}</span>`;
-          tabBar.appendChild(leftTab);
-
-          const actions = document.createElement('div');
-          actions.className = 'flex items-center gap-2 py-1';
-
-          const incLabel = document.createElement('label');
-          incLabel.className = 'inline-flex items-center gap-1 text-[10px] font-bold mono cursor-pointer px-1.5 py-0.5 rounded border ' +
-            (lib.enabled ? 'bg-[#e0f7fa] border-[#00979c] text-[#006669]' : 'bg-white border-[#d1d5db] text-[#6b7280]');
-          incLabel.title = `Toggle #include "${lib.name}"`;
-
-          const incCheckbox = document.createElement('input');
-          incCheckbox.type = 'checkbox';
-          incCheckbox.checked = Boolean(lib.enabled);
-          incCheckbox.className = 'accent-[#00979c] cursor-pointer m-0';
-          incCheckbox.addEventListener('change', () => {
-            lib.enabled = incCheckbox.checked;
-            saveArduinoCodeToStorage();
-            compileAllArduinoCode(false);
-            renderCustomLibsCards();
-          });
-
-          const incSpan = document.createElement('span');
-          incSpan.textContent = '#include';
-          incLabel.appendChild(incCheckbox);
-          incLabel.appendChild(incSpan);
-          actions.appendChild(incLabel);
-
-          const editBtn = document.createElement('button');
-          editBtn.className = 'ard-tool-btn mono';
-          editBtn.textContent = 'EDIT';
-          editBtn.addEventListener('click', () => openLibEditorModal(lib));
-          actions.appendChild(editBtn);
-
-          if (!lib.builtIn) {
-            const delBtn = document.createElement('button');
-            delBtn.className = 'ard-tool-btn danger mono';
-            delBtn.textContent = 'DEL';
-            delBtn.addEventListener('click', () => {
-              customLibs = customLibs.filter((item) => item.id !== lib.id);
-              saveArduinoCodeToStorage();
-              compileAllArduinoCode(false);
-              renderCustomLibsCards();
-              showToast(`Deleted ${lib.name}`);
-            });
-            actions.appendChild(delBtn);
-          }
-
-          tabBar.appendChild(actions);
-          card.appendChild(tabBar);
-
-          const editorDiv = document.createElement('div');
-          editorDiv.className = 'arduino-editor mono py-1' + (!lib.enabled ? ' opacity-50' : '');
-          editorDiv.innerHTML = renderLibTraceRows(lib.id, lib.code);
-          card.appendChild(editorDiv);
-
-          customLibsContainer.appendChild(card);
-        });
-      }
-
       function renderInoSketchCards() {
         updateSketchHeaderToolbar();
         inoCardsContainer.innerHTML = '';
 
-        // 1. FULL-SKETCH EDIT MODE (Available anytime from Standby or Moving)
+        // 1. FULL-SKETCH EDIT MODE
         if (isEditingFullIno) {
           const card = document.createElement('div');
           card.className = 'arduino-card shrink-0';
@@ -2095,120 +1850,13 @@
         }
       });
 
-      // Modal C++ Header Editor (.h) Controls
-      const openNewLibModalBtn = document.getElementById('openNewLibModalBtn');
-      const libEditorModal     = document.getElementById('libEditorModal');
-      const libModalTitle      = document.getElementById('libModalTitle');
-      const libModalNameInput  = document.getElementById('libModalNameInput');
-      const libModalCodeInput  = document.getElementById('libModalCodeInput');
-      const closeLibModalBtn   = document.getElementById('closeLibModalBtn');
-      const cancelLibModalBtn  = document.getElementById('cancelLibModalBtn');
-      const saveLibModalBtn    = document.getElementById('saveLibModalBtn');
-      const deleteLibModalBtn  = document.getElementById('deleteLibModalBtn');
-      const resetAllCodeBtn    = document.getElementById('resetAllCodeBtn');
-
-      let editingLibTargetId = null;
-
-      function closeLibEditorModal() {
-        editingLibTargetId = null;
-        libEditorModal.classList.add('hidden');
-        libEditorModal.classList.remove('flex');
-      }
-
-      function openLibEditorModal(libOrNull) {
-        if (libOrNull) {
-          editingLibTargetId = libOrNull.id;
-          libModalTitle.textContent = `EDIT HEADER: ${libOrNull.name}`;
-          libModalNameInput.value = libOrNull.name;
-          libModalNameInput.disabled = Boolean(libOrNull.builtIn);
-          libModalCodeInput.value = libOrNull.code;
-          deleteLibModalBtn.classList.toggle('hidden', Boolean(libOrNull.builtIn));
-        } else {
-          editingLibTargetId = null;
-          libModalTitle.textContent = 'NEW CUSTOM C++ HEADER (.h)';
-          libModalNameInput.value = '';
-          libModalNameInput.disabled = false;
-          libModalCodeInput.value = [
-            '#ifndef CUSTOM_LIB_H',
-            '#define CUSTOM_LIB_H',
-            '',
-            'inline float customHelper(float val) {',
-            '  return val;',
-            '}',
-            '',
-            '#endif'
-          ].join('\n');
-          deleteLibModalBtn.classList.add('hidden');
-        }
-
-        libEditorModal.classList.remove('hidden');
-        libEditorModal.classList.add('flex');
-        setTimeout(() => {
-          if (!libModalNameInput.disabled) libModalNameInput.focus();
-          else libModalCodeInput.focus();
-        }, 15);
-      }
-
-      function commitLibModalSave() {
-        let rawName = libModalNameInput.value.trim().replace(/[^a-zA-Z0-9_.]/g, '');
-        if (!rawName) {
-          showToast('Enter a valid header filename (e.g. CustomCurve.h).');
-          return;
-        }
-        if (!rawName.endsWith('.h')) rawName += '.h';
-
-        if (editingLibTargetId) {
-          const target = customLibs.find((l) => l.id === editingLibTargetId);
-          if (target) {
-            if (!target.builtIn) target.name = rawName;
-            target.code = libModalCodeInput.value;
-          }
-        } else {
-          if (customLibs.some((l) => l.name.toLowerCase() === rawName.toLowerCase())) {
-            showToast(`Library ${rawName} already exists.`);
-            return;
-          }
-          customLibs.push({
-            id: 'lib_' + Date.now().toString(36),
-            name: rawName,
-            enabled: true,
-            builtIn: false,
-            code: libModalCodeInput.value
-          });
-        }
-
-        closeLibEditorModal();
-        saveArduinoCodeToStorage();
-        compileAllArduinoCode(false);
-        renderCustomLibsCards();
-      }
-
-      attachTabIndentation(libModalCodeInput, commitLibModalSave);
-      openNewLibModalBtn.addEventListener('click', () => openLibEditorModal(null));
-      closeLibModalBtn.addEventListener('click', closeLibEditorModal);
-      cancelLibModalBtn.addEventListener('click', closeLibEditorModal);
-      saveLibModalBtn.addEventListener('click', commitLibModalSave);
-      deleteLibModalBtn.addEventListener('click', () => {
-        if (!editingLibTargetId) return;
-        customLibs = customLibs.filter((l) => l.id !== editingLibTargetId || l.builtIn);
-        closeLibEditorModal();
-        saveArduinoCodeToStorage();
-        compileAllArduinoCode(false);
-        renderCustomLibsCards();
-      });
-      libEditorModal.addEventListener('click', (e) => {
-        if (e.target === libEditorModal) closeLibEditorModal();
-      });
-
       resetAllCodeBtn.addEventListener('click', () => {
-        customLibs = JSON.parse(JSON.stringify(DEFAULT_CUSTOM_LIBS));
         fullSketchCode = DEFAULT_FULL_SKETCH;
         isEditingFullIno = false;
         saveArduinoCodeToStorage();
         compileAllArduinoCode(true);
-        renderCustomLibsCards();
         renderInoSketchCards();
-        showToast('Restored all .h libraries and full .ino sketch to defaults.');
+        showToast('Restored full .ino sketch to default firmware.');
       });
 
       // =========================================================================
@@ -2379,12 +2027,10 @@
           simEl.hostPinModalInput.focus();
           return;
         }
-        // Clear input immediately so digits are never retained in DOM
         simEl.hostPinModalInput.value = '';
         closeHostPinModal();
 
         accessMode = 'HOST';
-        // Kick any previously connected client so it must reconnect with the 4-digit Host PIN
         kickCurrentApprovedClient('HOST PIN REQUIRED');
         renderAccessControlUI();
         showToast('Access mode: HOST (4-digit PIN lock active).');
@@ -2510,7 +2156,6 @@
         isAlive: false,
         firePin: false,
         defendPin: false,
-        fireIntervalMs: 140,
         tgt: { fl: 0, fr: 0, rl: 0, rr: 0 },
         cur: { fl: 0, fr: 0, rl: 0, rr: 0 },
         braking: { fl: false, fr: false, rl: false, rr: false }
@@ -2546,7 +2191,6 @@
         const cleanBase = normalizeHttpBaseUrl(rawInput);
         if (cleanBase) {
           try { localStorage.setItem(STORAGE_HOSTED_URL, cleanBase); } catch {}
-          // QR code URL embeds Room Code ONLY (never the private Host PIN)
           activeShareableControllerUrl = `${cleanBase}?mode=controller&room=${simRoomDigits}`;
           simEl.copyCtrlUrlBtn.disabled = false;
           simEl.qrTargetUrlLabel.textContent = activeShareableControllerUrl;
@@ -2633,7 +2277,6 @@
                 return;
               }
 
-              // Binary control packet: accept ONLY if this connection belongs to approvedClient
               if (!approvedClient || approvedClient.peerConn !== conn) return;
               if (data instanceof ArrayBuffer) ingestBinaryControlPacket(new Uint8Array(data));
               else if (data instanceof Uint8Array) ingestBinaryControlPacket(data);
@@ -2749,25 +2392,6 @@
       }
 
       function applyLineTracesToDOM(traceMap) {
-        // 1. Update Custom Libraries (.h)
-        for (const lib of customLibs) {
-          const lineCount = lib.code.split('\n').length;
-          for (let ln = 1; ln <= lineCount; ln++) {
-            const rowEl = document.getElementById(`${lib.id}_l${ln}`);
-            const valEl = document.getElementById(`v_${lib.id}_l${ln}`);
-            if (!rowEl || !valEl) continue;
-            const entry = traceMap.get(`${lib.id}:${ln}`);
-            if (entry) {
-              rowEl.className = `ard-row exec-${entry.color}`;
-              valEl.textContent = entry.text;
-            } else {
-              rowEl.className = 'ard-row';
-              valEl.textContent = '-';
-            }
-          }
-        }
-
-        // 2. Update Full Sketch Card (Standby) OR Auto-Split Active Cards (Moving) via [data-ino-line]
         if (isEditingFullIno) return;
         const inoRows = inoCardsContainer.querySelectorAll('[data-ino-line]');
         for (let i = 0; i < inoRows.length; i++) {
@@ -2854,7 +2478,6 @@
             core1.braking.rr = Boolean(out.brakeRR);
             core1.firePin        = Boolean(out.firePin);
             core1.defendPin      = Boolean(out.defendPin);
-            core1.fireIntervalMs = Math.max(20, Number(out.fireIntervalMs) || 140);
           } catch {
             core1.cur = { fl: 0, fr: 0, rl: 0, rr: 0 };
             core1.braking = { fl: true, fr: true, rl: true, rr: true };
@@ -2879,7 +2502,6 @@
           } else if (sketchLayoutMode === 'FULL') {
             desiredSplit = false;
           } else {
-            // AUTO mode: split immediately when moving; hold split for 450ms after stopping to prevent flicker
             desiredSplit = (inputActive || anyDrive || (lastMotionTickMs > 0 && (now - lastMotionTickMs) < SPLIT_HOLD_MS));
           }
 
@@ -2936,8 +2558,8 @@
         robot.wheelPhase.rl += nRL * spinScale * dt;
         robot.wheelPhase.rr += nRR * spinScale * dt;
 
-        // Fire pulse projectiles
-        if (core1.firePin && now - robot.lastFireMs >= core1.fireIntervalMs) {
+        // Fire pulse projectiles (uses backend-configured FIRE_INTERVAL_MS)
+        if (core1.firePin && now - robot.lastFireMs >= FIRE_INTERVAL_MS) {
           robot.lastFireMs = now;
           robot.projectiles.push({
             x: robot.x + sinT * 32,
@@ -3050,7 +2672,6 @@
         ctx.fill();
         ctx.stroke();
 
-        // 45-degree animated roller stripes clipped to wheel housing
         ctx.save();
         ctx.beginPath();
         ctx.roundRect(-w / 2 + 1, -h / 2 + 1, w - 2, h - 2, 1.5);
@@ -3068,7 +2689,6 @@
         }
         ctx.restore();
 
-        // Wheel Label
         const side = wx < 0 ? -1 : 1;
         ctx.fillStyle = isBraking ? '#ef4444' : '#8a8a8a';
         ctx.font = '700 8px "JetBrains Mono", monospace';
@@ -3085,22 +2705,18 @@
         const h = simEl.arenaContainer.clientHeight;
         if (w <= 0 || h <= 0) return;
 
-        // 1. Completely clear the entire physical backing pixel buffer every frame
         arenaCtx.setTransform(1, 0, 0, 1, 0, 0);
         arenaCtx.clearRect(0, 0, simEl.arenaCanvas.width, simEl.arenaCanvas.height);
 
-        // 2. Apply DPR transform and fill pure black background
         arenaCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
         arenaCtx.fillStyle = '#000000';
         arenaCtx.fillRect(0, 0, w, h);
 
-        // 3. Clip strictly inside the 1px inner arena bounds to prevent any wall-edge color bleed
         arenaCtx.save();
         arenaCtx.beginPath();
         arenaCtx.rect(1, 1, Math.max(0, w - 2), Math.max(0, h - 2));
         arenaCtx.clip();
 
-        // Subtle Grid
         const cx = w / 2, cy = h / 2;
         arenaCtx.strokeStyle = '#121212';
         arenaCtx.lineWidth = 1;
@@ -3115,7 +2731,6 @@
         arenaCtx.moveTo(0, cy); arenaCtx.lineTo(w, cy);
         arenaCtx.stroke();
 
-        // Fire Pulse Projectiles
         for (const p of robot.projectiles) {
           arenaCtx.fillStyle = `rgba(255, 255, 255, ${p.life.toFixed(2)})`;
           arenaCtx.beginPath();
@@ -3123,7 +2738,6 @@
           arenaCtx.fill();
         }
 
-        // Velocity Vector Arrow
         const speed = Math.hypot(robot.vxWorld, robot.vyWorld);
         if (speed > 6) {
           const ex = robot.x + robot.vxWorld * 0.28;
@@ -3144,12 +2758,10 @@
           arenaCtx.fill();
         }
 
-        // Robot Chassis
         arenaCtx.save();
         arenaCtx.translate(robot.x, robot.y);
         arenaCtx.rotate(robot.theta);
 
-        // Defend Shield Arc (Fits safely within WALL_PAD = 48)
         if (core1.defendPin) {
           const pulse = 0.65 + 0.35 * Math.sin(now * 0.015);
           arenaCtx.strokeStyle = `rgba(255, 255, 255, ${pulse.toFixed(2)})`;
@@ -3159,13 +2771,11 @@
           arenaCtx.stroke();
         }
 
-        // 4 Labeled Mecanum Wheels
         drawMecanumWheel(arenaCtx, -26, -19, 'FL', +1, robot.wheelPhase.fl, core1.cur.fl, core1.braking.fl);
         drawMecanumWheel(arenaCtx, +26, -19, 'FR', -1, robot.wheelPhase.fr, core1.cur.fr, core1.braking.fr);
         drawMecanumWheel(arenaCtx, -26, +19, 'RL', -1, robot.wheelPhase.rl, core1.cur.rl, core1.braking.rl);
         drawMecanumWheel(arenaCtx, +26, +19, 'RR', +1, robot.wheelPhase.rr, core1.cur.rr, core1.braking.rr);
 
-        // Main Body Plate
         arenaCtx.fillStyle = '#0e0e0e';
         arenaCtx.strokeStyle = !core1.isAlive ? '#ef4444' : '#ffffff';
         arenaCtx.lineWidth = 1.8;
@@ -3174,7 +2784,6 @@
         arenaCtx.fill();
         arenaCtx.stroke();
 
-        // Forward Indicator Triangle
         arenaCtx.fillStyle = '#ffffff';
         arenaCtx.beginPath();
         arenaCtx.moveTo(0, -23);
@@ -3190,9 +2799,8 @@
         arenaCtx.fillText('T14', 0, 6);
 
         arenaCtx.restore();
-        arenaCtx.restore(); // End inner arena clip
+        arenaCtx.restore();
 
-        // 4. Draw crisp 1px arena wall border LAST so nothing ever bleeds on the boundary
         arenaCtx.strokeStyle = '#262626';
         arenaCtx.lineWidth = 1;
         arenaCtx.strokeRect(0.5, 0.5, w - 1, h - 1);
@@ -3621,7 +3229,6 @@
         cEl.selfIdBadge.textContent = myClientId;
         cEl.dockClientIdTag.textContent = myClientId;
 
-        renderCustomLibsCards();
         renderInoSketchCards();
         compileAllArduinoCode(true);
 
