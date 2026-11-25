@@ -200,6 +200,30 @@
       -webkit-user-select: text;
     }
 
+    .ard-mode-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      padding: 2px 8px;
+      border-radius: 5px;
+      border: 1px solid #2e2e2e;
+      background: #000000;
+      color: #a3a3a3;
+    }
+    .ard-mode-pill.is-split {
+      border-color: #22c55e;
+      color: #4ade80;
+      background: #052e16;
+    }
+    .ard-mode-pill.is-edit {
+      border-color: #f59e0b;
+      color: #fbbf24;
+      background: #271704;
+    }
+
     .ard-row {
       display: flex;
       align-items: center;
@@ -656,7 +680,8 @@
                 <span id="pwmValFL" class="font-bold text-white">0</span>
               </div>
               <div class="mt-1.5 h-1.5 w-full bg-[#1a1a1a] rounded-full overflow-hidden relative">
-                <div id="pwmBarFL" class="absolute top-0 bottom-0 bg-white transition-all duration-75" style="left:50%; width:0%;"></div>
+                <div class="absolute top-0 bottom-0 left-1/2 w-[1px] bg-[#404040] z-10"></div>
+                <div id="pwmBarFL" class="absolute top-0 bottom-0 bg-white" style="left:50%; width:0%;"></div>
               </div>
             </div>
 
@@ -666,7 +691,8 @@
                 <span id="pwmValFR" class="font-bold text-white">0</span>
               </div>
               <div class="mt-1.5 h-1.5 w-full bg-[#1a1a1a] rounded-full overflow-hidden relative">
-                <div id="pwmBarFR" class="absolute top-0 bottom-0 bg-white transition-all duration-75" style="left:50%; width:0%;"></div>
+                <div class="absolute top-0 bottom-0 left-1/2 w-[1px] bg-[#404040] z-10"></div>
+                <div id="pwmBarFR" class="absolute top-0 bottom-0 bg-white" style="left:50%; width:0%;"></div>
               </div>
             </div>
 
@@ -676,7 +702,8 @@
                 <span id="pwmValRL" class="font-bold text-white">0</span>
               </div>
               <div class="mt-1.5 h-1.5 w-full bg-[#1a1a1a] rounded-full overflow-hidden relative">
-                <div id="pwmBarRL" class="absolute top-0 bottom-0 bg-white transition-all duration-75" style="left:50%; width:0%;"></div>
+                <div class="absolute top-0 bottom-0 left-1/2 w-[1px] bg-[#404040] z-10"></div>
+                <div id="pwmBarRL" class="absolute top-0 bottom-0 bg-white" style="left:50%; width:0%;"></div>
               </div>
             </div>
 
@@ -686,13 +713,14 @@
                 <span id="pwmValRR" class="font-bold text-white">0</span>
               </div>
               <div class="mt-1.5 h-1.5 w-full bg-[#1a1a1a] rounded-full overflow-hidden relative">
-                <div id="pwmBarRR" class="absolute top-0 bottom-0 bg-white transition-all duration-75" style="left:50%; width:0%;"></div>
+                <div class="absolute top-0 bottom-0 left-1/2 w-[1px] bg-[#404040] z-10"></div>
+                <div id="pwmBarRR" class="absolute top-0 bottom-0 bg-white" style="left:50%; width:0%;"></div>
               </div>
             </div>
           </div>
         </section>
 
-        <!-- RIGHT PANE: CUSTOM LIBRARIES (.h) + 3 SEPARATE EDITABLE ARDUINO IDE 2.x BLOCKS -->
+        <!-- RIGHT PANE: CUSTOM LIBRARIES (.h) + AUTO-SPLITTING FULL ARDUINO SKETCH (.ino) -->
         <section id="arduinoBlocksColumn" class="flex flex-col gap-2 min-h-0 overflow-y-auto pr-0.5">
 
           <!-- CUSTOM LIBRARIES (.h) MANAGER BAR & CARDS -->
@@ -706,7 +734,7 @@
               </div>
               <div class="flex items-center gap-1.5">
                 <button id="openNewLibModalBtn" class="min-btn">+ NEW LIB (.h)</button>
-                <button id="resetAllCodeBtn" class="min-btn" title="Restore all .h and .ino files to default firmware">
+                <button id="resetAllCodeBtn" class="min-btn" title="Restore all .h libraries and full .ino sketch to default firmware">
                   RESET ALL CODE
                 </button>
               </div>
@@ -719,8 +747,32 @@
             <div id="customLibsContainer" class="flex flex-col gap-2"></div>
           </div>
 
-          <!-- Container for the 3 Separate Arduino .ino Movement Cards -->
-          <div id="inoCardsContainer" class="flex flex-col gap-2 shrink-0"></div>
+          <!-- ARDUINO SKETCH WORKSPACE BAR (STANDBY: FULL SKETCH | MOVING: AUTO-SPLIT) -->
+          <div class="min-panel p-2 flex flex-col gap-2 shrink-0">
+            <div class="flex flex-wrap items-center justify-between gap-2">
+              <div class="flex flex-wrap items-center gap-2">
+                <span class="text-[11px] font-extrabold tracking-wider text-white">ARDUINO FIRMWARE</span>
+                <span id="sketchLayoutBadge" class="ard-mode-pill mono">STANDBY · FULL SKETCH</span>
+              </div>
+              <div class="flex items-center gap-1.5">
+                <button id="sketchLayoutModeBtn" class="min-btn mono" title="Toggle Auto-Split behavior (AUTO / FULL / SPLIT)">
+                  LAYOUT: AUTO
+                </button>
+                <button id="editFullSketchBtn" class="min-btn active mono">
+                  EDIT FULL SKETCH
+                </button>
+                <button id="applyFullSketchBtn" class="hidden min-btn mode-host-on mono">
+                  APPLY &amp; RUN
+                </button>
+                <button id="cancelFullSketchBtn" class="hidden min-btn mono">
+                  CANCEL
+                </button>
+              </div>
+            </div>
+
+            <!-- Container for Full Sketch Card (Standby) OR Auto-Split Active Function Cards (Moving) -->
+            <div id="inoCardsContainer" class="flex flex-col gap-2 shrink-0"></div>
+          </div>
 
         </section>
       </main>
@@ -895,8 +947,8 @@
       const MIN_PWM            = 20;
 
       const STORAGE_HOSTED_URL = 'team14_hosted_url_v3';
-      const STORAGE_LIBS       = 'team14_custom_libs_v3';
-      const STORAGE_INOS       = 'team14_ino_blocks_v3';
+      const STORAGE_LIBS       = 'team14_custom_libs_v4';
+      const STORAGE_FULL_INO   = 'team14_full_sketch_v4';
 
       // Encapsulated private closure for the 4-digit Host PIN (never logged, stored, or rendered)
       const hostPinVault = (() => {
@@ -1082,7 +1134,7 @@
       }
 
       // =========================================================================
-      // PART A: DEFAULT ARDUINO SOURCE CODE, CUSTOM LIBRARIES (.h) & TRANSPILER
+      // PART A: COMPLETE ARDUINO SKETCH, CUSTOM LIBRARIES (.h) & AUTO-SPLIT
       // =========================================================================
       const DEFAULT_CUSTOM_LIBS = [
         {
@@ -1105,98 +1157,213 @@
         }
       ];
 
-      const DEFAULT_INO_BLOCKS = [
-        {
-          id: 'b1',
-          fileName: 'motorControlTask.ino',
-          subtitle: 'Mecanum Kinematics & Drive/Brake',
-          code: [
-            'void computeMecanum(int8_t rawX, int8_t rawY, int8_t rawR) {',
-            '  float x = constrain(rawX / 100.0f, -1.0f, 1.0f);',
-            '  float y = constrain(rawY / 100.0f, -1.0f, 1.0f);',
-            '  float r = constrain(rawR / 100.0f, -1.0f, 1.0f);',
-            '  x = applyCurve(x);',
-            '  y = applyCurve(y);',
-            '  float fl = y + x + r;',
-            '  float fr = y - x - r;',
-            '  float rl = y - x + r;',
-            '  float rr = y + x - r;',
-            '  float maxMag = max(max(fabsf(fl), fabsf(fr)), max(fabsf(rl), fabsf(rr)));',
-            '  if (maxMag > 1.0f) { fl /= maxMag; fr /= maxMag; rl /= maxMag; rr /= maxMag; }',
-            '  tgtFL = ratioToPWM(fl, 20);',
-            '  tgtFR = ratioToPWM(fr, 20);',
-            '  tgtRL = ratioToPWM(rl, 20);',
-            '  tgtRR = ratioToPWM(rr, 20);',
-            '  curFL = rampPWM(curFL, tgtFL, 20);',
-            '  curFR = rampPWM(curFR, tgtFR, 20);',
-            '  curRL = rampPWM(curRL, tgtRL, 20);',
-            '  curRR = rampPWM(curRR, tgtRR, 20);',
-            '  bool isMoving = (x != 0.0f || y != 0.0f || r != 0.0f);',
-            '  driveFL = (isMoving && curFL == 0) ? 0 : curFL;',
-            '  driveFR = (isMoving && curFR == 0) ? 0 : curFR;',
-            '  driveRL = (isMoving && curRL == 0) ? 0 : curRL;',
-            '  driveRR = (isMoving && curRR == 0) ? 0 : curRR;',
-            '}'
-          ].join('\n')
-        },
-        {
-          id: 'b2',
-          fileName: 'ratioToPWM.ino',
-          subtitle: 'Deadband & PWM Scaling',
-          code: [
-            'int ratioToPWM(float ratio, int minPwm) {',
-            '  float mag = fabsf(ratio);',
-            '  if (mag < 0.01f) return 0;',
-            '  int pwm = roundf(minPwm + mag * (CUSTOM_MAX_PWM - minPwm));',
-            '  pwm = constrain(pwm, minPwm, CUSTOM_MAX_PWM);',
-            '  return (ratio > 0) ? pwm : -pwm;',
-            '}'
-          ].join('\n')
-        },
-        {
-          id: 'b3',
-          fileName: 'rampPWM.ino',
-          subtitle: 'Logarithmic Slew-Rate Limiter',
-          code: [
-            'int rampPWM(int current, int target, int minPwm) {',
-            '  if (current == target) return target;',
-            '  if ((current > 0 && target < 0) || (current < 0 && target > 0)) {',
-            '    return (current > 0) ? max(current - 15, 0) : min(current + 15, 0);',
-            '  }',
-            '  if (current == 0 && abs(target) >= minPwm) {',
-            '    return (target > 0) ? minPwm : -minPwm;',
-            '  }',
-            '  if (abs(target) > abs(current)) {',
-            '    float norm = constrain(abs(current) / 150.0f, 0.0f, 1.0f);',
-            '    int step = roundf(3 + (logf(1.0f + 9.0f * norm) / logf(10.0f)) * 7);',
-            '    return (target > current) ? min(current + step, target) : max(current - step, target);',
-            '  }',
-            '  return (target > current) ? min(current + 15, target) : max(current - 15, target);',
-            '}'
-          ].join('\n')
-        }
-      ];
+      const DEFAULT_FULL_SKETCH = [
+        '#include <BLEDevice.h>',
+        '#include <BLEServer.h>',
+        '#include <BLEUtils.h>',
+        '#include <BLE2902.h>',
+        '#include <atomic>',
+        '#include <math.h>',
+        '#include "MecanumCurves.h"',
+        '',
+        '#define DEVICE_NAME   "team14"',
+        '#define SERVICE_UUID  "6E400001-B5A3-F393-E0A9-E50E24DCCA9E"',
+        '#define CHAR_RX_UUID  "6E400002-B5A3-F393-E0A9-E50E24DCCA9E"',
+        '#define CHAR_TX_UUID  "6E400003-B5A3-F393-E0A9-E50E24DCCA9E"',
+        '',
+        'constexpr uint8_t PKT_BATTERY = 0xBB;',
+        'constexpr uint8_t PKT_CONTROL = 0xCC;',
+        '',
+        'constexpr int PIN_FIRE    = 19;',
+        'constexpr int PIN_DEFEND  = 13;',
+        'constexpr int BAT_ADC_PIN = 34;',
+        '',
+        'constexpr uint32_t FAILSAFE_TIMEOUT_MS = 400;',
+        'constexpr uint32_t PWM_FREQ_HZ         = 1000;',
+        'constexpr uint8_t  PWM_RES_BITS        = 8;',
+        '',
+        'constexpr float SLIDER_MAX  = 100.0f;',
+        'constexpr int   MAX_PWM     = CUSTOM_MAX_PWM;',
+        'constexpr int   STEP_MIN    = 3;',
+        'constexpr int   STEP_MAX    = 10;',
+        'constexpr int   STEP_DECEL  = 15;',
+        'constexpr float LOG_CURVE_K = 9.0f;',
+        '',
+        'struct Motor {',
+        '  int   in1;',
+        '  int   in2;',
+        '  int   en;',
+        '  bool  inverted;',
+        '  int   minPwm;',
+        '  float gain;',
+        '',
+        '  void init() {',
+        '    pinMode(in1, OUTPUT);',
+        '    pinMode(in2, OUTPUT);',
+        '    ledcAttach(en, PWM_FREQ_HZ, PWM_RES_BITS);',
+        '    coast();',
+        '  }',
+        '',
+        '  void coast() {',
+        '    digitalWrite(in1, LOW);',
+        '    digitalWrite(in2, LOW);',
+        '    ledcWrite(en, 0);',
+        '  }',
+        '',
+        '  void brake() {',
+        '    digitalWrite(in1, HIGH);',
+        '    digitalWrite(in2, HIGH);',
+        '    ledcWrite(en, 255);',
+        '  }',
+        '',
+        '  void drive(int power) {',
+        '    if (inverted) power = -power;',
+        '    power = constrain(power, -MAX_PWM, MAX_PWM);',
+        '    if (power > 0) {',
+        '      digitalWrite(in1, HIGH);',
+        '      digitalWrite(in2, LOW);',
+        '      ledcWrite(en, power);',
+        '    } else if (power < 0) {',
+        '      digitalWrite(in1, LOW);',
+        '      digitalWrite(in2, HIGH);',
+        '      ledcWrite(en, -power);',
+        '    } else {',
+        '      coast();',
+        '    }',
+        '  }',
+        '};',
+        '',
+        'static Motor MOTOR_A = {32, 33, 27, false, 20, 1.00f};',
+        'static Motor MOTOR_B = {26, 25, 14, false, 20, 1.00f};',
+        'static Motor MOTOR_C = {22, 21, 23, false, 20, 1.00f};',
+        'static Motor MOTOR_D = {16, 17, 18, false, 20, 1.00f};',
+        '',
+        'int ratioToPWM(float ratio, int minPwm) {',
+        '  float mag = fabsf(ratio);',
+        '  if (mag < 0.01f) return 0;',
+        '  int pwm = static_cast<int>(roundf(minPwm + mag * (MAX_PWM - minPwm)));',
+        '  pwm = constrain(pwm, minPwm, MAX_PWM);',
+        '  return (ratio > 0) ? pwm : -pwm;',
+        '}',
+        '',
+        'int rampPWM(int current, int target, int minPwm) {',
+        '  if (current == target) return target;',
+        '  if ((current > 0 && target < 0) || (current < 0 && target > 0)) {',
+        '    return (current > 0) ? max(current - STEP_DECEL, 0) : min(current + STEP_DECEL, 0);',
+        '  }',
+        '  if (current == 0 && abs(target) >= minPwm) {',
+        '    return (target > 0) ? minPwm : -minPwm;',
+        '  }',
+        '  if (abs(target) > abs(current)) {',
+        '    float norm = constrain(abs(current) / static_cast<float>(MAX_PWM), 0.0f, 1.0f);',
+        '    float logFactor = logf(1.0f + LOG_CURVE_K * norm) / logf(1.0f + LOG_CURVE_K);',
+        '    int step = static_cast<int>(roundf(STEP_MIN + logFactor * (STEP_MAX - STEP_MIN)));',
+        '    return (target > current) ? min(current + step, target) : max(current - step, target);',
+        '  }',
+        '  return (target > current) ? min(current + STEP_DECEL, target) : max(current - STEP_DECEL, target);',
+        '}',
+        '',
+        'void motorControlTask(void* pvParameters) {',
+        '  TickType_t lastWakeTime = xTaskGetTickCount();',
+        '  const TickType_t frequency = pdMS_TO_TICKS(20);',
+        '  ControlCmd activeCmd = {0, 0, 0, 0, 0};',
+        '  int curFL = 0, curFR = 0, curRL = 0, curRR = 0;',
+        '',
+        '  for (;;) {',
+        '    ControlCmd incoming;',
+        '    if (xQueueReceive(cmdQueue, &incoming, 0) == pdTRUE) activeCmd = incoming;',
+        '    bool isAlive = deviceConnected.load() && (millis() - activeCmd.timestamp <= FAILSAFE_TIMEOUT_MS);',
+        '',
+        '    if (!isAlive) {',
+        '      curFL = curFR = curRL = curRR = 0;',
+        '      MOTOR_B.brake(); MOTOR_A.brake(); MOTOR_C.brake(); MOTOR_D.brake();',
+        '      digitalWrite(PIN_FIRE, LOW);',
+        '      digitalWrite(PIN_DEFEND, LOW);',
+        '    } else {',
+        '      digitalWrite(PIN_FIRE,   (activeCmd.flags & 0x01) ? HIGH : LOW);',
+        '      digitalWrite(PIN_DEFEND, (activeCmd.flags & 0x02) ? HIGH : LOW);',
+        '      float x = constrain(activeCmd.x / SLIDER_MAX, -1.0f, 1.0f);',
+        '      float y = constrain(activeCmd.y / SLIDER_MAX, -1.0f, 1.0f);',
+        '      float r = constrain(activeCmd.r / SLIDER_MAX, -1.0f, 1.0f);',
+        '      x = applyCurve(x);',
+        '      y = applyCurve(y);',
+        '      int tgtFL = 0, tgtFR = 0, tgtRL = 0, tgtRR = 0;',
+        '      bool isMoving = (x != 0.0f || y != 0.0f || r != 0.0f);',
+        '      if (isMoving) {',
+        '        float fl = (y + x + r) * MOTOR_B.gain;',
+        '        float fr = (y - x - r) * MOTOR_A.gain;',
+        '        float rl = (y - x + r) * MOTOR_C.gain;',
+        '        float rr = (y + x - r) * MOTOR_D.gain;',
+        '        float maxMag = max(max(fabsf(fl), fabsf(fr)), max(fabsf(rl), fabsf(rr)));',
+        '        if (maxMag > 1.0f) { fl /= maxMag; fr /= maxMag; rl /= maxMag; rr /= maxMag; }',
+        '        tgtFL = ratioToPWM(fl, MOTOR_B.minPwm);',
+        '        tgtFR = ratioToPWM(fr, MOTOR_A.minPwm);',
+        '        tgtRL = ratioToPWM(rl, MOTOR_C.minPwm);',
+        '        tgtRR = ratioToPWM(rr, MOTOR_D.minPwm);',
+        '      }',
+        '      curFL = rampPWM(curFL, tgtFL, MOTOR_B.minPwm);',
+        '      curFR = rampPWM(curFR, tgtFR, MOTOR_A.minPwm);',
+        '      curRL = rampPWM(curRL, tgtRL, MOTOR_C.minPwm);',
+        '      curRR = rampPWM(curRR, tgtRR, MOTOR_D.minPwm);',
+        '      (isMoving && curFL == 0) ? MOTOR_B.brake() : MOTOR_B.drive(curFL);',
+        '      (isMoving && curFR == 0) ? MOTOR_A.brake() : MOTOR_A.drive(curFR);',
+        '      (isMoving && curRL == 0) ? MOTOR_C.brake() : MOTOR_C.drive(curRL);',
+        '      (isMoving && curRR == 0) ? MOTOR_D.brake() : MOTOR_D.drive(curRR);',
+        '      if (curFL != 0 || curFR != 0 || curRL != 0 || curRR != 0) lastMotorActiveMs.store(millis());',
+        '    }',
+        '    vTaskDelayUntil(&lastWakeTime, frequency);',
+        '  }',
+        '}',
+        '',
+        'void setup() {',
+        '  Serial.begin(115200);',
+        '  pinMode(PIN_FIRE, OUTPUT);',
+        '  pinMode(PIN_DEFEND, OUTPUT);',
+        '  MOTOR_A.init(); MOTOR_B.init(); MOTOR_C.init(); MOTOR_D.init();',
+        '  cmdQueue = xQueueCreate(1, sizeof(ControlCmd));',
+        '  initBLE();',
+        '  xTaskCreatePinnedToCore(bleMonitorTask,   "BLE_Monitor", 3072, nullptr, 1, nullptr, 0);',
+        '  xTaskCreatePinnedToCore(motorControlTask, "Motor_Ctrl",  4096, nullptr, 2, nullptr, 1);',
+        '}',
+        '',
+        'void loop() {',
+        '  vTaskDelay(portMAX_DELAY);',
+        '}'
+      ].join('\n');
 
-      function loadStateFromStorage(key, fallback) {
+      function loadLibsFromStorage() {
         try {
-          const raw = localStorage.getItem(key);
-          if (!raw) return JSON.parse(JSON.stringify(fallback));
+          const raw = localStorage.getItem(STORAGE_LIBS);
+          if (!raw) return JSON.parse(JSON.stringify(DEFAULT_CUSTOM_LIBS));
           const parsed = JSON.parse(raw);
           if (Array.isArray(parsed) && parsed.length > 0) return parsed;
         } catch {}
-        return JSON.parse(JSON.stringify(fallback));
+        return JSON.parse(JSON.stringify(DEFAULT_CUSTOM_LIBS));
       }
 
-      let customLibs = loadStateFromStorage(STORAGE_LIBS, DEFAULT_CUSTOM_LIBS);
-      let inoBlocks  = loadStateFromStorage(STORAGE_INOS, DEFAULT_INO_BLOCKS);
+      function loadFullSketchFromStorage() {
+        try {
+          const raw = localStorage.getItem(STORAGE_FULL_INO);
+          if (raw && typeof raw === 'string' && raw.trim().length > 20) return raw;
+        } catch {}
+        return DEFAULT_FULL_SKETCH;
+      }
 
-      // Track which cards are currently in EDIT mode
-      const editingState = {}; // { [cardId]: boolean }
+      let customLibs      = loadLibsFromStorage();
+      let fullSketchCode  = loadFullSketchFromStorage();
+
+      // Sketch Display State:
+      // layoutMode: 'AUTO' (Standby -> Full Sketch, Moving -> Split Active Blocks) | 'FULL' | 'SPLIT'
+      let sketchLayoutMode  = 'AUTO';
+      let isEditingFullIno  = false;
+      let isSplitActiveView = false;
+      let lastMotionTickMs  = 0;
+      const SPLIT_HOLD_MS   = 450; // Debounce before returning to Full Sketch after stopping
 
       function saveArduinoCodeToStorage() {
         try {
           localStorage.setItem(STORAGE_LIBS, JSON.stringify(customLibs));
-          localStorage.setItem(STORAGE_INOS, JSON.stringify(inoBlocks));
+          localStorage.setItem(STORAGE_FULL_INO, fullSketchCode);
         } catch {}
       }
 
@@ -1210,7 +1377,7 @@
 
       function highlightArduinoLine(rawLine) {
         const escaped = escapeHtml(rawLine);
-        const tokenRegex = /(\/\/.*$|#(?:include|define|ifndef|ifdef|endif|pragma)\b|\b(?:void|int|float|double|long|short|bool|boolean|char|byte|uint8_t|int8_t|uint16_t|int16_t|uint32_t|int32_t|size_t|inline|static|const)\b|\b(?:if|else|for|while|return|switch|case|break|continue|constrain|map|max|min|abs|fabs|fabsf|round|roundf|floor|floorf|ceil|ceilf|sqrt|sqrtf|pow|powf|log|logf|log10|log10f|exp|expf|sin|sinf|cos|cosf|tan|tanf|atan2|atan2f|sq|radians|degrees)\b|\b\d+(?:\.\d+)?f?\b)/g;
+        const tokenRegex = /(\/\/.*$|#(?:include|define|ifndef|ifdef|endif|pragma)\b|\b(?:void|int|float|double|long|short|bool|boolean|char|byte|uint8_t|int8_t|uint16_t|int16_t|uint32_t|int32_t|size_t|TickType_t|ControlCmd|Motor|inline|static|const|constexpr|struct)\b|\b(?:if|else|for|while|return|switch|case|break|continue|static_cast|constrain|map|max|min|abs|fabs|fabsf|round|roundf|floor|floorf|ceil|ceilf|sqrt|sqrtf|pow|powf|log|logf|log10|log10f|exp|expf|sin|sinf|cos|cosf|tan|tanf|atan2|atan2f|sq|radians|degrees|pinMode|digitalWrite|ledcAttach|ledcWrite|millis|vTaskDelay|vTaskDelayUntil|xQueueCreate|xQueueReceive|xTaskCreatePinnedToCore|pdMS_TO_TICKS|portMAX_DELAY|HIGH|LOW|OUTPUT|pdTRUE)\b|\b0x[0-9a-fA-F]+\b|\b\d+(?:\.\d+)?f?\b)/g;
 
         return escaped.replace(tokenRegex, (match) => {
           if (match.startsWith('//')) {
@@ -1219,145 +1386,204 @@
           if (match.startsWith('#')) {
             return `<span class="ard-prep">${match}</span>`;
           }
-          if (/^(?:void|int|float|double|long|short|bool|boolean|char|byte|uint8_t|int8_t|uint16_t|int16_t|uint32_t|int32_t|size_t|inline|static|const)$/.test(match)) {
+          if (/^(?:void|int|float|double|long|short|bool|boolean|char|byte|uint8_t|int8_t|uint16_t|int16_t|uint32_t|int32_t|size_t|TickType_t|ControlCmd|Motor|inline|static|const|constexpr|struct)$/.test(match)) {
             return `<span class="ard-type">${match}</span>`;
           }
-          if (/^\d/.test(match)) {
+          if (/^(?:0x|\d)/.test(match)) {
             return `<span class="ard-num">${match}</span>`;
           }
           return `<span class="ard-ctrl">${match}</span>`;
         });
       }
 
-      // ==================== C++ TO JAVASCRIPT TRANSPILER WITH LINE TRACE HOOKS ====================
-      let compiledStepFn = null;
-      let lastCompileError = '';
-
-      function transpileArduinoCard(cardId, sourceCode, macrosMap) {
-        // Strip multi-line comments while preserving newline count so line numbers match 1:1
-        const withoutBlockComments = sourceCode.replace(/\/\*[\s\S]*?\*\//g, (m) => {
-          const newlines = m.match(/\n/g);
-          return newlines ? '\n'.repeat(newlines.length) : '';
-        });
-
-        const rawLines = withoutBlockComments.split('\n');
-        const outLines = [];
-
-        for (let i = 0; i < rawLines.length; i++) {
-          const lineNo = i + 1;
-          let line = rawLines[i];
-
-          // Remove single-line comment
-          const cmIdx = line.indexOf('//');
-          if (cmIdx !== -1) line = line.slice(0, cmIdx);
-
-          const trimmed = line.trim();
-          if (!trimmed) {
-            outLines.push('');
-            continue;
+      // ==================== FULL-SKETCH C++ SECTION EXTRACTOR ====================
+      function extractBraceBlock(lines, startRegex) {
+        let startIdx = -1;
+        for (let i = 0; i < lines.length; i++) {
+          if (startRegex.test(lines[i])) {
+            startIdx = i;
+            break;
           }
+        }
+        if (startIdx === -1) return null;
 
-          // Skip preprocessor lines (macros already collected in pass 1)
-          if (trimmed.startsWith('#')) {
-            outLines.push('');
-            continue;
+        let depth = 0;
+        let sawOpen = false;
+        let endIdx = startIdx;
+        for (let i = startIdx; i < lines.length; i++) {
+          const clean = lines[i].split('//')[0];
+          for (let c = 0; c < clean.length; c++) {
+            if (clean[c] === '{') { depth++; sawOpen = true; }
+            else if (clean[c] === '}') { depth--; }
           }
+          endIdx = i;
+          if (sawOpen && depth <= 0) break;
+        }
+        return {
+          startLine: startIdx + 1,
+          endLine: endIdx + 1,
+          lines: lines.slice(startIdx, endIdx + 1)
+        };
+      }
 
-          // Expand #define object-like macros
-          for (const [mName, mVal] of macrosMap.entries()) {
-            const re = new RegExp(`\\b${mName}\\b`, 'g');
-            line = line.replace(re, `(${mVal})`);
-          }
+      function getActiveSplitSections(sketchSource) {
+        const lines = sketchSource.split('\n');
+        const sections = [];
 
-          // Strip float literal suffix 'f' (e.g. 100.0f -> 100.0, 2.f -> 2.)
-          line = line.replace(/\b(\d+\.\d+|\d+\.|\.\d+)f\b/g, '$1');
-
-          // Convert C-style casts
-          line = line.replace(/\(\s*(?:float|double)\s*\)/g, '');
-          line = line.replace(/\(\s*(?:int|long|int8_t|uint8_t|int16_t|uint16_t|int32_t|uint32_t)\s*\)/g, 'Math.trunc');
-
-          // Detect function signature: e.g. "inline float applyCurve(float v) {"
-          const fnMatch = line.match(/^\s*(?:inline\s+|static\s+|const\s+)*(?:void|int|float|double|long|short|bool|boolean|char|byte|uint8_t|int8_t|uint16_t|int16_t|uint32_t|int32_t|size_t)\s+([a-zA-Z_]\w*)\s*\(([^)]*)\)\s*\{\s*$/);
-          if (fnMatch) {
-            const fnName = fnMatch[1];
-            const rawParams = fnMatch[2].trim();
-            const cleanParams = rawParams
-              ? rawParams.split(',').map((p) => {
-                  const noDefault = p.split('=')[0].trim();
-                  const parts = noDefault.replace(/[&*]/g, ' ').trim().split(/\s+/);
-                  return parts[parts.length - 1];
-                }).join(', ')
-              : '';
-            outLines.push(`function ${fnName}(${cleanParams}) { __trace("${cardId}", ${lineNo}, "CALL", "teal");`);
-            continue;
-          }
-
-          // Convert C++ typed loop headers: for (int i = 0; ...) -> for (let i = 0; ...)
-          line = line.replace(/for\s*\(\s*(?:const\s+)?(?:int|long|float|double|size_t|uint8_t|int8_t|uint16_t|int16_t|uint32_t|int32_t)\s+/g, 'for (let ');
-
-          // Convert C++ variable declarations at start of line
-          let declaredVarName = null;
-          const declMatch = line.match(/^(\s*)(?:static\s+|const\s+|volatile\s+)*(?:int8_t|uint8_t|int16_t|uint16_t|int32_t|uint32_t|float|double|int|long|short|bool|boolean|byte|char|size_t)\s+([a-zA-Z_]\w*)(.*)$/);
-          if (declMatch) {
-            const indent = declMatch[1];
-            declaredVarName = declMatch[2];
-            let rest = declMatch[3];
-            if (/^\s*;/.test(rest)) {
-              rest = ' = 0' + rest;
-            }
-            line = `${indent}let ${declaredVarName}${rest}`;
-          }
-
-          // Inject infinite-loop protection guard inside while / for opening braces
-          if (/\b(?:while|for)\s*\(.*\)\s*\{\s*$/.test(line)) {
-            line = line.replace(/\{\s*$/, '{ if (++__ops > 6000) throw new Error("Loop iteration limit exceeded");');
-          }
-
-          // Transform `if (cond)` into `if (__cond("cardId", lineNo, Boolean(cond)))`
-          line = line.replace(/\bif\s*\((.+)\)(\s*\{?\s*(?:return\b.*)?)$/, (full, condExpr, tail) => {
-            // Only wrap outer condition if parentheses are balanced
-            let depth = 0;
-            let splitAt = -1;
-            for (let k = 0; k < condExpr.length; k++) {
-              if (condExpr[k] === '(') depth++;
-              else if (condExpr[k] === ')') {
-                depth--;
-                if (depth < 0) {
-                  splitAt = k;
-                  break;
-                }
-              }
-            }
-            if (splitAt !== -1) {
-              const realCond = condExpr.slice(0, splitAt);
-              const afterParen = condExpr.slice(splitAt + 1) + tail;
-              return `if (__cond("${cardId}", ${lineNo}, Boolean(${realCond})))${afterParen}`;
-            }
-            return `if (__cond("${cardId}", ${lineNo}, Boolean(${condExpr})))${tail}`;
+        const taskBlk = extractBraceBlock(lines, /^\s*void\s+motorControlTask\s*\(/);
+        if (taskBlk) {
+          sections.push({
+            id: 'split_task',
+            title: `motorControlTask()  [L${taskBlk.startLine}–L${taskBlk.endLine}]`,
+            subtitle: '50Hz Kinematics & Actuation',
+            startLine: taskBlk.startLine,
+            lines: taskBlk.lines
           });
-
-          // Transform `return expr;` into `return __ret("cardId", lineNo, (expr));`
-          line = line.replace(/\breturn\s+([^;]+);/g, `return __ret("${cardId}", ${lineNo}, ($1));`);
-          line = line.replace(/\breturn\s*;/g, `__trace("${cardId}", ${lineNo}, "void", "amber"); return;`);
-
-          // If line is a simple assignment or declaration ending in ';' (not inside for(...) header and not a return)
-          if (!line.includes('__ret(') && !/\b(?:for|while|if)\s*\(/.test(line) && /;\s*$/.test(line)) {
-            let probeVar = declaredVarName;
-            if (!probeVar) {
-              const assignMatch = line.match(/^\s*([a-zA-Z_]\w*)\s*(?:\+|-|\*|\/)?=\s*[^=]/);
-              if (assignMatch) probeVar = assignMatch[1];
-            }
-            if (probeVar) {
-              line = line.replace(/;\s*$/, `; __trace("${cardId}", ${lineNo}, "${probeVar}:" + __fmt(${probeVar}), "teal");`);
-            } else {
-              line = line.replace(/;\s*$/, `; __trace("${cardId}", ${lineNo}, "EXEC", "teal");`);
-            }
-          }
-
-          outLines.push(line);
         }
 
-        return outLines.join('\n');
+        const ratioBlk = extractBraceBlock(lines, /^\s*int\s+ratioToPWM\s*\(/);
+        if (ratioBlk) {
+          sections.push({
+            id: 'split_ratio',
+            title: `ratioToPWM()  [L${ratioBlk.startLine}–L${ratioBlk.endLine}]`,
+            subtitle: 'Deadband & PWM Scaling',
+            startLine: ratioBlk.startLine,
+            lines: ratioBlk.lines
+          });
+        }
+
+        const rampBlk = extractBraceBlock(lines, /^\s*int\s+rampPWM\s*\(/);
+        if (rampBlk) {
+          sections.push({
+            id: 'split_ramp',
+            title: `rampPWM()  [L${rampBlk.startLine}–L${rampBlk.endLine}]`,
+            subtitle: 'Logarithmic Slew-Rate Limiter',
+            startLine: rampBlk.startLine,
+            lines: rampBlk.lines
+          });
+        }
+
+        const motorBlk = extractBraceBlock(lines, /^\s*struct\s+Motor\b/);
+        if (motorBlk) {
+          sections.push({
+            id: 'split_motor',
+            title: `struct Motor  [L${motorBlk.startLine}–L${motorBlk.endLine}]`,
+            subtitle: 'H-Bridge Drive & Active Brake',
+            startLine: motorBlk.startLine,
+            lines: motorBlk.lines
+          });
+        }
+
+        return sections;
+      }
+
+      // ==================== FULL-SKETCH C++ TO JS TRANSPILER ====================
+      let compiledStepFn = null;
+      let parsedMotorConfigs = {
+        A: { inverted: false, minPwm: 20, gain: 1.0 },
+        B: { inverted: false, minPwm: 20, gain: 1.0 },
+        C: { inverted: false, minPwm: 20, gain: 1.0 },
+        D: { inverted: false, minPwm: 20, gain: 1.0 }
+      };
+
+      function transpileLineWithTrace(cardId, lineNo, rawLine, macrosMap) {
+        let line = rawLine;
+        const cmIdx = line.indexOf('//');
+        if (cmIdx !== -1) line = line.slice(0, cmIdx);
+
+        const trimmed = line.trim();
+        if (!trimmed || trimmed.startsWith('#')) return '';
+
+        // Expand #define macros
+        for (const [mName, mVal] of macrosMap.entries()) {
+          const re = new RegExp(`\\b${mName}\\b`, 'g');
+          line = line.replace(re, `(${mVal})`);
+        }
+
+        // Strip float literal suffix 'f'
+        line = line.replace(/\b(\d+\.\d+|\d+\.|\.\d+)f\b/g, '$1');
+
+        // Convert C++ static_cast<...>(expr) & C-style casts
+        line = line.replace(/static_cast\s*<\s*(?:int|long|int8_t|uint8_t|int16_t|uint16_t|int32_t|uint32_t)\s*>/g, 'Math.trunc');
+        line = line.replace(/static_cast\s*<\s*(?:float|double)\s*>/g, '');
+        line = line.replace(/\(\s*(?:float|double)\s*\)/g, '');
+        line = line.replace(/\(\s*(?:int|long|int8_t|uint8_t|int16_t|uint16_t|int32_t|uint32_t)\s*\)/g, 'Math.trunc');
+
+        // Convert constexpr scalar declarations
+        line = line.replace(/^\s*constexpr\s+(?:int8_t|uint8_t|int16_t|uint16_t|int32_t|uint32_t|float|double|int|long|bool)\s+/, 'const ');
+
+        // Function signature
+        const fnMatch = line.match(/^\s*(?:inline\s+|static\s+|const\s+)*(?:void|int|float|double|long|short|bool|boolean|char|byte|uint8_t|int8_t|uint16_t|int16_t|uint32_t|int32_t|size_t)\s+([a-zA-Z_]\w*)\s*\(([^)]*)\)\s*\{\s*$/);
+        if (fnMatch) {
+          const fnName = fnMatch[1];
+          const rawParams = fnMatch[2].trim();
+          const cleanParams = rawParams
+            ? rawParams.split(',').map((p) => {
+                const noDefault = p.split('=')[0].trim();
+                const parts = noDefault.replace(/[&*]/g, ' ').trim().split(/\s+/);
+                return parts[parts.length - 1];
+              }).join(', ')
+            : '';
+          return `function ${fnName}(${cleanParams}) { __trace("${cardId}", ${lineNo}, "CALL", "teal");`;
+        }
+
+        // Typed for-loop headers
+        line = line.replace(/for\s*\(\s*(?:const\s+)?(?:int|long|float|double|size_t|uint8_t|int8_t|uint16_t|int16_t|uint32_t|int32_t)\s+/g, 'for (let ');
+
+        // C++ typed variable declarations
+        let declaredVarName = null;
+        const declMatch = line.match(/^(\s*)(?:static\s+|const\s+|volatile\s+)*(?:int8_t|uint8_t|int16_t|uint16_t|int32_t|uint32_t|float|double|int|long|short|bool|boolean|byte|char|size_t)\s+([a-zA-Z_]\w*)(.*)$/);
+        if (declMatch) {
+          const indent = declMatch[1];
+          declaredVarName = declMatch[2];
+          let rest = declMatch[3];
+          if (/^\s*;/.test(rest)) rest = ' = 0' + rest;
+          line = `${indent}let ${declaredVarName}${rest}`;
+        }
+
+        // Loop guard
+        if (/\b(?:while|for)\s*\(.*\)\s*\{\s*$/.test(line)) {
+          line = line.replace(/\{\s*$/, '{ if (++__ops > 6000) throw new Error("Loop iteration limit exceeded");');
+        }
+
+        // Wrap if (cond)
+        line = line.replace(/\bif\s*\((.+)\)(\s*\{?\s*(?:return\b.*)?)$/, (full, condExpr, tail) => {
+          let depth = 0;
+          let splitAt = -1;
+          for (let k = 0; k < condExpr.length; k++) {
+            if (condExpr[k] === '(') depth++;
+            else if (condExpr[k] === ')') {
+              depth--;
+              if (depth < 0) { splitAt = k; break; }
+            }
+          }
+          if (splitAt !== -1) {
+            const realCond = condExpr.slice(0, splitAt);
+            const afterParen = condExpr.slice(splitAt + 1) + tail;
+            return `if (__cond("${cardId}", ${lineNo}, Boolean(${realCond})))${afterParen}`;
+          }
+          return `if (__cond("${cardId}", ${lineNo}, Boolean(${condExpr})))${tail}`;
+        });
+
+        // Wrap return statements
+        line = line.replace(/\breturn\s+([^;]+);/g, `return __ret("${cardId}", ${lineNo}, ($1));`);
+        line = line.replace(/\breturn\s*;/g, `__trace("${cardId}", ${lineNo}, "void", "amber"); return;`);
+
+        // Statement probe
+        if (!line.includes('__ret(') && !/\b(?:for|while|if)\s*\(/.test(line) && /;\s*$/.test(line)) {
+          let probeVar = declaredVarName;
+          if (!probeVar) {
+            const assignMatch = line.match(/^\s*([a-zA-Z_]\w*)\s*(?:\+|-|\*|\/)?=\s*[^=]/);
+            if (assignMatch) probeVar = assignMatch[1];
+          }
+          if (probeVar) {
+            line = line.replace(/;\s*$/, `; __trace("${cardId}", ${lineNo}, "${probeVar}:" + __fmt(${probeVar}), "teal");`);
+          } else {
+            line = line.replace(/;\s*$/, `; __trace("${cardId}", ${lineNo}, "EXEC", "teal");`);
+          }
+        }
+
+        return line;
       }
 
       function compileAllArduinoCode(silentToast = false) {
@@ -1365,19 +1591,18 @@
         const errBanner  = document.getElementById('compileErrorBanner');
 
         try {
-          // Pass 1: Collect #define macros from enabled .h libraries and .ino files
+          // 1. Collect #define macros from enabled .h libraries and full .ino sketch
           const macrosMap = new Map();
-          macrosMap.set('CUSTOM_MAX_PWM', '150'); // Safe baseline default if MecanumCurves.h is toggled off
+          macrosMap.set('CUSTOM_MAX_PWM', '150');
 
           const collectMacros = (code) => {
-            const lines = code.split('\n');
-            for (const raw of lines) {
+            for (const raw of code.split('\n')) {
               const noCm = raw.split('//')[0].trim();
               const m = noCm.match(/^#define\s+([A-Za-z_]\w*)\s+(.+)$/);
               if (m) {
                 const name = m[1];
                 let val = m[2].trim().replace(/\b(\d+\.\d+|\d+\.|\.\d+)f\b/g, '$1');
-                macrosMap.set(name, val);
+                if (!val.startsWith('"')) macrosMap.set(name, val);
               }
             }
           };
@@ -1385,24 +1610,107 @@
           for (const lib of customLibs) {
             if (lib.enabled) collectMacros(lib.code);
           }
-          for (const blk of inoBlocks) {
-            collectMacros(blk.code);
+          collectMacros(fullSketchCode);
+
+          // 2. Parse Motor A/B/C/D struct initializers from fullSketchCode
+          const nextMotorConfigs = {
+            A: { inverted: false, minPwm: 20, gain: 1.0 },
+            B: { inverted: false, minPwm: 20, gain: 1.0 },
+            C: { inverted: false, minPwm: 20, gain: 1.0 },
+            D: { inverted: false, minPwm: 20, gain: 1.0 }
+          };
+          const motorRegex = /\bMotor\s+MOTOR_([ABCD])\s*=\s*\{\s*\d+\s*,\s*\d+\s*,\s*\d+\s*,\s*(true|false)\s*,\s*(\d+)\s*,\s*([0-9.]+)f?\s*\}/g;
+          let mMatch;
+          while ((mMatch = motorRegex.exec(fullSketchCode)) !== null) {
+            const key = mMatch[1];
+            nextMotorConfigs[key] = {
+              inverted: mMatch[2] === 'true',
+              minPwm: parseInt(mMatch[3], 10) || 20,
+              gain: parseFloat(mMatch[4]) || 1.0
+            };
           }
 
-          // Pass 2: Transpile enabled .h libraries and all 3 .ino blocks
+          // 3. Transpile enabled custom .h libraries
           const jsChunks = [];
           for (const lib of customLibs) {
-            if (lib.enabled) {
-              jsChunks.push(transpileArduinoCard(lib.id, lib.code, macrosMap));
+            if (!lib.enabled) continue;
+            const libLines = lib.code.split('\n');
+            jsChunks.push(
+              libLines.map((lnText, idx) => transpileLineWithTrace(lib.id, idx + 1, lnText, macrosMap)).join('\n')
+            );
+          }
+
+          // 4. Transpile top-level constexpr constants and helper functions (ratioToPWM, rampPWM, etc.)
+          //    plus the 50Hz loop body inside motorControlTask() with exact 1:1 line numbers from fullSketchCode!
+          const sketchLines = fullSketchCode.split('\n');
+          const taskBlk = extractBraceBlock(sketchLines, /^\s*void\s+motorControlTask\s*\(/);
+          if (!taskBlk) {
+            throw new Error('Missing void motorControlTask(void* pvParameters) in mecanum_ble_robot.ino');
+          }
+
+          const motorStructBlk = extractBraceBlock(sketchLines, /^\s*struct\s+Motor\b/);
+          const setupBlk       = extractBraceBlock(sketchLines, /^\s*void\s+setup\s*\(/);
+          const loopBlk        = extractBraceBlock(sketchLines, /^\s*void\s+loop\s*\(/);
+
+          // Collect top-level constexprs & helper functions outside motorControlTask / struct Motor / setup / loop
+          const excludedRanges = [taskBlk, motorStructBlk, setupBlk, loopBlk].filter(Boolean);
+          const isLineExcluded = (lineNo) =>
+            excludedRanges.some((rng) => lineNo >= rng.startLine && lineNo <= rng.endLine);
+
+          const topLevelJs = [];
+          for (let i = 0; i < sketchLines.length; i++) {
+            const lineNo = i + 1;
+            if (isLineExcluded(lineNo)) continue;
+            const raw = sketchLines[i];
+            if (/^\s*static\s+Motor\s+MOTOR_[ABCD]/.test(raw)) continue;
+            topLevelJs.push(transpileLineWithTrace('ino_full', lineNo, raw, macrosMap));
+          }
+
+          // Extract inner body of `for (;;)` inside motorControlTask
+          let forStartOffset = -1;
+          for (let k = 0; k < taskBlk.lines.length; k++) {
+            if (/\bfor\s*\(\s*;\s*;\s*\)/.test(taskBlk.lines[k])) {
+              forStartOffset = k;
+              break;
             }
           }
-          for (const blk of inoBlocks) {
-            jsChunks.push(transpileArduinoCard(blk.id, blk.code, macrosMap));
+          if (forStartOffset === -1) {
+            throw new Error('Missing for (;;) control loop inside motorControlTask()');
+          }
+
+          const taskBodyJs = [];
+          for (let k = forStartOffset + 1; k < taskBlk.lines.length - 1; k++) {
+            const globalLineNo = taskBlk.startLine + k;
+            const raw = taskBlk.lines[k];
+            const trimmed = raw.trim();
+
+            // Skip FreeRTOS scheduler/queue boilerplate lines; simulator injects activeCmd & isAlive
+            if (
+              trimmed.startsWith('ControlCmd incoming') ||
+              trimmed.startsWith('if (xQueueReceive') ||
+              trimmed.startsWith('bool isAlive') ||
+              trimmed.startsWith('vTaskDelayUntil') ||
+              (trimmed === '}' && k === taskBlk.lines.length - 2)
+            ) {
+              continue;
+            }
+            taskBodyJs.push(transpileLineWithTrace('ino_full', globalLineNo, raw, macrosMap));
+          }
+
+          // Map Motor::brake() and Motor::drive() line numbers inside struct Motor for live tracing
+          let motorBrakeLine = 0;
+          let motorDriveLine = 0;
+          if (motorStructBlk) {
+            for (let k = 0; k < motorStructBlk.lines.length; k++) {
+              if (/\bvoid\s+brake\s*\(/.test(motorStructBlk.lines[k])) motorBrakeLine = motorStructBlk.startLine + k;
+              if (/\bvoid\s+drive\s*\(/.test(motorStructBlk.lines[k])) motorDriveLine = motorStructBlk.startLine + k;
+            }
           }
 
           const combinedBody = `
             "use strict";
             let __ops = 0;
+            const HIGH = 1, LOW = 0;
             const constrain = (x, a, b) => Math.max(a, Math.min(b, x));
             const map = (x, inMin, inMax, outMin, outMax) => (x - inMin) * (outMax - outMin) / (inMax - inMin) + outMin;
             const max = (a, b) => Math.max(a, b);
@@ -1440,60 +1748,107 @@
             const PI = Math.PI;
             const TWO_PI = Math.PI * 2;
             const HALF_PI = Math.PI / 2;
+            const millis = () => __nowMs;
 
-            const MAX_PWM = 150;
-            const MIN_PWM = 20;
-            const STEP_MIN = 3;
-            const STEP_MAX = 10;
-            const STEP_DECEL = 15;
-            const LOG_CURVE_K = 9.0;
+            let firePin = false;
+            let defendPin = false;
+            const digitalWrite = (pin, val) => {
+              if (pin === 19) firePin = Boolean(val);
+              if (pin === 13) defendPin = Boolean(val);
+            };
+            const lastMotorActiveMs = { store: () => {} };
 
-            let tgtFL = __state.tgtFL, tgtFR = __state.tgtFR, tgtRL = __state.tgtRL, tgtRR = __state.tgtRR;
+            const makeMotor = (cfg) => ({
+              inverted: cfg.inverted,
+              minPwm: cfg.minPwm,
+              gain: cfg.gain,
+              outPwm: 0,
+              isBraking: false,
+              coast() { this.outPwm = 0; this.isBraking = false; },
+              brake() {
+                this.outPwm = 0;
+                this.isBraking = true;
+                if (${motorBrakeLine} > 0) __trace("ino_full", ${motorBrakeLine}, "BRAKE", "red");
+              },
+              drive(power) {
+                let p = this.inverted ? -power : power;
+                const lim = (typeof MAX_PWM !== "undefined") ? MAX_PWM : 150;
+                p = constrain(Math.round(p), -lim, lim);
+                this.outPwm = p;
+                this.isBraking = false;
+                if (${motorDriveLine} > 0 && p !== 0) __trace("ino_full", ${motorDriveLine}, "pwm:" + p, "green");
+              }
+            });
+
+            const MOTOR_A = makeMotor(__mCfg.A);
+            const MOTOR_B = makeMotor(__mCfg.B);
+            const MOTOR_C = makeMotor(__mCfg.C);
+            const MOTOR_D = makeMotor(__mCfg.D);
+
+            const activeCmd = __in;
+            const isAlive   = __alive;
             let curFL = __state.curFL, curFR = __state.curFR, curRL = __state.curRL, curRR = __state.curRR;
-            let driveFL = curFL, driveFR = curFR, driveRL = curRL, driveRR = curRR;
 
-            ${jsChunks.join('\n\n')}
+            ${jsChunks.join('\n')}
+            ${topLevelJs.join('\n')}
+            ${taskBodyJs.join('\n')}
 
-            if (typeof computeMecanum !== 'function') {
-              throw new Error('Missing entry function: void computeMecanum(int8_t rawX, int8_t rawY, int8_t rawR)');
-            }
-            computeMecanum(__in.x, __in.y, __in.r);
-            return { tgtFL, tgtFR, tgtRL, tgtRR, curFL, curFR, curRL, curRR, driveFL, driveFR, driveRL, driveRR };
+            return {
+              curFL, curFR, curRL, curRR,
+              driveFL: MOTOR_B.outPwm,
+              driveFR: MOTOR_A.outPwm,
+              driveRL: MOTOR_C.outPwm,
+              driveRR: MOTOR_D.outPwm,
+              brakeFL: MOTOR_B.isBraking,
+              brakeFR: MOTOR_A.isBraking,
+              brakeRL: MOTOR_C.isBraking,
+              brakeRR: MOTOR_D.isBraking,
+              firePin,
+              defendPin,
+              maxPwm: (typeof MAX_PWM !== "undefined") ? MAX_PWM : 150
+            };
           `;
 
-          const factory = new Function('__in', '__state', '__trace', '__cond', '__ret', '__fmt', combinedBody);
+          const factory = new Function('__in', '__alive', '__state', '__mCfg', '__nowMs', '__trace', '__cond', '__ret', '__fmt', combinedBody);
 
-          // Dry-run test with (0, 0, 0) to catch runtime ReferenceErrors immediately
-          const noop = (v) => v;
+          // Dry-run validation
           factory(
-            { x: 0, y: 0, r: 0 },
-            { tgtFL: 0, tgtFR: 0, tgtRL: 0, tgtRR: 0, curFL: 0, curFR: 0, curRL: 0, curRR: 0 },
+            { x: 0, y: 0, r: 0, flags: 0, timestamp: 0 },
+            false,
+            { curFL: 0, curFR: 0, curRL: 0, curRR: 0 },
+            nextMotorConfigs,
+            0,
             () => {},
             (_, __, b) => b,
             (_, __, v) => v,
-            noop
+            (v) => v
           );
 
           compiledStepFn = factory;
-          lastCompileError = '';
+          parsedMotorConfigs = nextMotorConfigs;
 
           statusPill.textContent = 'COMPILED OK';
           statusPill.className = 'mono text-[10px] font-bold px-2 py-0.5 rounded bg-[#052e16] border border-[#22c55e] text-[#4ade80]';
           errBanner.classList.add('hidden');
-          if (!silentToast) showToast('Arduino firmware compiled & active (50Hz).');
+          if (!silentToast) showToast('Arduino sketch compiled & active (50Hz).');
         } catch (err) {
-          lastCompileError = err && err.message ? err.message : String(err);
+          const errMsg = err && err.message ? err.message : String(err);
           statusPill.textContent = 'COMPILE ERROR';
           statusPill.className = 'mono text-[10px] font-bold px-2 py-0.5 rounded bg-[#1f0909] border border-[#ef4444] text-[#f87171]';
-          errBanner.textContent = `Compile / Runtime Error: ${lastCompileError} (Holding previous valid build)`;
+          errBanner.textContent = `Compile / Runtime Error: ${errMsg} (Holding previous valid build)`;
           errBanner.classList.remove('hidden');
           if (!silentToast) showToast('Compile error. Check red banner in code pane.');
         }
       }
 
-      // ==================== RENDER EDITABLE .h & .ino CARDS ====================
+      // ==================== RENDER .h LIBRARIES & STANDBY FULL / MOVING SPLIT CARDS ====================
       const customLibsContainer = document.getElementById('customLibsContainer');
       const inoCardsContainer   = document.getElementById('inoCardsContainer');
+      const sketchLayoutBadge   = document.getElementById('sketchLayoutBadge');
+      const sketchLayoutModeBtn = document.getElementById('sketchLayoutModeBtn');
+      const editFullSketchBtn   = document.getElementById('editFullSketchBtn');
+      const applyFullSketchBtn  = document.getElementById('applyFullSketchBtn');
+      const cancelFullSketchBtn = document.getElementById('cancelFullSketchBtn');
 
       function attachTabIndentation(textareaEl, onSaveShortcut) {
         textareaEl.addEventListener('keydown', (e) => {
@@ -1510,17 +1865,47 @@
         });
       }
 
-      function renderTraceRowsHtml(cardId, code) {
-        const lines = code.split('\n');
+      function renderTraceRowsWithOffset(lines, startLineNo) {
         return lines.map((lineText, idx) => {
-          const lineNo = idx + 1;
+          const lineNo = startLineNo + idx;
           const highlighted = highlightArduinoLine(lineText);
-          return `<div id="${cardId}_l${lineNo}" class="ard-row"><span class="ard-gutter">${lineNo}</span><span class="ard-code">${highlighted || ' '}</span><span class="ard-val" id="v_${cardId}_l${lineNo}">-</span></div>`;
+          return `<div data-ino-line="${lineNo}" class="ard-row"><span class="ard-gutter">${lineNo}</span><span class="ard-code">${highlighted || ' '}</span><span class="ard-val" data-ino-val="${lineNo}">-</span></div>`;
         }).join('');
       }
 
-      function renderArduinoWorkspaceCards() {
-        // 1. Render Custom Libraries (.h) with #include Checkbox & Modal Editor Trigger
+      function renderLibTraceRows(libId, code) {
+        return code.split('\n').map((lineText, idx) => {
+          const lineNo = idx + 1;
+          const highlighted = highlightArduinoLine(lineText);
+          return `<div id="${libId}_l${lineNo}" class="ard-row"><span class="ard-gutter">${lineNo}</span><span class="ard-code">${highlighted || ' '}</span><span class="ard-val" id="v_${libId}_l${lineNo}">-</span></div>`;
+        }).join('');
+      }
+
+      function updateSketchHeaderToolbar() {
+        sketchLayoutModeBtn.textContent = `LAYOUT: ${sketchLayoutMode}`;
+
+        if (isEditingFullIno) {
+          sketchLayoutBadge.textContent = 'EDITING FULL SKETCH';
+          sketchLayoutBadge.className = 'ard-mode-pill is-edit mono';
+          editFullSketchBtn.classList.add('hidden');
+          applyFullSketchBtn.classList.remove('hidden');
+          cancelFullSketchBtn.classList.remove('hidden');
+        } else {
+          editFullSketchBtn.classList.remove('hidden');
+          applyFullSketchBtn.classList.add('hidden');
+          cancelFullSketchBtn.classList.add('hidden');
+
+          if (isSplitActiveView) {
+            sketchLayoutBadge.textContent = 'MOVING · AUTO-SPLIT ACTIVE';
+            sketchLayoutBadge.className = 'ard-mode-pill is-split mono';
+          } else {
+            sketchLayoutBadge.textContent = 'STANDBY · FULL SKETCH';
+            sketchLayoutBadge.className = 'ard-mode-pill mono';
+          }
+        }
+      }
+
+      function renderCustomLibsCards() {
         customLibsContainer.innerHTML = '';
         customLibs.forEach((lib) => {
           const card = document.createElement('div');
@@ -1537,7 +1922,6 @@
           const actions = document.createElement('div');
           actions.className = 'flex items-center gap-2 py-1';
 
-          // Authentic #include toggle checkbox
           const incLabel = document.createElement('label');
           incLabel.className = 'inline-flex items-center gap-1 text-[10px] font-bold mono cursor-pointer px-1.5 py-0.5 rounded border ' +
             (lib.enabled ? 'bg-[#e0f7fa] border-[#00979c] text-[#006669]' : 'bg-white border-[#d1d5db] text-[#6b7280]');
@@ -1551,7 +1935,7 @@
             lib.enabled = incCheckbox.checked;
             saveArduinoCodeToStorage();
             compileAllArduinoCode(false);
-            renderArduinoWorkspaceCards();
+            renderCustomLibsCards();
           });
 
           const incSpan = document.createElement('span');
@@ -1574,7 +1958,7 @@
               customLibs = customLibs.filter((item) => item.id !== lib.id);
               saveArduinoCodeToStorage();
               compileAllArduinoCode(false);
-              renderArduinoWorkspaceCards();
+              renderCustomLibsCards();
               showToast(`Deleted ${lib.name}`);
             });
             actions.appendChild(delBtn);
@@ -1585,108 +1969,130 @@
 
           const editorDiv = document.createElement('div');
           editorDiv.className = 'arduino-editor mono py-1' + (!lib.enabled ? ' opacity-50' : '');
-          editorDiv.innerHTML = renderTraceRowsHtml(lib.id, lib.code);
+          editorDiv.innerHTML = renderLibTraceRows(lib.id, lib.code);
           card.appendChild(editorDiv);
 
           customLibsContainer.appendChild(card);
         });
+      }
 
-        // 2. Render 3 Separate Arduino .ino Movement Cards
+      function renderInoSketchCards() {
+        updateSketchHeaderToolbar();
         inoCardsContainer.innerHTML = '';
-        inoBlocks.forEach((blk) => {
-          const isEditing = Boolean(editingState[blk.id]);
+
+        // 1. FULL-SKETCH EDIT MODE (Available anytime from Standby or Moving)
+        if (isEditingFullIno) {
           const card = document.createElement('div');
           card.className = 'arduino-card shrink-0';
 
+          const totalLines = fullSketchCode.split('\n').length;
           const tabBar = document.createElement('div');
           tabBar.className = 'arduino-tabbar';
-
-          const leftGroup = document.createElement('div');
-          leftGroup.className = 'flex items-center gap-2 min-w-0';
-          leftGroup.innerHTML = `
-            <div class="arduino-tab mono"><span>${escapeHtml(blk.fileName)}</span></div>
-            <span class="hidden sm:inline text-[10px] font-semibold text-[#6b7280] mono truncate">${escapeHtml(blk.subtitle)}</span>
+          tabBar.innerHTML = `
+            <div class="arduino-tab mono"><span>mecanum_ble_robot.ino</span></div>
+            <span class="text-[10px] font-semibold text-[#6b7280] mono">FULL SKETCH EDITOR (${totalLines} LINES · CTRL+S TO APPLY)</span>
           `;
-          tabBar.appendChild(leftGroup);
-
-          const actions = document.createElement('div');
-          actions.className = 'flex items-center gap-1.5 py-1 shrink-0';
-
-          if (!isEditing) {
-            const editBtn = document.createElement('button');
-            editBtn.className = 'ard-tool-btn mono';
-            editBtn.textContent = 'EDIT';
-            editBtn.addEventListener('click', () => {
-              editingState[blk.id] = true;
-              renderArduinoWorkspaceCards();
-            });
-            actions.appendChild(editBtn);
-          } else {
-            const applyBtn = document.createElement('button');
-            applyBtn.className = 'ard-tool-btn primary mono';
-            applyBtn.textContent = 'APPLY & RUN';
-            const commitInoEdit = () => {
-              const ta = card.querySelector('textarea');
-              if (ta) blk.code = ta.value;
-              editingState[blk.id] = false;
-              saveArduinoCodeToStorage();
-              compileAllArduinoCode(false);
-              renderArduinoWorkspaceCards();
-            };
-            applyBtn.addEventListener('click', commitInoEdit);
-            actions.appendChild(applyBtn);
-
-            const cancelBtn = document.createElement('button');
-            cancelBtn.className = 'ard-tool-btn mono';
-            cancelBtn.textContent = 'CANCEL';
-            cancelBtn.addEventListener('click', () => {
-              editingState[blk.id] = false;
-              renderArduinoWorkspaceCards();
-            });
-            actions.appendChild(cancelBtn);
-          }
-
-          const resetBtn = document.createElement('button');
-          resetBtn.className = 'ard-tool-btn mono';
-          resetBtn.textContent = 'RESET';
-          resetBtn.title = `Restore ${blk.fileName} to default`;
-          resetBtn.addEventListener('click', () => {
-            const def = DEFAULT_INO_BLOCKS.find((d) => d.id === blk.id);
-            if (def) blk.code = def.code;
-            editingState[blk.id] = false;
-            saveArduinoCodeToStorage();
-            compileAllArduinoCode(false);
-            renderArduinoWorkspaceCards();
-          });
-          actions.appendChild(resetBtn);
-
-          tabBar.appendChild(actions);
           card.appendChild(tabBar);
 
-          if (isEditing) {
-            const ta = document.createElement('textarea');
-            ta.className = 'arduino-textarea';
-            ta.rows = Math.max(7, blk.code.split('\n').length + 1);
-            ta.value = blk.code;
-            attachTabIndentation(ta, () => {
-              blk.code = ta.value;
-              editingState[blk.id] = false;
-              saveArduinoCodeToStorage();
-              compileAllArduinoCode(false);
-              renderArduinoWorkspaceCards();
-            });
-            card.appendChild(ta);
-            setTimeout(() => ta.focus(), 10);
-          } else {
-            const editorDiv = document.createElement('div');
-            editorDiv.className = 'arduino-editor mono py-1';
-            editorDiv.innerHTML = renderTraceRowsHtml(blk.id, blk.code);
-            card.appendChild(editorDiv);
-          }
+          const ta = document.createElement('textarea');
+          ta.id = 'fullSketchTextarea';
+          ta.className = 'arduino-textarea';
+          ta.rows = Math.min(34, Math.max(18, totalLines + 2));
+          ta.value = fullSketchCode;
+          attachTabIndentation(ta, commitFullSketchEdit);
+          card.appendChild(ta);
 
           inoCardsContainer.appendChild(card);
-        });
+          setTimeout(() => ta.focus(), 10);
+          return;
+        }
+
+        // 2. MOVING MODE -> AUTO-SPLIT INTO SEPARATE EXECUTING FUNCTION CARDS
+        if (isSplitActiveView) {
+          const sections = getActiveSplitSections(fullSketchCode);
+          if (sections.length > 0) {
+            sections.forEach((sec) => {
+              const card = document.createElement('div');
+              card.className = 'arduino-card shrink-0';
+
+              const tabBar = document.createElement('div');
+              tabBar.className = 'arduino-tabbar';
+              tabBar.innerHTML = `
+                <div class="arduino-tab mono"><span>${escapeHtml(sec.title)}</span></div>
+                <span class="hidden sm:inline text-[10px] font-semibold text-[#6b7280] mono truncate">${escapeHtml(sec.subtitle)}</span>
+              `;
+              card.appendChild(tabBar);
+
+              const editorDiv = document.createElement('div');
+              editorDiv.className = 'arduino-editor mono py-1';
+              editorDiv.innerHTML = renderTraceRowsWithOffset(sec.lines, sec.startLine);
+              card.appendChild(editorDiv);
+
+              inoCardsContainer.appendChild(card);
+            });
+            return;
+          }
+        }
+
+        // 3. STANDBY MODE -> DISPLAY COMPLETE FULL SKETCH (mecanum_ble_robot.ino)
+        const lines = fullSketchCode.split('\n');
+        const card = document.createElement('div');
+        card.className = 'arduino-card shrink-0';
+
+        const tabBar = document.createElement('div');
+        tabBar.className = 'arduino-tabbar';
+        tabBar.innerHTML = `
+          <div class="arduino-tab mono"><span>mecanum_ble_robot.ino</span></div>
+          <span class="text-[10px] font-semibold text-[#6b7280] mono">COMPLETE SKETCH (${lines.length} LINES)</span>
+        `;
+        card.appendChild(tabBar);
+
+        const editorDiv = document.createElement('div');
+        editorDiv.className = 'arduino-editor mono py-1';
+        editorDiv.innerHTML = renderTraceRowsWithOffset(lines, 1);
+        card.appendChild(editorDiv);
+
+        inoCardsContainer.appendChild(card);
       }
+
+      function enterFullSketchEditMode() {
+        isEditingFullIno = true;
+        renderInoSketchCards();
+      }
+
+      function commitFullSketchEdit() {
+        const ta = document.getElementById('fullSketchTextarea');
+        if (ta) fullSketchCode = ta.value;
+        isEditingFullIno = false;
+        saveArduinoCodeToStorage();
+        compileAllArduinoCode(false);
+        renderInoSketchCards();
+      }
+
+      function cancelFullSketchEdit() {
+        isEditingFullIno = false;
+        renderInoSketchCards();
+      }
+
+      editFullSketchBtn.addEventListener('click', enterFullSketchEditMode);
+      applyFullSketchBtn.addEventListener('click', commitFullSketchEdit);
+      cancelFullSketchBtn.addEventListener('click', cancelFullSketchEdit);
+
+      sketchLayoutModeBtn.addEventListener('click', () => {
+        const modes = ['AUTO', 'FULL', 'SPLIT'];
+        sketchLayoutMode = modes[(modes.indexOf(sketchLayoutMode) + 1) % modes.length];
+        if (!isEditingFullIno) {
+          const nextSplit = (sketchLayoutMode === 'SPLIT') ? true : false;
+          if (nextSplit !== isSplitActiveView) {
+            isSplitActiveView = nextSplit;
+            renderInoSketchCards();
+          } else {
+            updateSketchHeaderToolbar();
+          }
+        } else {
+          updateSketchHeaderToolbar();
+        }
+      });
 
       // Modal C++ Header Editor (.h) Controls
       const openNewLibModalBtn = document.getElementById('openNewLibModalBtn');
@@ -1773,7 +2179,7 @@
         closeLibEditorModal();
         saveArduinoCodeToStorage();
         compileAllArduinoCode(false);
-        renderArduinoWorkspaceCards();
+        renderCustomLibsCards();
       }
 
       attachTabIndentation(libModalCodeInput, commitLibModalSave);
@@ -1787,7 +2193,7 @@
         closeLibEditorModal();
         saveArduinoCodeToStorage();
         compileAllArduinoCode(false);
-        renderArduinoWorkspaceCards();
+        renderCustomLibsCards();
       });
       libEditorModal.addEventListener('click', (e) => {
         if (e.target === libEditorModal) closeLibEditorModal();
@@ -1795,12 +2201,13 @@
 
       resetAllCodeBtn.addEventListener('click', () => {
         customLibs = JSON.parse(JSON.stringify(DEFAULT_CUSTOM_LIBS));
-        inoBlocks  = JSON.parse(JSON.stringify(DEFAULT_INO_BLOCKS));
-        for (const k of Object.keys(editingState)) delete editingState[k];
+        fullSketchCode = DEFAULT_FULL_SKETCH;
+        isEditingFullIno = false;
         saveArduinoCodeToStorage();
         compileAllArduinoCode(true);
-        renderArduinoWorkspaceCards();
-        showToast('Restored all .h libraries and .ino blocks to defaults.');
+        renderCustomLibsCards();
+        renderInoSketchCards();
+        showToast('Restored all .h libraries and full .ino sketch to defaults.');
       });
 
       // =========================================================================
@@ -2340,16 +2747,14 @@
       }
 
       function applyLineTracesToDOM(traceMap) {
-        // Clear previous highlights on all non-editing cards
-        const allCards = [...customLibs, ...inoBlocks];
-        for (const card of allCards) {
-          if (editingState[card.id]) continue;
-          const lineCount = card.code.split('\n').length;
+        // 1. Update Custom Libraries (.h)
+        for (const lib of customLibs) {
+          const lineCount = lib.code.split('\n').length;
           for (let ln = 1; ln <= lineCount; ln++) {
-            const rowEl = document.getElementById(`${card.id}_l${ln}`);
-            const valEl = document.getElementById(`v_${card.id}_l${ln}`);
+            const rowEl = document.getElementById(`${lib.id}_l${ln}`);
+            const valEl = document.getElementById(`v_${lib.id}_l${ln}`);
             if (!rowEl || !valEl) continue;
-            const entry = traceMap.get(`${card.id}:${ln}`);
+            const entry = traceMap.get(`${lib.id}:${ln}`);
             if (entry) {
               rowEl.className = `ard-row exec-${entry.color}`;
               valEl.textContent = entry.text;
@@ -2357,6 +2762,24 @@
               rowEl.className = 'ard-row';
               valEl.textContent = '-';
             }
+          }
+        }
+
+        // 2. Update Full Sketch Card (Standby) OR Auto-Split Active Cards (Moving) via [data-ino-line]
+        if (isEditingFullIno) return;
+        const inoRows = inoCardsContainer.querySelectorAll('[data-ino-line]');
+        for (let i = 0; i < inoRows.length; i++) {
+          const rowEl = inoRows[i];
+          const ln = Number(rowEl.getAttribute('data-ino-line'));
+          const valEl = rowEl.querySelector('[data-ino-val]');
+          if (!valEl) continue;
+          const entry = traceMap.get(`ino_full:${ln}`);
+          if (entry) {
+            rowEl.className = `ard-row exec-${entry.color}`;
+            valEl.textContent = entry.text;
+          } else {
+            rowEl.className = 'ard-row';
+            valEl.textContent = '-';
           }
         }
       }
@@ -2393,51 +2816,75 @@
           return retVal;
         };
 
-        let isMoving = false;
+        if (compiledStepFn) {
+          try {
+            const out = compiledStepFn(
+              {
+                x: core1.activeCmd.x,
+                y: core1.activeCmd.y,
+                r: core1.activeCmd.r,
+                flags: core1.activeCmd.flags,
+                timestamp: core1.activeCmd.timestamp
+              },
+              isAlive,
+              {
+                curFL: core1.cur.fl,
+                curFR: core1.cur.fr,
+                curRL: core1.cur.rl,
+                curRR: core1.cur.rr
+              },
+              parsedMotorConfigs,
+              now,
+              onTrace,
+              onCond,
+              onRet,
+              formatTraceValue
+            );
 
-        if (!isAlive) {
-          core1.tgt = { fl: 0, fr: 0, rl: 0, rr: 0 };
-          core1.cur = { fl: 0, fr: 0, rl: 0, rr: 0 };
-          core1.braking = { fl: true, fr: true, rl: true, rr: true };
-          core1.firePin = false;
-          core1.defendPin = false;
-        } else {
-          core1.firePin = Boolean(core1.activeCmd.flags & 0x01);
-          core1.defendPin = Boolean(core1.activeCmd.flags & 0x02);
-          isMoving = (core1.activeCmd.x !== 0 || core1.activeCmd.y !== 0 || core1.activeCmd.r !== 0);
+            core1.cur.fl = clamp(Math.round(out.curFL || 0), -255, 255);
+            core1.cur.fr = clamp(Math.round(out.curFR || 0), -255, 255);
+            core1.cur.rl = clamp(Math.round(out.curRL || 0), -255, 255);
+            core1.cur.rr = clamp(Math.round(out.curRR || 0), -255, 255);
 
-          if (compiledStepFn) {
-            try {
-              const out = compiledStepFn(
-                { x: core1.activeCmd.x, y: core1.activeCmd.y, r: core1.activeCmd.r },
-                {
-                  tgtFL: core1.tgt.fl, tgtFR: core1.tgt.fr, tgtRL: core1.tgt.rl, tgtRR: core1.tgt.rr,
-                  curFL: core1.cur.fl, curFR: core1.cur.fr, curRL: core1.cur.rl, curRR: core1.cur.rr
-                },
-                onTrace,
-                onCond,
-                onRet,
-                formatTraceValue
-              );
-              core1.tgt.fl = clamp(Math.round(out.tgtFL || 0), -255, 255);
-              core1.tgt.fr = clamp(Math.round(out.tgtFR || 0), -255, 255);
-              core1.tgt.rl = clamp(Math.round(out.tgtRL || 0), -255, 255);
-              core1.tgt.rr = clamp(Math.round(out.tgtRR || 0), -255, 255);
+            core1.braking.fl = Boolean(out.brakeFL);
+            core1.braking.fr = Boolean(out.brakeFR);
+            core1.braking.rl = Boolean(out.brakeRL);
+            core1.braking.rr = Boolean(out.brakeRR);
 
-              core1.cur.fl = clamp(Math.round(out.curFL || 0), -255, 255);
-              core1.cur.fr = clamp(Math.round(out.curFR || 0), -255, 255);
-              core1.cur.rl = clamp(Math.round(out.curRL || 0), -255, 255);
-              core1.cur.rr = clamp(Math.round(out.curRR || 0), -255, 255);
-            } catch {
-              // Keep safe zero output if runtime throws
-              core1.cur = { fl: 0, fr: 0, rl: 0, rr: 0 };
-            }
+            core1.firePin   = Boolean(out.firePin);
+            core1.defendPin = Boolean(out.defendPin);
+          } catch {
+            core1.cur = { fl: 0, fr: 0, rl: 0, rr: 0 };
+            core1.braking = { fl: true, fr: true, rl: true, rr: true };
+            core1.firePin = false;
+            core1.defendPin = false;
+          }
+        }
+
+        // --- Auto-Split State Machine: Standby -> Full Sketch | Moving -> Auto-Split Blocks ---
+        const inputActive = isAlive && (core1.activeCmd.x !== 0 || core1.activeCmd.y !== 0 || core1.activeCmd.r !== 0);
+        const anyDrive = (core1.cur.fl !== 0 || core1.cur.fr !== 0 || core1.cur.rl !== 0 || core1.cur.rr !== 0);
+        const allBrake = core1.braking.fl && core1.braking.fr && core1.braking.rl && core1.braking.rr;
+
+        if (inputActive || anyDrive) {
+          lastMotionTickMs = now;
+        }
+
+        if (!isEditingFullIno && currentView !== 'ctrl') {
+          let desiredSplit = false;
+          if (sketchLayoutMode === 'SPLIT') {
+            desiredSplit = true;
+          } else if (sketchLayoutMode === 'FULL') {
+            desiredSplit = false;
+          } else {
+            // AUTO mode: split immediately when moving; hold split for 450ms after stopping to prevent flicker
+            desiredSplit = (inputActive || anyDrive || (lastMotionTickMs > 0 && (now - lastMotionTickMs) < SPLIT_HOLD_MS));
           }
 
-          core1.braking.fl = isMoving && core1.cur.fl === 0;
-          core1.braking.fr = isMoving && core1.cur.fr === 0;
-          core1.braking.rl = isMoving && core1.cur.rl === 0;
-          core1.braking.rr = isMoving && core1.cur.rr === 0;
+          if (desiredSplit !== isSplitActiveView) {
+            isSplitActiveView = desiredSplit;
+            renderInoSketchCards();
+          }
         }
 
         // --- Mecanum Forward Kinematics & Arena Wall Clamping (WALL_PAD = 48) ---
@@ -2451,8 +2898,6 @@
         const targetVyLocal = ((nFL + nFR + nRL + nRR) / 4.0) * 240;
         const targetOmega   = ((nFL - nFR + nRL - nRR) / 4.0) * 2.55;
 
-        const anyDrive = (core1.cur.fl !== 0 || core1.cur.fr !== 0 || core1.cur.rl !== 0 || core1.cur.rr !== 0);
-        const allBrake = core1.braking.fl && core1.braking.fr && core1.braking.rl && core1.braking.rr;
         const alpha = allBrake ? 0.45 : (anyDrive ? 0.24 : 0.14);
 
         robot.vxLocal += (targetVxLocal - robot.vxLocal) * alpha;
@@ -2543,12 +2988,13 @@
         ];
 
         for (const w of wheels) {
+          if (!w.card || !w.valEl || !w.barEl) continue;
           if (w.brk && anyDrive) {
             w.card.style.borderColor = '#ef4444';
             w.valEl.textContent = 'BRK';
             w.valEl.style.color = '#ef4444';
-            w.barEl.style.left = '0%';
-            w.barEl.style.width = '100%';
+            w.barEl.style.left = '50%';
+            w.barEl.style.width = '0%';
             w.barEl.style.backgroundColor = '#ef4444';
           } else {
             w.card.style.borderColor = w.pwm !== 0 ? '#525252' : '#262626';
@@ -3173,7 +3619,8 @@
         cEl.selfIdBadge.textContent = myClientId;
         cEl.dockClientIdTag.textContent = myClientId;
 
-        renderArduinoWorkspaceCards();
+        renderCustomLibsCards();
+        renderInoSketchCards();
         compileAllArduinoCode(true);
 
         renderAccessControlUI();
