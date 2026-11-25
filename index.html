@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
-  <title>Team14 Mecanum Simulator</title>
+  <title>Mecanum Simulator</title>
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- PeerJS (WebRTC DataChannel for Wireless Phone Pairing) -->
@@ -497,7 +497,7 @@
         <div class="flex items-center gap-2 pr-1">
           <span class="w-2 h-2 rounded-full bg-white"></span>
           <h1 class="text-xs sm:text-sm font-extrabold tracking-wider text-white">
-            TEAM14 MECANUM SIMULATOR
+            MECANUM SIMULATOR
           </h1>
         </div>
 
@@ -652,7 +652,6 @@
         <section class="min-panel flex flex-col p-2.5 gap-2.5 min-h-[360px]">
           <div class="flex items-center justify-between px-0.5 shrink-0">
             <span class="text-[11px] font-extrabold tracking-wider text-white">2D MECANUM ARENA</span>
-            <span class="mono text-[10px] text-[#8a8a8a]">WASD MOVE · Q/E ROTATE · SPACE FIRE · SHIFT DEFEND</span>
           </div>
 
           <!-- Clipped 2D Canvas Container (Zero Wall-Edge Color Bleed) -->
@@ -1174,7 +1173,7 @@
         'constexpr uint8_t PKT_BATTERY = 0xBB;',
         'constexpr uint8_t PKT_CONTROL = 0xCC;',
         '',
-        'constexpr int PIN_FIRE    = 19;',
+        'constexpr int PIN_    = 19;',
         'constexpr int PIN_DEFEND  = 13;',
         'constexpr int BAT_ADC_PIN = 34;',
         '',
@@ -2935,7 +2934,7 @@
         robot.wheelPhase.rr += nRR * spinScale * dt;
 
         // Fire pulse projectiles
-        if (core1.firePin && now - robot.lastFireMs >= 140) {
+        if (core1.firePin && now - robot.lastFireMs >= 500) {
           robot.lastFireMs = now;
           robot.projectiles.push({
             x: robot.x + sinT * 32,
