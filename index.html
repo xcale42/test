@@ -92,6 +92,11 @@
       color: #000000;
       border-color: #ffffff;
     }
+    .min-btn.onlyme-on {
+      background: #052e16;
+      color: #4ade80;
+      border-color: #22c55e;
+    }
 
     /* ==================== ARDUINO IDE 2.x DEFAULT LIGHT THEME BLOCKS ==================== */
     .arduino-card {
@@ -108,9 +113,10 @@
       background: #f3f4f6;
       border-bottom: 1px solid #e5e7eb;
       display: flex;
-      align-items: stretch;
+      align-items: center;
       justify-content: space-between;
-      padding-right: 10px;
+      padding-right: 8px;
+      gap: 6px;
       flex-shrink: 0;
     }
 
@@ -118,7 +124,7 @@
       background: #ffffff;
       border-top: 2.5px solid #00979c;
       border-right: 1px solid #e5e7eb;
-      padding: 5px 12px;
+      padding: 5px 11px;
       font-size: 11px;
       font-weight: 700;
       color: #111827;
@@ -127,11 +133,66 @@
       gap: 6px;
     }
 
+    .arduino-tab.lib-tab {
+      border-top-color: #d35400;
+    }
+
+    .ard-tool-btn {
+      background: #ffffff;
+      color: #374151;
+      border: 1px solid #d1d5db;
+      border-radius: 5px;
+      padding: 2px 7px;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.03em;
+      cursor: pointer;
+      transition: all 0.1s ease;
+    }
+    .ard-tool-btn:hover {
+      border-color: #00979c;
+      color: #00979c;
+    }
+    .ard-tool-btn.primary {
+      background: #00979c;
+      color: #ffffff;
+      border-color: #00979c;
+    }
+    .ard-tool-btn.primary:hover {
+      background: #007f84;
+      color: #ffffff;
+    }
+    .ard-tool-btn.danger:hover {
+      border-color: #dc2626;
+      color: #dc2626;
+    }
+    .ard-tool-btn.inc-on {
+      background: #e0f7fa;
+      color: #006669;
+      border-color: #00979c;
+    }
+
     .arduino-editor {
       background: #ffffff;
       overflow-x: auto;
       overflow-y: auto;
       flex: 1;
+    }
+
+    .arduino-textarea {
+      width: 100%;
+      background: #ffffff;
+      color: #111827;
+      border: none;
+      outline: none;
+      resize: vertical;
+      padding: 8px 10px;
+      font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 11px;
+      line-height: 1.5;
+      tab-size: 2;
+      user-select: text;
+      -webkit-user-select: text;
     }
 
     .ard-row {
@@ -163,8 +224,7 @@
       flex: 1;
       min-width: 0;
       color: #24292e;
-      overflow: hidden;
-      text-overflow: ellipsis;
+      white-space: pre;
     }
 
     .ard-val {
@@ -185,6 +245,7 @@
     .ard-ctrl { color: #d35400; font-weight: 600; }
     .ard-num  { color: #005cc5; }
     .ard-cm   { color: #7e8e91; font-style: italic; }
+    .ard-prep { color: #5c6370; font-weight: 600; }
 
     /* Live Execution Line Highlights on Arduino White Canvas */
     .ard-row.exec-teal {
@@ -257,21 +318,21 @@
     }
     .ctrl-topbar::-webkit-scrollbar { display: none; }
 
-    .ctrl-room-input {
+    .ctrl-pin-input {
       background: #000000;
       color: #ffffff;
       border: 1px solid #2e2e2e;
       border-radius: 7px;
-      padding: 5px 6px;
+      padding: 5px 5px;
       font-size: 11px;
       font-weight: 700;
-      width: 58px;
+      width: 52px;
       text-align: center;
       outline: none;
       user-select: text;
       -webkit-user-select: text;
     }
-    .ctrl-room-input:focus { border-color: #ffffff; }
+    .ctrl-pin-input:focus { border-color: #ffffff; }
 
     .ctrl-conn-pill {
       display: inline-flex;
@@ -400,10 +461,10 @@
   <!-- ========================================================================= -->
   <div id="rootShell" class="flex flex-col w-full lg:h-[100dvh] p-2.5 gap-2.5">
 
-    <!-- ==================== TOP BAR (SIMULATOR & ACCESS CONTROL) ==================== -->
+    <!-- ==================== TOP BAR (SIMULATOR & ONLY ME ACCESS CONTROL) ==================== -->
     <header id="simHeader" class="min-panel flex flex-wrap items-center justify-between gap-2 px-3 py-2 shrink-0">
-      <!-- Left: Brand + Room + Connection & Access Status -->
-      <div class="flex flex-wrap items-center gap-2">
+      <!-- Left: Brand + Room + Owner Key + ONLY ME Toggle + Policy + Active Client -->
+      <div class="flex flex-wrap items-center gap-1.5">
         <div class="flex items-center gap-2 pr-1">
           <span class="w-2 h-2 rounded-full bg-white"></span>
           <h1 class="text-xs sm:text-sm font-extrabold tracking-wider text-white">
@@ -415,28 +476,45 @@
           ROOM: 0000
         </span>
 
-        <!-- Host Access Policy Toggle Button -->
-        <button id="accessPolicyBtn" class="min-btn mono" title="Click to cycle connection access policy">
+        <span id="ownerKeyBadge" class="mono text-[11px] font-bold px-2 py-0.5 rounded bg-black border border-[#262626] text-[#ffffff]" title="4-digit Owner PIN embedded in QR URL">
+          KEY: 0000
+        </span>
+
+        <!-- One-Click Exclusive Demo Lock Button -->
+        <button id="onlyMeToggleBtn" class="min-btn mono" title="Toggle exclusive presenter-only connection lock">
+          ONLY ME: OFF
+        </button>
+
+        <!-- Synchronized Access Policy Cycle Button -->
+        <button id="accessPolicyBtn" class="min-btn mono" title="Cycle policy: APPROVAL / OPEN / ONLY ME">
           ACCESS: APPROVAL
         </button>
 
-        <!-- Active Client Badge + Kick Button (Shown when a client is connected) -->
-        <div id="activeClientBox" class="hidden items-center gap-1.5 px-2.5 py-0.5 rounded-md bg-[#052e16] border border-[#22c55e] text-[11px] font-bold mono text-[#4ade80]">
+        <!-- Quiet Blocked Counter Badge -->
+        <button id="blockedCountBadge" class="hidden mono text-[10.5px] font-bold px-2 py-0.5 rounded bg-[#1f0909] border border-[#ef4444] text-[#f87171] cursor-pointer" title="Unauthorized connection attempts silently blocked (click to reset)">
+          BLOCKED: 0
+        </button>
+
+        <!-- Active Client Badge + Set Owner + Kick -->
+        <div id="activeClientBox" class="hidden items-center gap-1.5 px-2 py-0.5 rounded-md bg-[#052e16] border border-[#22c55e] text-[11px] font-bold mono text-[#4ade80]">
           <span class="w-1.5 h-1.5 rounded-full bg-[#22c55e]"></span>
           <span id="activeClientLabel">CONNECTED: CLIENT-0000</span>
-          <button id="kickClientBtn" class="ml-1 px-1.5 py-0.2 rounded bg-[#ef4444] text-white text-[10px] font-extrabold hover:bg-[#dc2626] cursor-pointer">
+          <button id="setOwnerBtn" class="px-1.5 py-0.2 rounded bg-white text-black text-[10px] font-extrabold hover:bg-[#e5e5e5] cursor-pointer" title="Lock this client as exclusive owner">
+            SET OWNER
+          </button>
+          <button id="kickClientBtn" class="px-1.5 py-0.2 rounded bg-[#ef4444] text-white text-[10px] font-extrabold hover:bg-[#dc2626] cursor-pointer">
             KICK
           </button>
         </div>
 
         <!-- Standby Status Pill (Shown when no client is connected) -->
-        <div id="standbyStatusPill" class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md bg-black border border-[#262626] text-[11px] font-bold mono text-[#8a8a8a]">
+        <div id="standbyStatusPill" class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-black border border-[#262626] text-[10.5px] font-bold mono text-[#8a8a8a]">
           <span id="standbyDot" class="w-1.5 h-1.5 rounded-full bg-[#8a8a8a]"></span>
           <span id="standbyText">NO CLIENT (KEYBOARD READY)</span>
         </div>
       </div>
 
-      <!-- Right: View Switcher + Pair QR + Reset -->
+      <!-- Right: View Switcher + Pair QR + Reset Car -->
       <div class="flex flex-wrap items-center gap-1.5">
         <div class="inline-flex rounded-lg bg-black p-0.5 border border-[#262626]">
           <button id="btnViewSim" class="px-2.5 py-1 rounded-md text-[11px] font-bold bg-white text-black transition cursor-pointer">
@@ -460,7 +538,7 @@
       </div>
     </header>
 
-    <!-- ==================== INLINE CONNECTION APPROVAL BAR ==================== -->
+    <!-- ==================== INLINE CONNECTION APPROVAL BAR (ONLY IN APPROVAL MODE) ==================== -->
     <div id="approvalBanner" class="hidden items-center justify-between gap-3 px-3.5 py-2 rounded-lg bg-[#141414] border border-[#f59e0b] shrink-0">
       <div class="flex items-center gap-2 mono text-xs">
         <span class="w-2 h-2 rounded-full bg-[#f59e0b] animate-pulse"></span>
@@ -471,6 +549,9 @@
       <div class="flex items-center gap-2">
         <button id="approveClientBtn" class="px-3 py-1 rounded text-[11px] font-extrabold bg-[#22c55e] text-black hover:bg-[#4ade80] transition cursor-pointer">
           ALLOW
+        </button>
+        <button id="approveAsOwnerBtn" class="px-3 py-1 rounded text-[11px] font-extrabold bg-white text-black hover:bg-[#e5e5e5] transition cursor-pointer">
+          ALLOW &amp; ONLY ME
         </button>
         <button id="denyClientBtn" class="px-3 py-1 rounded text-[11px] font-extrabold bg-[#ef4444] text-white hover:bg-[#dc2626] transition cursor-pointer">
           DENY
@@ -485,7 +566,7 @@
       <aside id="ctrlDockPanel" class="hidden flex-col min-h-[420px] lg:min-h-0">
         <!-- Split Mode Dock Header -->
         <div id="splitPhoneHeader" class="hidden items-center justify-between px-3 py-1.5 bg-[#0e0e0e] border-b border-[#262626] rounded-t-xl text-[10px] mono text-[#8a8a8a]">
-          <span class="font-bold text-white">WEB CONTROLLER</span>
+          <span class="font-bold text-white">WEB CONTROLLER (HOST EMBEDDED)</span>
           <span id="dockClientIdTag" class="text-[#a3a3a3]">CLIENT-0000</span>
         </div>
 
@@ -493,7 +574,8 @@
         <div id="ctrlView" class="ctrl-app">
           <div class="ctrl-topbar">
             <div class="flex items-center gap-1.5 shrink-0">
-              <input id="ctrlRoomInput" class="ctrl-room-input mono" type="text" maxlength="4" placeholder="ROOM" title="4-digit simulator room code" />
+              <input id="ctrlRoomInput" class="ctrl-pin-input mono" type="text" maxlength="4" placeholder="ROOM" title="4-digit simulator room code" />
+              <input id="ctrlKeyInput" class="ctrl-pin-input mono" type="text" maxlength="4" placeholder="KEY" title="4-digit Owner Key PIN" />
               <button id="ctrlConnectBtn" class="min-btn active">CONNECT</button>
               <span id="ctrlSelfIdBadge" class="mono text-[10px] px-2 py-1 rounded bg-black border border-[#262626] text-[#8a8a8a]">
                 CLIENT-0000
@@ -553,10 +635,10 @@
         </div>
       </aside>
 
-      <!-- ==================== SIMULATOR CORE GRID (LEFT ARENA | RIGHT ARDUINO BLOCKS) ==================== -->
-      <main id="simMainGrid" class="flex-1 min-h-0 min-w-0 grid grid-cols-1 lg:grid-cols-[44%_1fr] gap-2.5">
+      <!-- ==================== SIMULATOR CORE GRID (LEFT ARENA | RIGHT ARDUINO IDE) ==================== -->
+      <main id="simMainGrid" class="flex-1 min-h-0 min-w-0 grid grid-cols-1 lg:grid-cols-[43%_1fr] gap-2.5">
 
-        <!-- LEFT PANE: 2D MECANUM ARENA + COMPACT 4-WHEEL PWM BARS (NO OSCILLOSCOPE, NO WAYPOINTS) -->
+        <!-- LEFT PANE: 2D MECANUM ARENA + COMPACT 4-WHEEL PWM BARS -->
         <section class="min-panel flex flex-col p-2.5 gap-2.5 min-h-[360px]">
           <div class="flex items-center justify-between px-0.5 shrink-0">
             <span class="text-[11px] font-extrabold tracking-wider text-white">2D MECANUM ARENA</span>
@@ -624,76 +706,48 @@
           </div>
         </section>
 
-        <!-- RIGHT PANE: 3 SEPARATE ARDUINO IDE 2.x MOVEMENT CALCULATION BLOCKS -->
-        <section class="flex flex-col gap-2.5 min-h-0 overflow-y-auto pr-0.5">
+        <!-- RIGHT PANE: CUSTOM LIBRARIES (.h) + 3 SEPARATE EDITABLE ARDUINO IDE 2.x BLOCKS -->
+        <section id="arduinoBlocksColumn" class="flex flex-col gap-2 min-h-0 overflow-y-auto pr-0.5">
 
-          <!-- BLOCK 1: motorControlTask.ino — Mecanum Inverse Kinematics -->
-          <div class="arduino-card shrink-0">
-            <div class="arduino-tabbar">
-              <div class="arduino-tab mono">
-                <span>motorControlTask.ino</span>
+          <!-- CUSTOM LIBRARIES (.h) MANAGER BAR & CARDS -->
+          <div class="min-panel p-2 flex flex-col gap-2 shrink-0">
+            <div class="flex flex-wrap items-center justify-between gap-2">
+              <div class="flex items-center gap-2">
+                <span class="text-[11px] font-extrabold tracking-wider text-white">CUSTOM LIBRARIES (.h)</span>
+                <span id="compileStatusPill" class="mono text-[10px] font-bold px-2 py-0.5 rounded bg-[#052e16] border border-[#22c55e] text-[#4ade80]">
+                  COMPILED OK
+                </span>
               </div>
-              <span class="self-center text-[10px] font-semibold text-[#6b7280] mono">Mecanum Inverse Kinematics</span>
+              <div class="flex items-center gap-1.5">
+                <button id="showNewLibFormBtn" class="min-btn">+ NEW LIB (.h)</button>
+                <button id="resetAllCodeBtn" class="min-btn" title="Restore all .h and .ino files to default firmware">
+                  RESET ALL CODE
+                </button>
+              </div>
             </div>
-            <div class="arduino-editor mono py-1">
-              <div id="b1_l1" class="ard-row"><span class="ard-gutter">1</span><span class="ard-code"><span class="ard-type">float</span> x = <span class="ard-ctrl">constrain</span>(cmd.x / <span class="ard-num">100.0f</span>, -<span class="ard-num">1.0f</span>, <span class="ard-num">1.0f</span>);</span><span class="ard-val" id="vb1_l1">x:0.00</span></div>
-              <div id="b1_l2" class="ard-row"><span class="ard-gutter">2</span><span class="ard-code"><span class="ard-type">float</span> y = <span class="ard-ctrl">constrain</span>(cmd.y / <span class="ard-num">100.0f</span>, -<span class="ard-num">1.0f</span>, <span class="ard-num">1.0f</span>);</span><span class="ard-val" id="vb1_l2">y:0.00</span></div>
-              <div id="b1_l3" class="ard-row"><span class="ard-gutter">3</span><span class="ard-code"><span class="ard-type">float</span> r = <span class="ard-ctrl">constrain</span>(cmd.r / <span class="ard-num">100.0f</span>, -<span class="ard-num">1.0f</span>, <span class="ard-num">1.0f</span>);</span><span class="ard-val" id="vb1_l3">r:0.00</span></div>
-              <div id="b1_l4" class="ard-row"><span class="ard-gutter">4</span><span class="ard-code"><span class="ard-type">float</span> fl = y + x + r;  <span class="ard-type">float</span> fr = y - x - r;</span><span class="ard-val" id="vb1_l4">fl:0.00 fr:0.00</span></div>
-              <div id="b1_l5" class="ard-row"><span class="ard-gutter">5</span><span class="ard-code"><span class="ard-type">float</span> rl = y - x + r;  <span class="ard-type">float</span> rr = y + x - r;</span><span class="ard-val" id="vb1_l5">rl:0.00 rr:0.00</span></div>
-              <div id="b1_l6" class="ard-row"><span class="ard-gutter">6</span><span class="ard-code"><span class="ard-type">float</span> maxMag = <span class="ard-ctrl">max</span>(<span class="ard-ctrl">max</span>(<span class="ard-ctrl">fabsf</span>(fl), <span class="ard-ctrl">fabsf</span>(fr)), <span class="ard-ctrl">max</span>(<span class="ard-ctrl">fabsf</span>(rl), <span class="ard-ctrl">fabsf</span>(rr)));</span><span class="ard-val" id="vb1_l6">max:0.00</span></div>
-              <div id="b1_l7" class="ard-row"><span class="ard-gutter">7</span><span class="ard-code"><span class="ard-ctrl">if</span> (maxMag &gt; <span class="ard-num">1.0f</span>) { fl /= maxMag; fr /= maxMag; rl /= maxMag; rr /= maxMag; }</span><span class="ard-val" id="vb1_l7">norm:off</span></div>
-              <div id="b1_l8" class="ard-row"><span class="ard-gutter">8</span><span class="ard-code">tgtFL = ratioToPWM(fl, <span class="ard-num">20</span>);  tgtFR = ratioToPWM(fr, <span class="ard-num">20</span>);</span><span class="ard-val" id="vb1_l8">0 / 0</span></div>
-              <div id="b1_l9" class="ard-row"><span class="ard-gutter">9</span><span class="ard-code">tgtRL = ratioToPWM(rl, <span class="ard-num">20</span>);  tgtRR = ratioToPWM(rr, <span class="ard-num">20</span>);</span><span class="ard-val" id="vb1_l9">0 / 0</span></div>
-              <div id="b1_l10" class="ard-row"><span class="ard-gutter">10</span><span class="ard-code">curFL = rampPWM(curFL, tgtFL, <span class="ard-num">20</span>);  curFR = rampPWM(curFR, tgtFR, <span class="ard-num">20</span>);</span><span class="ard-val" id="vb1_l10">0 / 0</span></div>
-              <div id="b1_l11" class="ard-row"><span class="ard-gutter">11</span><span class="ard-code">curRL = rampPWM(curRL, tgtRL, <span class="ard-num">20</span>);  curRR = rampPWM(curRR, tgtRR, <span class="ard-num">20</span>);</span><span class="ard-val" id="vb1_l11">0 / 0</span></div>
-              <div id="b1_l12" class="ard-row"><span class="ard-gutter">12</span><span class="ard-code">(isMoving &amp;&amp; cur == <span class="ard-num">0</span>) ? motor.brake() : motor.drive(cur);</span><span class="ard-val" id="vb1_l12">BRAKE</span></div>
+
+            <!-- Inline New Library Creation Bar (Zero window.prompt) -->
+            <div id="newLibFormRow" class="hidden items-center gap-2 bg-black border border-[#2e2e2e] rounded-lg p-2">
+              <input
+                id="newLibNameInput"
+                type="text"
+                maxlength="32"
+                class="selectable-input flex-1 bg-[#0e0e0e] border border-[#2e2e2e] focus:border-white rounded px-2.5 py-1 text-xs mono text-white outline-none"
+                placeholder="LibraryName.h (e.g. BoostCurve.h)"
+              />
+              <button id="createLibConfirmBtn" class="min-btn active">CREATE</button>
+              <button id="createLibCancelBtn" class="min-btn">CANCEL</button>
             </div>
+
+            <!-- Compile Error Output Banner (Shown only if user introduces a syntax/runtime error) -->
+            <div id="compileErrorBanner" class="hidden px-2.5 py-1.5 rounded bg-[#1f0909] border border-[#ef4444] mono text-[10.5px] text-[#fca5a5] break-words"></div>
+
+            <!-- Container for Custom .h Library Cards -->
+            <div id="customLibsContainer" class="flex flex-col gap-2"></div>
           </div>
 
-          <!-- BLOCK 2: ratioToPWM.ino — Deadband & PWM Scaling -->
-          <div class="arduino-card shrink-0">
-            <div class="arduino-tabbar">
-              <div class="arduino-tab mono">
-                <span>ratioToPWM.ino</span>
-              </div>
-              <span class="self-center text-[10px] font-semibold text-[#6b7280] mono">Deadband &amp; PWM Scaling</span>
-            </div>
-            <div class="arduino-editor mono py-1">
-              <div id="b2_l1" class="ard-row"><span class="ard-gutter">1</span><span class="ard-code"><span class="ard-type">int</span> ratioToPWM(<span class="ard-type">float</span> ratio, <span class="ard-type">int</span> minPwm) {</span><span class="ard-val" id="vb2_l1">in:0.00</span></div>
-              <div id="b2_l2" class="ard-row"><span class="ard-gutter">2</span><span class="ard-code">&nbsp;&nbsp;<span class="ard-type">float</span> mag = <span class="ard-ctrl">fabsf</span>(ratio);</span><span class="ard-val" id="vb2_l2">mag:0.00</span></div>
-              <div id="b2_l3" class="ard-row"><span class="ard-gutter">3</span><span class="ard-code">&nbsp;&nbsp;<span class="ard-ctrl">if</span> (mag &lt; <span class="ard-num">0.01f</span>) <span class="ard-ctrl">return</span> <span class="ard-num">0</span>;</span><span class="ard-val" id="vb2_l3">0</span></div>
-              <div id="b2_l4" class="ard-row"><span class="ard-gutter">4</span><span class="ard-code">&nbsp;&nbsp;<span class="ard-type">int</span> pwm = <span class="ard-ctrl">roundf</span>(minPwm + mag * (MAX_PWM - minPwm));</span><span class="ard-val" id="vb2_l4">-</span></div>
-              <div id="b2_l5" class="ard-row"><span class="ard-gutter">5</span><span class="ard-code">&nbsp;&nbsp;pwm = <span class="ard-ctrl">constrain</span>(pwm, minPwm, MAX_PWM);</span><span class="ard-val" id="vb2_l5">-</span></div>
-              <div id="b2_l6" class="ard-row"><span class="ard-gutter">6</span><span class="ard-code">&nbsp;&nbsp;<span class="ard-ctrl">return</span> (ratio &gt; <span class="ard-num">0</span>) ? pwm : -pwm;</span><span class="ard-val" id="vb2_l6">-</span></div>
-              <div id="b2_l7" class="ard-row"><span class="ard-gutter">7</span><span class="ard-code">}</span><span class="ard-val" id="vb2_l7"></span></div>
-            </div>
-          </div>
-
-          <!-- BLOCK 3: rampPWM.ino — Logarithmic Slew-Rate Limiter -->
-          <div class="arduino-card shrink-0">
-            <div class="arduino-tabbar">
-              <div class="arduino-tab mono">
-                <span>rampPWM.ino</span>
-              </div>
-              <span class="self-center text-[10px] font-semibold text-[#6b7280] mono">Logarithmic Slew-Rate Limiter</span>
-            </div>
-            <div class="arduino-editor mono py-1">
-              <div id="b3_l1" class="ard-row"><span class="ard-gutter">1</span><span class="ard-code"><span class="ard-type">int</span> rampPWM(<span class="ard-type">int</span> current, <span class="ard-type">int</span> target, <span class="ard-type">int</span> minPwm) {</span><span class="ard-val" id="vb3_l1">0 -&gt; 0</span></div>
-              <div id="b3_l2" class="ard-row"><span class="ard-gutter">2</span><span class="ard-code">&nbsp;&nbsp;<span class="ard-ctrl">if</span> (current == target) <span class="ard-ctrl">return</span> target;</span><span class="ard-val" id="vb3_l2">STEADY</span></div>
-              <div id="b3_l3" class="ard-row"><span class="ard-gutter">3</span><span class="ard-code">&nbsp;&nbsp;<span class="ard-ctrl">if</span> ((current &gt; <span class="ard-num">0</span> &amp;&amp; target &lt; <span class="ard-num">0</span>) || (current &lt; <span class="ard-num">0</span> &amp;&amp; target &gt; <span class="ard-num">0</span>))</span><span class="ard-val" id="vb3_l3">-</span></div>
-              <div id="b3_l4" class="ard-row"><span class="ard-gutter">4</span><span class="ard-code">&nbsp;&nbsp;&nbsp;&nbsp;<span class="ard-ctrl">return</span> (current &gt; <span class="ard-num">0</span>) ? <span class="ard-ctrl">max</span>(current - <span class="ard-num">15</span>, <span class="ard-num">0</span>) : <span class="ard-ctrl">min</span>(current + <span class="ard-num">15</span>, <span class="ard-num">0</span>); <span class="ard-cm">// Zero-Cross</span></span><span class="ard-val" id="vb3_l4">-</span></div>
-              <div id="b3_l5" class="ard-row"><span class="ard-gutter">5</span><span class="ard-code">&nbsp;&nbsp;<span class="ard-ctrl">if</span> (current == <span class="ard-num">0</span> &amp;&amp; <span class="ard-ctrl">abs</span>(target) &gt;= minPwm)</span><span class="ard-val" id="vb3_l5">-</span></div>
-              <div id="b3_l6" class="ard-row"><span class="ard-gutter">6</span><span class="ard-code">&nbsp;&nbsp;&nbsp;&nbsp;<span class="ard-ctrl">return</span> (target &gt; <span class="ard-num">0</span>) ? minPwm : -minPwm; <span class="ard-cm">// Pre-load Jump</span></span><span class="ard-val" id="vb3_l6">-</span></div>
-              <div id="b3_l7" class="ard-row"><span class="ard-gutter">7</span><span class="ard-code">&nbsp;&nbsp;<span class="ard-ctrl">if</span> (<span class="ard-ctrl">abs</span>(target) &gt; <span class="ard-ctrl">abs</span>(current)) { <span class="ard-cm">// Logarithmic Accel (K = 9.0f)</span></span><span class="ard-val" id="vb3_l7">-</span></div>
-              <div id="b3_l8" class="ard-row"><span class="ard-gutter">8</span><span class="ard-code">&nbsp;&nbsp;&nbsp;&nbsp;<span class="ard-type">float</span> norm = <span class="ard-ctrl">constrain</span>(<span class="ard-ctrl">abs</span>(current) / <span class="ard-num">150.0f</span>, <span class="ard-num">0.0f</span>, <span class="ard-num">1.0f</span>);</span><span class="ard-val" id="vb3_l8">-</span></div>
-              <div id="b3_l9" class="ard-row"><span class="ard-gutter">9</span><span class="ard-code">&nbsp;&nbsp;&nbsp;&nbsp;<span class="ard-type">int</span> step = <span class="ard-ctrl">roundf</span>(<span class="ard-num">3</span> + (<span class="ard-ctrl">logf</span>(<span class="ard-num">1.0f</span> + <span class="ard-num">9.0f</span> * norm) / <span class="ard-ctrl">logf</span>(<span class="ard-num">10.0f</span>)) * <span class="ard-num">7</span>);</span><span class="ard-val" id="vb3_l9">-</span></div>
-              <div id="b3_l10" class="ard-row"><span class="ard-gutter">10</span><span class="ard-code">&nbsp;&nbsp;&nbsp;&nbsp;<span class="ard-ctrl">return</span> (target &gt; current) ? <span class="ard-ctrl">min</span>(current + step, target) : <span class="ard-ctrl">max</span>(current - step, target);</span><span class="ard-val" id="vb3_l10">-</span></div>
-              <div id="b3_l11" class="ard-row"><span class="ard-gutter">11</span><span class="ard-code">&nbsp;&nbsp;}</span><span class="ard-val" id="vb3_l11"></span></div>
-              <div id="b3_l12" class="ard-row"><span class="ard-gutter">12</span><span class="ard-code">&nbsp;&nbsp;<span class="ard-ctrl">return</span> (target &gt; current) ? <span class="ard-ctrl">min</span>(current + <span class="ard-num">15</span>, target) : <span class="ard-ctrl">max</span>(current - <span class="ard-num">15</span>, target); <span class="ard-cm">// Decel</span></span><span class="ard-val" id="vb3_l12">-</span></div>
-              <div id="b3_l13" class="ard-row"><span class="ard-gutter">13</span><span class="ard-code">}</span><span class="ard-val" id="vb3_l13"></span></div>
-            </div>
-          </div>
+          <!-- Container for the 3 Separate Arduino .ino Movement Cards -->
+          <div id="inoCardsContainer" class="flex flex-col gap-2 shrink-0"></div>
 
         </section>
       </main>
@@ -708,24 +762,34 @@
       <div class="flex items-center justify-between border-b border-[#262626] pb-3 mb-3.5">
         <div>
           <h2 class="text-sm font-extrabold text-white tracking-wide">WIRELESS CONTROLLER PAIRING</h2>
-          <p class="text-[11px] text-[#8a8a8a] mt-0.5">Connect a mobile phone via WebRTC or open Split View locally</p>
+          <p class="text-[11px] text-[#8a8a8a] mt-0.5">Scan QR code with your phone or open Split View locally</p>
         </div>
         <button id="closePairModalBtn" class="min-btn">CLOSE</button>
       </div>
 
-      <!-- Room Code Display -->
-      <div class="flex items-center justify-between bg-black border border-[#262626] rounded-lg px-4 py-3 mb-3">
-        <div>
+      <!-- Room Code & Owner Key Grid -->
+      <div class="grid grid-cols-2 gap-2.5 mb-3">
+        <div class="bg-black border border-[#262626] rounded-lg px-3.5 py-2.5">
           <div class="text-[10px] font-bold tracking-wider text-[#8a8a8a]">HOST ROOM CODE</div>
-          <div id="peerStatusLine" class="mono text-[11px] text-[#a3a3a3] mt-0.5">Initializing WebRTC host...</div>
+          <div id="modalRoomCode" class="mono text-2xl font-extrabold tracking-[0.14em] text-white mt-0.5">0000</div>
         </div>
-        <div id="modalRoomCode" class="mono text-3xl font-extrabold tracking-[0.15em] text-white">0000</div>
+        <div class="bg-black border border-[#262626] rounded-lg px-3.5 py-2.5 flex items-center justify-between">
+          <div>
+            <div class="text-[10px] font-bold tracking-wider text-[#8a8a8a]">OWNER KEY (PIN)</div>
+            <div id="modalOwnerKey" class="mono text-2xl font-extrabold tracking-[0.14em] text-[#4ade80] mt-0.5">0000</div>
+          </div>
+          <button id="regenOwnerKeyBtn" class="min-btn" title="Generate a new 4-digit Owner Key">NEW</button>
+        </div>
+      </div>
+
+      <div id="peerStatusLine" class="mono text-[11px] text-[#a3a3a3] bg-black border border-[#262626] rounded-lg px-3 py-2 mb-3">
+        Initializing WebRTC host...
       </div>
 
       <!-- Hosted URL Input (Prevents 404 when running in local/sandbox preview) -->
       <div class="mb-3">
         <label for="hostedUrlInput" class="block text-[11px] font-bold text-[#d4d4d4] mb-1">
-          PUBLIC HOSTED URL (FOR PHONE QR CODE)
+          PUBLIC HOSTED URL (AUTO-EMBEDS ROOM &amp; OWNER KEY)
         </label>
         <div class="flex gap-2">
           <input
@@ -755,29 +819,28 @@
   </div>
 
   <!-- ========================================================================= -->
-  <!-- UNIFIED ENGINE: ACCESS CONTROL + MECANUM KINEMATICS + ARDUINO TRACER      -->
+  <!-- UNIFIED ENGINE: ONLY-ME ACCESS + LIVE ARDUINO TRANSPILER + 2D KINEMATICS  -->
   <!-- ========================================================================= -->
   <script>
     (() => {
       'use strict';
 
-      // ==================== FIRMWARE CONSTANTS ====================
-      const PKT_CONTROL     = 0xCC; // [0xCC, x, y, r, flags]
-      const WEB_LOOP_MS     = 33;   // ~30Hz controller loop
-      const HEARTBEAT_MS    = 150;  // Keep-alive interval
-      const CORE1_PERIOD_MS = 20;   // 50Hz deterministic control loop
-      const FAILSAFE_MS     = 400;  // 400ms heartbeat timeout
+      // ==================== FIRMWARE & STORAGE CONSTANTS ====================
+      const PKT_CONTROL        = 0xCC; // [0xCC, x, y, r, flags]
+      const WEB_LOOP_MS        = 33;   // ~30Hz controller loop
+      const HEARTBEAT_MS       = 150;  // Keep-alive interval
+      const CORE1_PERIOD_MS    = 20;   // 50Hz deterministic control loop
+      const FAILSAFE_MS        = 400;  // 400ms heartbeat timeout
 
-      const SLIDER_MAX      = 100.0;
-      const MAX_PWM         = 150;
-      const MIN_PWM         = 20;
-      const STEP_MIN        = 3;
-      const STEP_MAX        = 10;
-      const STEP_DECEL      = 15;
-      const LOG_CURVE_K     = 9.0;
-      const INV_LOG_DENOM   = 1.0 / Math.log(1.0 + LOG_CURVE_K);
+      const SLIDER_MAX         = 100.0;
+      const MAX_PWM            = 150;
+      const MIN_PWM            = 20;
 
-      const STORAGE_HOSTED_URL = 'team14_hosted_url_en';
+      const STORAGE_HOSTED_URL = 'team14_hosted_url_v2';
+      const STORAGE_OWNER_KEY  = 'team14_owner_key_v2';
+      const STORAGE_LIBS       = 'team14_custom_libs_v2';
+      const STORAGE_INOS       = 'team14_ino_blocks_v2';
+
       const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
 
       // Non-blocking toast banner
@@ -845,7 +908,7 @@
         }
       }
 
-      // ==================== ROOM CODE, CLIENT ID & VIEW SWITCHER ====================
+      // ==================== ROOM CODE, OWNER KEY, CLIENT ID & VIEW SWITCHER ====================
       const urlParams = new URLSearchParams(window.location.search);
       const isOpenedAsPhoneController = (urlParams.get('mode') === 'controller');
 
@@ -853,7 +916,17 @@
         ? urlParams.get('room')
         : String(Math.floor(1000 + Math.random() * 9000));
 
-      // Unique Client ID for this controller instance (e.g. CLIENT-7A2F)
+      function loadOrCreateOwnerKey() {
+        try {
+          const saved = localStorage.getItem(STORAGE_OWNER_KEY);
+          if (saved && /^\d{4}$/.test(saved)) return saved;
+        } catch {}
+        const fresh = String(Math.floor(1000 + Math.random() * 9000));
+        try { localStorage.setItem(STORAGE_OWNER_KEY, fresh); } catch {}
+        return fresh;
+      }
+
+      let ownerKey = loadOrCreateOwnerKey();
       const myClientId = 'CLIENT-' + Math.floor(0x1000 + Math.random() * 0xF000).toString(16).toUpperCase();
 
       let currentView = isOpenedAsPhoneController ? 'ctrl' : 'sim';
@@ -883,7 +956,7 @@
         if (view === 'sim') {
           simHeader.classList.remove('hidden');
           simMainGrid.classList.remove('hidden');
-          simMainGrid.className = 'flex-1 min-h-0 min-w-0 grid grid-cols-1 lg:grid-cols-[44%_1fr] gap-2.5';
+          simMainGrid.className = 'flex-1 min-h-0 min-w-0 grid grid-cols-1 lg:grid-cols-[43%_1fr] gap-2.5';
           ctrlDockPanel.classList.add('hidden');
           ctrlDockPanel.classList.remove('flex', 'split-docked');
           splitPhoneHdr.classList.add('hidden');
@@ -892,15 +965,17 @@
         } else if (view === 'split') {
           simHeader.classList.remove('hidden');
           simMainGrid.classList.remove('hidden');
-          simMainGrid.className = 'flex-1 min-h-0 min-w-0 grid grid-cols-1 xl:grid-cols-[42%_1fr] gap-2.5';
+          simMainGrid.className = 'flex-1 min-h-0 min-w-0 grid grid-cols-1 xl:grid-cols-[41%_1fr] gap-2.5';
 
           ctrlDockPanel.classList.remove('hidden', 'fixed', 'inset-0', 'z-40');
-          ctrlDockPanel.className = 'flex flex-col w-full lg:w-[360px] xl:w-[385px] shrink-0 rounded-xl border border-[#262626] bg-black overflow-hidden split-docked min-h-[420px] lg:min-h-0';
+          ctrlDockPanel.className = 'flex flex-col w-full lg:w-[365px] xl:w-[390px] shrink-0 rounded-xl border border-[#262626] bg-black overflow-hidden split-docked min-h-[420px] lg:min-h-0';
           splitPhoneHdr.classList.remove('hidden');
           splitPhoneHdr.classList.add('flex');
 
+          // Auto-fill Owner Key in embedded Split View controller so presenter connects immediately
+          cEl.keyInput.value = ownerKey;
           if (!ctrlConnected && !ctrlPendingApproval) {
-            connectControllerToRoom(simRoomDigits);
+            connectControllerToRoom(simRoomDigits, ownerKey, true);
           }
           setTimeout(resizeArenaCanvas, 30);
         } else if (view === 'ctrl') {
@@ -921,7 +996,7 @@
         setViewMode(currentView === 'ctrl' ? 'split' : 'sim');
       });
 
-      // ==================== EXACT ARDUINO MOVEMENT CALCULATION FUNCTIONS ====================
+      // ==================== JOYSTICK SHAPING HELPERS ====================
       function shapeAxis(v, dz = 0.08) {
         const a = Math.abs(v);
         if (a < dz) return 0;
@@ -940,55 +1015,730 @@
         };
       }
 
-      function ratioToPWMTraced(ratio, minPwm = MIN_PWM) {
-        const mag = Math.abs(ratio);
-        if (mag < 0.01) {
-          return { pwm: 0, mag, rawPwm: 0, deadband: true };
+      // =========================================================================
+      // PART A: DEFAULT ARDUINO SOURCE CODE, CUSTOM LIBRARIES (.h) & TRANSPILER
+      // =========================================================================
+      const DEFAULT_CUSTOM_LIBS = [
+        {
+          id: 'lib_mecanum_curves',
+          name: 'MecanumCurves.h',
+          enabled: true,
+          builtIn: true,
+          code: [
+            '#ifndef MECANUM_CURVES_H',
+            '#define MECANUM_CURVES_H',
+            '',
+            '#define CUSTOM_MAX_PWM 150',
+            '',
+            'inline float applyCurve(float v) {',
+            '  return v;',
+            '}',
+            '',
+            '#endif'
+          ].join('\n')
         }
-        const rawPwm = Math.round(minPwm + mag * (MAX_PWM - minPwm));
-        const clamped = clamp(rawPwm, minPwm, MAX_PWM);
-        const signed = ratio > 0 ? clamped : -clamped;
-        return { pwm: signed, mag, rawPwm, deadband: false };
+      ];
+
+      const DEFAULT_INO_BLOCKS = [
+        {
+          id: 'b1',
+          fileName: 'motorControlTask.ino',
+          subtitle: 'Mecanum Inverse Kinematics',
+          code: [
+            'void computeMecanum(int8_t rawX, int8_t rawY, int8_t rawR) {',
+            '  float x = constrain(rawX / 100.0f, -1.0f, 1.0f);',
+            '  float y = constrain(rawY / 100.0f, -1.0f, 1.0f);',
+            '  float r = constrain(rawR / 100.0f, -1.0f, 1.0f);',
+            '  x = applyCurve(x);',
+            '  y = applyCurve(y);',
+            '  float fl = y + x + r;',
+            '  float fr = y - x - r;',
+            '  float rl = y - x + r;',
+            '  float rr = y + x - r;',
+            '  float maxMag = max(max(fabsf(fl), fabsf(fr)), max(fabsf(rl), fabsf(rr)));',
+            '  if (maxMag > 1.0f) { fl /= maxMag; fr /= maxMag; rl /= maxMag; rr /= maxMag; }',
+            '  tgtFL = ratioToPWM(fl, 20);',
+            '  tgtFR = ratioToPWM(fr, 20);',
+            '  tgtRL = ratioToPWM(rl, 20);',
+            '  tgtRR = ratioToPWM(rr, 20);',
+            '  curFL = rampPWM(curFL, tgtFL, 20);',
+            '  curFR = rampPWM(curFR, tgtFR, 20);',
+            '  curRL = rampPWM(curRL, tgtRL, 20);',
+            '  curRR = rampPWM(curRR, tgtRR, 20);',
+            '}'
+          ].join('\n')
+        },
+        {
+          id: 'b2',
+          fileName: 'ratioToPWM.ino',
+          subtitle: 'Deadband & PWM Scaling',
+          code: [
+            'int ratioToPWM(float ratio, int minPwm) {',
+            '  float mag = fabsf(ratio);',
+            '  if (mag < 0.01f) return 0;',
+            '  int pwm = roundf(minPwm + mag * (CUSTOM_MAX_PWM - minPwm));',
+            '  pwm = constrain(pwm, minPwm, CUSTOM_MAX_PWM);',
+            '  return (ratio > 0) ? pwm : -pwm;',
+            '}'
+          ].join('\n')
+        },
+        {
+          id: 'b3',
+          fileName: 'rampPWM.ino',
+          subtitle: 'Logarithmic Slew-Rate Limiter',
+          code: [
+            'int rampPWM(int current, int target, int minPwm) {',
+            '  if (current == target) return target;',
+            '  if ((current > 0 && target < 0) || (current < 0 && target > 0)) {',
+            '    return (current > 0) ? max(current - 15, 0) : min(current + 15, 0);',
+            '  }',
+            '  if (current == 0 && abs(target) >= minPwm) {',
+            '    return (target > 0) ? minPwm : -minPwm;',
+            '  }',
+            '  if (abs(target) > abs(current)) {',
+            '    float norm = constrain(abs(current) / 150.0f, 0.0f, 1.0f);',
+            '    int step = roundf(3 + (logf(1.0f + 9.0f * norm) / logf(10.0f)) * 7);',
+            '    return (target > current) ? min(current + step, target) : max(current - step, target);',
+            '  }',
+            '  return (target > current) ? min(current + 15, target) : max(current - 15, target);',
+            '}'
+          ].join('\n')
+        }
+      ];
+
+      function loadStateFromStorage(key, fallback) {
+        try {
+          const raw = localStorage.getItem(key);
+          if (!raw) return JSON.parse(JSON.stringify(fallback));
+          const parsed = JSON.parse(raw);
+          if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        } catch {}
+        return JSON.parse(JSON.stringify(fallback));
       }
 
-      function rampPWMTraced(current, target, minPwm = MIN_PWM) {
-        if (current === target) {
-          return { next: target, branch: 'steady', step: 0, norm: 0 };
+      let customLibs = loadStateFromStorage(STORAGE_LIBS, DEFAULT_CUSTOM_LIBS);
+      let inoBlocks  = loadStateFromStorage(STORAGE_INOS, DEFAULT_INO_BLOCKS);
+
+      // Track which cards are currently in EDIT mode
+      const editingState = {}; // { [cardId]: boolean }
+
+      function saveArduinoCodeToStorage() {
+        try {
+          localStorage.setItem(STORAGE_LIBS, JSON.stringify(customLibs));
+          localStorage.setItem(STORAGE_INOS, JSON.stringify(inoBlocks));
+        } catch {}
+      }
+
+      // ==================== AUTHENTIC ARDUINO IDE 2.x SYNTAX HIGHLIGHTER ====================
+      function escapeHtml(str) {
+        return str
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;');
+      }
+
+      function highlightArduinoLine(rawLine) {
+        const escaped = escapeHtml(rawLine);
+        const tokenRegex = /(\/\/.*$|#(?:include|define|ifndef|ifdef|endif|pragma)\b|\b(?:void|int|float|double|long|short|bool|boolean|char|byte|uint8_t|int8_t|uint16_t|int16_t|uint32_t|int32_t|size_t|inline|static|const)\b|\b(?:if|else|for|while|return|switch|case|break|continue|constrain|map|max|min|abs|fabs|fabsf|round|roundf|floor|floorf|ceil|ceilf|sqrt|sqrtf|pow|powf|log|logf|log10|log10f|exp|expf|sin|sinf|cos|cosf|tan|tanf|atan2|atan2f|sq|radians|degrees)\b|\b\d+(?:\.\d+)?f?\b)/g;
+
+        return escaped.replace(tokenRegex, (match) => {
+          if (match.startsWith('//')) {
+            return `<span class="ard-cm">${match}</span>`;
+          }
+          if (match.startsWith('#')) {
+            return `<span class="ard-prep">${match}</span>`;
+          }
+          if (/^(?:void|int|float|double|long|short|bool|boolean|char|byte|uint8_t|int8_t|uint16_t|int16_t|uint32_t|int32_t|size_t|inline|static|const)$/.test(match)) {
+            return `<span class="ard-type">${match}</span>`;
+          }
+          if (/^\d/.test(match)) {
+            return `<span class="ard-num">${match}</span>`;
+          }
+          return `<span class="ard-ctrl">${match}</span>`;
+        });
+      }
+
+      // ==================== C++ TO JAVASCRIPT TRANSPILER WITH LINE TRACE HOOKS ====================
+      let compiledStepFn = null;
+      let lastCompileError = '';
+
+      function transpileArduinoCard(cardId, sourceCode, macrosMap) {
+        // Strip multi-line comments while preserving newline count so line numbers match 1:1
+        const withoutBlockComments = sourceCode.replace(/\/\*[\s\S]*?\*\//g, (m) => {
+          const newlines = m.match(/\n/g);
+          return newlines ? '\n'.repeat(newlines.length) : '';
+        });
+
+        const rawLines = withoutBlockComments.split('\n');
+        const outLines = [];
+
+        for (let i = 0; i < rawLines.length; i++) {
+          const lineNo = i + 1;
+          let line = rawLines[i];
+
+          // Remove single-line comment
+          const cmIdx = line.indexOf('//');
+          if (cmIdx !== -1) line = line.slice(0, cmIdx);
+
+          const trimmed = line.trim();
+          if (!trimmed) {
+            outLines.push('');
+            continue;
+          }
+
+          // Skip preprocessor lines (macros already collected in pass 1)
+          if (trimmed.startsWith('#')) {
+            outLines.push('');
+            continue;
+          }
+
+          // Expand #define object-like macros
+          for (const [mName, mVal] of macrosMap.entries()) {
+            const re = new RegExp(`\\b${mName}\\b`, 'g');
+            line = line.replace(re, `(${mVal})`);
+          }
+
+          // Strip float literal suffix 'f' (e.g. 100.0f -> 100.0, 2.f -> 2.)
+          line = line.replace(/\b(\d+\.\d+|\d+\.|\.\d+)f\b/g, '$1');
+
+          // Convert C-style casts
+          line = line.replace(/\(\s*(?:float|double)\s*\)/g, '');
+          line = line.replace(/\(\s*(?:int|long|int8_t|uint8_t|int16_t|uint16_t|int32_t|uint32_t)\s*\)/g, 'Math.trunc');
+
+          // Detect function signature: e.g. "inline float applyCurve(float v) {"
+          const fnMatch = line.match(/^\s*(?:inline\s+|static\s+|const\s+)*(?:void|int|float|double|long|short|bool|boolean|char|byte|uint8_t|int8_t|uint16_t|int16_t|uint32_t|int32_t|size_t)\s+([a-zA-Z_]\w*)\s*\(([^)]*)\)\s*\{\s*$/);
+          if (fnMatch) {
+            const fnName = fnMatch[1];
+            const rawParams = fnMatch[2].trim();
+            const cleanParams = rawParams
+              ? rawParams.split(',').map((p) => {
+                  const noDefault = p.split('=')[0].trim();
+                  const parts = noDefault.replace(/[&*]/g, ' ').trim().split(/\s+/);
+                  return parts[parts.length - 1];
+                }).join(', ')
+              : '';
+            outLines.push(`function ${fnName}(${cleanParams}) { __trace("${cardId}", ${lineNo}, "CALL", "teal");`);
+            continue;
+          }
+
+          // Convert C++ typed loop headers: for (int i = 0; ...) -> for (let i = 0; ...)
+          line = line.replace(/for\s*\(\s*(?:const\s+)?(?:int|long|float|double|size_t|uint8_t|int8_t|uint16_t|int16_t|uint32_t|int32_t)\s+/g, 'for (let ');
+
+          // Convert C++ variable declarations at start of line
+          let declaredVarName = null;
+          const declMatch = line.match(/^(\s*)(?:static\s+|const\s+|volatile\s+)*(?:int8_t|uint8_t|int16_t|uint16_t|int32_t|uint32_t|float|double|int|long|short|bool|boolean|byte|char|size_t)\s+([a-zA-Z_]\w*)(.*)$/);
+          if (declMatch) {
+            const indent = declMatch[1];
+            declaredVarName = declMatch[2];
+            let rest = declMatch[3];
+            if (/^\s*;/.test(rest)) {
+              rest = ' = 0' + rest;
+            }
+            line = `${indent}let ${declaredVarName}${rest}`;
+          }
+
+          // Inject infinite-loop protection guard inside while / for opening braces
+          if (/\b(?:while|for)\s*\(.*\)\s*\{\s*$/.test(line)) {
+            line = line.replace(/\{\s*$/, '{ if (++__ops > 6000) throw new Error("Loop iteration limit exceeded");');
+          }
+
+          // Transform `if (cond)` into `if (__cond("cardId", lineNo, Boolean(cond)))`
+          line = line.replace(/\bif\s*\((.+)\)(\s*\{?\s*(?:return\b.*)?)$/, (full, condExpr, tail) => {
+            // Only wrap outer condition if parentheses are balanced
+            let depth = 0;
+            let splitAt = -1;
+            for (let k = 0; k < condExpr.length; k++) {
+              if (condExpr[k] === '(') depth++;
+              else if (condExpr[k] === ')') {
+                depth--;
+                if (depth < 0) {
+                  splitAt = k;
+                  break;
+                }
+              }
+            }
+            if (splitAt !== -1) {
+              const realCond = condExpr.slice(0, splitAt);
+              const afterParen = condExpr.slice(splitAt + 1) + tail;
+              return `if (__cond("${cardId}", ${lineNo}, Boolean(${realCond})))${afterParen}`;
+            }
+            return `if (__cond("${cardId}", ${lineNo}, Boolean(${condExpr})))${tail}`;
+          });
+
+          // Transform `return expr;` into `return __ret("cardId", lineNo, (expr));`
+          line = line.replace(/\breturn\s+([^;]+);/g, `return __ret("${cardId}", ${lineNo}, ($1));`);
+          line = line.replace(/\breturn\s*;/g, `__trace("${cardId}", ${lineNo}, "void", "amber"); return;`);
+
+          // If line is a simple assignment or declaration ending in ';' (not inside for(...) header and not a return)
+          if (!line.includes('__ret(') && !/\b(?:for|while|if)\s*\(/.test(line) && /;\s*$/.test(line)) {
+            let probeVar = declaredVarName;
+            if (!probeVar) {
+              const assignMatch = line.match(/^\s*([a-zA-Z_]\w*)\s*(?:\+|-|\*|\/)?=\s*[^=]/);
+              if (assignMatch) probeVar = assignMatch[1];
+            }
+            if (probeVar) {
+              line = line.replace(/;\s*$/, `; __trace("${cardId}", ${lineNo}, "${probeVar}:" + __fmt(${probeVar}), "teal");`);
+            } else {
+              line = line.replace(/;\s*$/, `; __trace("${cardId}", ${lineNo}, "EXEC", "teal");`);
+            }
+          }
+
+          outLines.push(line);
         }
 
-        // Zero-crossing protection on sudden reversal
-        if ((current > 0 && target < 0) || (current < 0 && target > 0)) {
-          const next = current > 0 ? Math.max(current - STEP_DECEL, 0) : Math.min(current + STEP_DECEL, 0);
-          return { next, branch: 'zerocross', step: STEP_DECEL, norm: 0 };
-        }
+        return outLines.join('\n');
+      }
 
-        // Pre-load jump to minPwm from zero
-        if (current === 0 && Math.abs(target) >= minPwm) {
-          const next = target > 0 ? minPwm : -minPwm;
-          return { next, branch: 'preload', step: minPwm, norm: 0 };
-        }
+      function compileAllArduinoCode(silentToast = false) {
+        const statusPill = document.getElementById('compileStatusPill');
+        const errBanner  = document.getElementById('compileErrorBanner');
 
-        // Logarithmic acceleration vs fixed deceleration
-        if (Math.abs(target) > Math.abs(current)) {
-          const norm = clamp(Math.abs(current) / MAX_PWM, 0.0, 1.0);
-          const logFactor = Math.log(1.0 + LOG_CURVE_K * norm) * INV_LOG_DENOM;
-          const step = Math.round(STEP_MIN + logFactor * (STEP_MAX - STEP_MIN));
-          const next = target > current ? Math.min(current + step, target) : Math.max(current - step, target);
-          return { next, branch: 'logaccel', step, norm };
-        } else {
-          const next = target > current ? Math.min(current + STEP_DECEL, target) : Math.max(current - STEP_DECEL, target);
-          return { next, branch: 'decel', step: STEP_DECEL, norm: 0 };
+        try {
+          // Pass 1: Collect #define macros from enabled .h libraries and .ino files
+          const macrosMap = new Map();
+          macrosMap.set('CUSTOM_MAX_PWM', '150'); // Safe baseline default if MecanumCurves.h is toggled off
+
+          const collectMacros = (code) => {
+            const lines = code.split('\n');
+            for (const raw of lines) {
+              const noCm = raw.split('//')[0].trim();
+              const m = noCm.match(/^#define\s+([A-Za-z_]\w*)\s+(.+)$/);
+              if (m) {
+                const name = m[1];
+                let val = m[2].trim().replace(/\b(\d+\.\d+|\d+\.|\.\d+)f\b/g, '$1');
+                macrosMap.set(name, val);
+              }
+            }
+          };
+
+          for (const lib of customLibs) {
+            if (lib.enabled) collectMacros(lib.code);
+          }
+          for (const blk of inoBlocks) {
+            collectMacros(blk.code);
+          }
+
+          // Pass 2: Transpile enabled .h libraries and all 3 .ino blocks
+          const jsChunks = [];
+          for (const lib of customLibs) {
+            if (lib.enabled) {
+              jsChunks.push(transpileArduinoCard(lib.id, lib.code, macrosMap));
+            }
+          }
+          for (const blk of inoBlocks) {
+            jsChunks.push(transpileArduinoCard(blk.id, blk.code, macrosMap));
+          }
+
+          const combinedBody = `
+            "use strict";
+            let __ops = 0;
+            const constrain = (x, a, b) => Math.max(a, Math.min(b, x));
+            const map = (x, inMin, inMax, outMin, outMax) => (x - inMin) * (outMax - outMin) / (inMax - inMin) + outMin;
+            const max = (a, b) => Math.max(a, b);
+            const min = (a, b) => Math.min(a, b);
+            const abs = (x) => Math.abs(x);
+            const fabs = (x) => Math.abs(x);
+            const fabsf = (x) => Math.abs(x);
+            const round = (x) => Math.round(x);
+            const roundf = (x) => Math.round(x);
+            const floor = (x) => Math.floor(x);
+            const floorf = (x) => Math.floor(x);
+            const ceil = (x) => Math.ceil(x);
+            const ceilf = (x) => Math.ceil(x);
+            const sqrt = (x) => Math.sqrt(x);
+            const sqrtf = (x) => Math.sqrt(x);
+            const pow = (x, y) => Math.pow(x, y);
+            const powf = (x, y) => Math.pow(x, y);
+            const log = (x) => Math.log(x);
+            const logf = (x) => Math.log(x);
+            const log10 = (x) => Math.log10(x);
+            const log10f = (x) => Math.log10(x);
+            const exp = (x) => Math.exp(x);
+            const expf = (x) => Math.exp(x);
+            const sin = (x) => Math.sin(x);
+            const sinf = (x) => Math.sin(x);
+            const cos = (x) => Math.cos(x);
+            const cosf = (x) => Math.cos(x);
+            const tan = (x) => Math.tan(x);
+            const tanf = (x) => Math.tan(x);
+            const atan2 = (y, x) => Math.atan2(y, x);
+            const atan2f = (y, x) => Math.atan2(y, x);
+            const sq = (x) => x * x;
+            const radians = (d) => d * (Math.PI / 180);
+            const degrees = (r) => r * (180 / Math.PI);
+            const PI = Math.PI;
+            const TWO_PI = Math.PI * 2;
+            const HALF_PI = Math.PI / 2;
+
+            const MAX_PWM = 150;
+            const MIN_PWM = 20;
+            const STEP_MIN = 3;
+            const STEP_MAX = 10;
+            const STEP_DECEL = 15;
+            const LOG_CURVE_K = 9.0;
+
+            let tgtFL = __state.tgtFL, tgtFR = __state.tgtFR, tgtRL = __state.tgtRL, tgtRR = __state.tgtRR;
+            let curFL = __state.curFL, curFR = __state.curFR, curRL = __state.curRL, curRR = __state.curRR;
+
+            ${jsChunks.join('\n\n')}
+
+            if (typeof computeMecanum !== 'function') {
+              throw new Error('Missing entry function: void computeMecanum(int8_t rawX, int8_t rawY, int8_t rawR)');
+            }
+            computeMecanum(__in.x, __in.y, __in.r);
+            return { tgtFL, tgtFR, tgtRL, tgtRR, curFL, curFR, curRL, curRR };
+          `;
+
+          const factory = new Function('__in', '__state', '__trace', '__cond', '__ret', '__fmt', combinedBody);
+
+          // Dry-run test with (0, 0, 0) to catch runtime ReferenceErrors immediately
+          const noop = (v) => v;
+          factory(
+            { x: 0, y: 0, r: 0 },
+            { tgtFL: 0, tgtFR: 0, tgtRL: 0, tgtRR: 0, curFL: 0, curFR: 0, curRL: 0, curRR: 0 },
+            () => {},
+            (_, __, b) => b,
+            (_, __, v) => v,
+            noop
+          );
+
+          compiledStepFn = factory;
+          lastCompileError = '';
+
+          statusPill.textContent = 'COMPILED OK';
+          statusPill.className = 'mono text-[10px] font-bold px-2 py-0.5 rounded bg-[#052e16] border border-[#22c55e] text-[#4ade80]';
+          errBanner.classList.add('hidden');
+          if (!silentToast) showToast('Arduino firmware compiled & active (50Hz).');
+        } catch (err) {
+          lastCompileError = err && err.message ? err.message : String(err);
+          statusPill.textContent = 'COMPILE ERROR';
+          statusPill.className = 'mono text-[10px] font-bold px-2 py-0.5 rounded bg-[#1f0909] border border-[#ef4444] text-[#f87171]';
+          errBanner.textContent = `Compile / Runtime Error: ${lastCompileError} (Holding previous valid build)`;
+          errBanner.classList.remove('hidden');
+          if (!silentToast) showToast('Compile error. Check red banner in code pane.');
         }
       }
+
+      // ==================== RENDER EDITABLE .h & .ino CARDS ====================
+      const customLibsContainer = document.getElementById('customLibsContainer');
+      const inoCardsContainer   = document.getElementById('inoCardsContainer');
+
+      function attachTabIndentation(textareaEl, onSaveShortcut) {
+        textareaEl.addEventListener('keydown', (e) => {
+          if (e.key === 'Tab') {
+            e.preventDefault();
+            const start = textareaEl.selectionStart;
+            const end = textareaEl.selectionEnd;
+            textareaEl.value = textareaEl.value.substring(0, start) + '  ' + textareaEl.value.substring(end);
+            textareaEl.selectionStart = textareaEl.selectionEnd = start + 2;
+          } else if ((e.ctrlKey || e.metaKey) && (e.key.toLowerCase() === 's' || e.key === 'Enter')) {
+            e.preventDefault();
+            onSaveShortcut();
+          }
+        });
+      }
+
+      function renderTraceRowsHtml(cardId, code) {
+        const lines = code.split('\n');
+        return lines.map((lineText, idx) => {
+          const lineNo = idx + 1;
+          const highlighted = highlightArduinoLine(lineText);
+          return `<div id="${cardId}_l${lineNo}" class="ard-row"><span class="ard-gutter">${lineNo}</span><span class="ard-code">${highlighted || ' '}</span><span class="ard-val" id="v_${cardId}_l${lineNo}">-</span></div>`;
+        }).join('');
+      }
+
+      function renderArduinoWorkspaceCards() {
+        // 1. Render Custom Libraries (.h)
+        customLibsContainer.innerHTML = '';
+        customLibs.forEach((lib) => {
+          const isEditing = Boolean(editingState[lib.id]);
+          const card = document.createElement('div');
+          card.className = 'arduino-card shrink-0';
+
+          const tabBar = document.createElement('div');
+          tabBar.className = 'arduino-tabbar';
+
+          const leftTab = document.createElement('div');
+          leftTab.className = 'arduino-tab lib-tab mono';
+          leftTab.innerHTML = `<span>${escapeHtml(lib.name)}</span>`;
+          tabBar.appendChild(leftTab);
+
+          const actions = document.createElement('div');
+          actions.className = 'flex items-center gap-1.5 py-1';
+
+          // #include toggle button
+          const incBtn = document.createElement('button');
+          incBtn.className = 'ard-tool-btn mono' + (lib.enabled ? ' inc-on' : '');
+          incBtn.textContent = lib.enabled ? '#include ON' : '#include OFF';
+          incBtn.title = 'Toggle whether this .h library is included in compilation';
+          incBtn.addEventListener('click', () => {
+            lib.enabled = !lib.enabled;
+            saveArduinoCodeToStorage();
+            compileAllArduinoCode(false);
+            renderArduinoWorkspaceCards();
+          });
+          actions.appendChild(incBtn);
+
+          if (!isEditing) {
+            const editBtn = document.createElement('button');
+            editBtn.className = 'ard-tool-btn mono';
+            editBtn.textContent = 'EDIT';
+            editBtn.addEventListener('click', () => {
+              editingState[lib.id] = true;
+              renderArduinoWorkspaceCards();
+            });
+            actions.appendChild(editBtn);
+          } else {
+            const applyBtn = document.createElement('button');
+            applyBtn.className = 'ard-tool-btn primary mono';
+            applyBtn.textContent = 'APPLY';
+            const commitEdit = () => {
+              const ta = card.querySelector('textarea');
+              if (ta) lib.code = ta.value;
+              editingState[lib.id] = false;
+              saveArduinoCodeToStorage();
+              compileAllArduinoCode(false);
+              renderArduinoWorkspaceCards();
+            };
+            applyBtn.addEventListener('click', commitEdit);
+            actions.appendChild(applyBtn);
+
+            const cancelBtn = document.createElement('button');
+            cancelBtn.className = 'ard-tool-btn mono';
+            cancelBtn.textContent = 'CANCEL';
+            cancelBtn.addEventListener('click', () => {
+              editingState[lib.id] = false;
+              renderArduinoWorkspaceCards();
+            });
+            actions.appendChild(cancelBtn);
+          }
+
+          if (!lib.builtIn) {
+            const delBtn = document.createElement('button');
+            delBtn.className = 'ard-tool-btn danger mono';
+            delBtn.textContent = 'DEL';
+            delBtn.addEventListener('click', () => {
+              customLibs = customLibs.filter((item) => item.id !== lib.id);
+              delete editingState[lib.id];
+              saveArduinoCodeToStorage();
+              compileAllArduinoCode(false);
+              renderArduinoWorkspaceCards();
+              showToast(`Deleted ${lib.name}`);
+            });
+            actions.appendChild(delBtn);
+          }
+
+          tabBar.appendChild(actions);
+          card.appendChild(tabBar);
+
+          if (isEditing) {
+            const ta = document.createElement('textarea');
+            ta.className = 'arduino-textarea';
+            ta.rows = Math.max(6, lib.code.split('\n').length + 1);
+            ta.value = lib.code;
+            attachTabIndentation(ta, () => {
+              lib.code = ta.value;
+              editingState[lib.id] = false;
+              saveArduinoCodeToStorage();
+              compileAllArduinoCode(false);
+              renderArduinoWorkspaceCards();
+            });
+            card.appendChild(ta);
+            setTimeout(() => ta.focus(), 10);
+          } else {
+            const editorDiv = document.createElement('div');
+            editorDiv.className = 'arduino-editor mono py-1' + (!lib.enabled ? ' opacity-50' : '');
+            editorDiv.innerHTML = renderTraceRowsHtml(lib.id, lib.code);
+            card.appendChild(editorDiv);
+          }
+
+          customLibsContainer.appendChild(card);
+        });
+
+        // 2. Render 3 Separate Arduino .ino Movement Cards
+        inoCardsContainer.innerHTML = '';
+        inoBlocks.forEach((blk) => {
+          const isEditing = Boolean(editingState[blk.id]);
+          const card = document.createElement('div');
+          card.className = 'arduino-card shrink-0';
+
+          const tabBar = document.createElement('div');
+          tabBar.className = 'arduino-tabbar';
+
+          const leftGroup = document.createElement('div');
+          leftGroup.className = 'flex items-center gap-2 min-w-0';
+          leftGroup.innerHTML = `
+            <div class="arduino-tab mono"><span>${escapeHtml(blk.fileName)}</span></div>
+            <span class="hidden sm:inline text-[10px] font-semibold text-[#6b7280] mono truncate">${escapeHtml(blk.subtitle)}</span>
+          `;
+          tabBar.appendChild(leftGroup);
+
+          const actions = document.createElement('div');
+          actions.className = 'flex items-center gap-1.5 py-1 shrink-0';
+
+          if (!isEditing) {
+            const editBtn = document.createElement('button');
+            editBtn.className = 'ard-tool-btn mono';
+            editBtn.textContent = 'EDIT';
+            editBtn.addEventListener('click', () => {
+              editingState[blk.id] = true;
+              renderArduinoWorkspaceCards();
+            });
+            actions.appendChild(editBtn);
+          } else {
+            const applyBtn = document.createElement('button');
+            applyBtn.className = 'ard-tool-btn primary mono';
+            applyBtn.textContent = 'APPLY & RUN';
+            const commitInoEdit = () => {
+              const ta = card.querySelector('textarea');
+              if (ta) blk.code = ta.value;
+              editingState[blk.id] = false;
+              saveArduinoCodeToStorage();
+              compileAllArduinoCode(false);
+              renderArduinoWorkspaceCards();
+            };
+            applyBtn.addEventListener('click', commitInoEdit);
+            actions.appendChild(applyBtn);
+
+            const cancelBtn = document.createElement('button');
+            cancelBtn.className = 'ard-tool-btn mono';
+            cancelBtn.textContent = 'CANCEL';
+            cancelBtn.addEventListener('click', () => {
+              editingState[blk.id] = false;
+              renderArduinoWorkspaceCards();
+            });
+            actions.appendChild(cancelBtn);
+          }
+
+          const resetBtn = document.createElement('button');
+          resetBtn.className = 'ard-tool-btn mono';
+          resetBtn.textContent = 'RESET';
+          resetBtn.title = `Restore ${blk.fileName} to default`;
+          resetBtn.addEventListener('click', () => {
+            const def = DEFAULT_INO_BLOCKS.find((d) => d.id === blk.id);
+            if (def) blk.code = def.code;
+            editingState[blk.id] = false;
+            saveArduinoCodeToStorage();
+            compileAllArduinoCode(false);
+            renderArduinoWorkspaceCards();
+          });
+          actions.appendChild(resetBtn);
+
+          tabBar.appendChild(actions);
+          card.appendChild(tabBar);
+
+          if (isEditing) {
+            const ta = document.createElement('textarea');
+            ta.className = 'arduino-textarea';
+            ta.rows = Math.max(7, blk.code.split('\n').length + 1);
+            ta.value = blk.code;
+            attachTabIndentation(ta, () => {
+              blk.code = ta.value;
+              editingState[blk.id] = false;
+              saveArduinoCodeToStorage();
+              compileAllArduinoCode(false);
+              renderArduinoWorkspaceCards();
+            });
+            card.appendChild(ta);
+            setTimeout(() => ta.focus(), 10);
+          } else {
+            const editorDiv = document.createElement('div');
+            editorDiv.className = 'arduino-editor mono py-1';
+            editorDiv.innerHTML = renderTraceRowsHtml(blk.id, blk.code);
+            card.appendChild(editorDiv);
+          }
+
+          inoCardsContainer.appendChild(card);
+        });
+      }
+
+      // New Custom Library (.h) Form Controls
+      const showNewLibFormBtn   = document.getElementById('showNewLibFormBtn');
+      const newLibFormRow       = document.getElementById('newLibFormRow');
+      const newLibNameInput     = document.getElementById('newLibNameInput');
+      const createLibConfirmBtn = document.getElementById('createLibConfirmBtn');
+      const createLibCancelBtn  = document.getElementById('createLibCancelBtn');
+      const resetAllCodeBtn     = document.getElementById('resetAllCodeBtn');
+
+      showNewLibFormBtn.addEventListener('click', () => {
+        newLibFormRow.classList.remove('hidden');
+        newLibFormRow.classList.add('flex');
+        newLibNameInput.value = '';
+        newLibNameInput.focus();
+      });
+
+      createLibCancelBtn.addEventListener('click', () => {
+        newLibFormRow.classList.add('hidden');
+        newLibFormRow.classList.remove('flex');
+      });
+
+      function handleCreateNewLibrary() {
+        let rawName = newLibNameInput.value.trim().replace(/[^a-zA-Z0-9_.]/g, '');
+        if (!rawName) {
+          showToast('Enter a valid header filename (e.g. BoostLib.h).');
+          return;
+        }
+        if (!rawName.endsWith('.h')) rawName += '.h';
+        if (customLibs.some((l) => l.name.toLowerCase() === rawName.toLowerCase())) {
+          showToast(`Library ${rawName} already exists.`);
+          return;
+        }
+
+        const guardName = rawName.toUpperCase().replace(/[^A-Z0-9]/g, '_');
+        const newId = 'lib_' + Date.now().toString(36);
+        customLibs.push({
+          id: newId,
+          name: rawName,
+          enabled: true,
+          builtIn: false,
+          code: [
+            `#ifndef ${guardName}`,
+            `#define ${guardName}`,
+            '',
+            'inline float customHelper(float val) {',
+            '  return val;',
+            '}',
+            '',
+            '#endif'
+          ].join('\n')
+        });
+        editingState[newId] = true;
+        newLibFormRow.classList.add('hidden');
+        newLibFormRow.classList.remove('flex');
+        saveArduinoCodeToStorage();
+        compileAllArduinoCode(true);
+        renderArduinoWorkspaceCards();
+        showToast(`Created ${rawName}`);
+      }
+
+      createLibConfirmBtn.addEventListener('click', handleCreateNewLibrary);
+      newLibNameInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') handleCreateNewLibrary();
+        if (e.key === 'Escape') createLibCancelBtn.click();
+      });
+
+      resetAllCodeBtn.addEventListener('click', () => {
+        customLibs = JSON.parse(JSON.stringify(DEFAULT_CUSTOM_LIBS));
+        inoBlocks  = JSON.parse(JSON.stringify(DEFAULT_INO_BLOCKS));
+        for (const k of Object.keys(editingState)) delete editingState[k];
+        saveArduinoCodeToStorage();
+        compileAllArduinoCode(true);
+        renderArduinoWorkspaceCards();
+        showToast('Restored all .h libraries and .ino blocks to defaults.');
+      });
 
       // =========================================================================
-      // PART A: SIMULATOR HOST ENGINE + CONNECTION ACCESS CONTROL
+      // PART B: CONNECTION ACCESS CONTROL ("ONLY ME" EXCLUSIVE LOCK)
       // =========================================================================
       const simEl = {
         roomBadge: document.getElementById('roomBadge'),
+        ownerKeyBadge: document.getElementById('ownerKeyBadge'),
+        onlyMeToggleBtn: document.getElementById('onlyMeToggleBtn'),
         accessPolicyBtn: document.getElementById('accessPolicyBtn'),
+        blockedCountBadge: document.getElementById('blockedCountBadge'),
         activeClientBox: document.getElementById('activeClientBox'),
         activeClientLabel: document.getElementById('activeClientLabel'),
+        setOwnerBtn: document.getElementById('setOwnerBtn'),
         kickClientBtn: document.getElementById('kickClientBtn'),
         standbyStatusPill: document.getElementById('standbyStatusPill'),
         standbyText: document.getElementById('standbyText'),
@@ -996,11 +1746,14 @@
         pendingClientIdText: document.getElementById('pendingClientIdText'),
         pendingTransportText: document.getElementById('pendingTransportText'),
         approveClientBtn: document.getElementById('approveClientBtn'),
+        approveAsOwnerBtn: document.getElementById('approveAsOwnerBtn'),
         denyClientBtn: document.getElementById('denyClientBtn'),
         openPairModalBtn: document.getElementById('openPairModalBtn'),
         closePairModalBtn: document.getElementById('closePairModalBtn'),
         pairModal: document.getElementById('pairModal'),
         modalRoomCode: document.getElementById('modalRoomCode'),
+        modalOwnerKey: document.getElementById('modalOwnerKey'),
+        regenOwnerKeyBtn: document.getElementById('regenOwnerKeyBtn'),
         hostedUrlInput: document.getElementById('hostedUrlInput'),
         urlEnvHint: document.getElementById('urlEnvHint'),
         qrActiveBox: document.getElementById('qrActiveBox'),
@@ -1030,37 +1783,13 @@
         pwmBarRR: document.getElementById('pwmBarRR')
       };
 
-      // Cache Arduino IDE 3-Block DOM nodes
-      const b1Lines = {}, b1Vals = {};
-      for (let i = 1; i <= 12; i++) {
-        b1Lines[i] = document.getElementById('b1_l' + i);
-        b1Vals[i]  = document.getElementById('vb1_l' + i);
-      }
-      const b2Lines = {}, b2Vals = {};
-      for (let i = 1; i <= 7; i++) {
-        b2Lines[i] = document.getElementById('b2_l' + i);
-        b2Vals[i]  = document.getElementById('vb2_l' + i);
-      }
-      const b3Lines = {}, b3Vals = {};
-      for (let i = 1; i <= 13; i++) {
-        b3Lines[i] = document.getElementById('b3_l' + i);
-        b3Vals[i]  = document.getElementById('vb3_l' + i);
-      }
-
-      function setArdRowHL(rowEl, cls) {
-        if (!rowEl) return;
-        rowEl.className = 'ard-row' + (cls ? ' ' + cls : '');
-      }
-
-      // ==================== CONNECTION ACCESS CONTROL STATE ====================
-      // Policies: 'APPROVAL' (default) | 'OPEN' | 'LOCKED'
-      const ACCESS_POLICIES = ['APPROVAL', 'OPEN', 'LOCKED'];
-      let accessPolicyIdx = 0;
-      let accessPolicy = ACCESS_POLICIES[accessPolicyIdx];
+      // Access policy state: 'APPROVAL' | 'OPEN' | 'ONLY ME'
+      let accessPolicy = 'APPROVAL';
+      let ownerClientId = null;
+      let blockedCount = 0;
 
       // approvedClient: { clientId, transport: 'WEBRTC'|'LOCAL', peerConn: DataConnection|null }
       let approvedClient = null;
-      // pendingClients: Map<clientId, { clientId, transport, peerConn }>
       const pendingClients = new Map();
 
       const localBusChannel = ('BroadcastChannel' in window)
@@ -1079,33 +1808,61 @@
       }
 
       function renderAccessControlUI() {
+        const isOnlyMe = (accessPolicy === 'ONLY ME');
+
+        simEl.ownerKeyBadge.textContent = `KEY: ${ownerKey}`;
+        simEl.modalOwnerKey.textContent = ownerKey;
+
+        // Sync ONLY ME: ON/OFF button
+        simEl.onlyMeToggleBtn.textContent = isOnlyMe ? 'ONLY ME: ON' : 'ONLY ME: OFF';
+        simEl.onlyMeToggleBtn.className = 'min-btn mono' + (isOnlyMe ? ' onlyme-on' : '');
+
+        // Sync ACCESS policy pill
         simEl.accessPolicyBtn.textContent = `ACCESS: ${accessPolicy}`;
-        if (accessPolicy === 'LOCKED') {
-          simEl.accessPolicyBtn.style.borderColor = '#ef4444';
-          simEl.accessPolicyBtn.style.color = '#ef4444';
-        } else if (accessPolicy === 'OPEN') {
+        if (isOnlyMe) {
           simEl.accessPolicyBtn.style.borderColor = '#22c55e';
-          simEl.accessPolicyBtn.style.color = '#22c55e';
+          simEl.accessPolicyBtn.style.color = '#4ade80';
+        } else if (accessPolicy === 'OPEN') {
+          simEl.accessPolicyBtn.style.borderColor = '#38bdf8';
+          simEl.accessPolicyBtn.style.color = '#38bdf8';
         } else {
           simEl.accessPolicyBtn.style.borderColor = '#ffffff';
           simEl.accessPolicyBtn.style.color = '#ffffff';
         }
 
+        // Blocked attempts badge
+        if (blockedCount > 0) {
+          simEl.blockedCountBadge.classList.remove('hidden');
+          simEl.blockedCountBadge.textContent = `BLOCKED: ${blockedCount}`;
+        } else {
+          simEl.blockedCountBadge.classList.add('hidden');
+        }
+
+        // Active Client Badge
         if (approvedClient) {
+          const isOwner = (ownerClientId && approvedClient.clientId === ownerClientId);
           simEl.activeClientBox.classList.remove('hidden');
           simEl.activeClientBox.classList.add('flex');
-          simEl.activeClientLabel.textContent = `CONNECTED: ${approvedClient.clientId}`;
+          simEl.activeClientLabel.textContent = isOwner
+            ? `OWNER: ${approvedClient.clientId}`
+            : `CONNECTED: ${approvedClient.clientId}`;
+          simEl.setOwnerBtn.classList.toggle('hidden', Boolean(isOwner));
           simEl.standbyStatusPill.classList.add('hidden');
         } else {
           simEl.activeClientBox.classList.add('hidden');
           simEl.activeClientBox.classList.remove('flex');
           simEl.standbyStatusPill.classList.remove('hidden');
-          simEl.standbyText.textContent = accessPolicy === 'LOCKED'
-            ? 'HOST LOCKED (KEYBOARD ONLY)'
-            : 'NO CLIENT (KEYBOARD READY)';
+          if (isOnlyMe) {
+            simEl.standbyText.textContent = ownerClientId
+              ? `ONLY ME (${ownerClientId} / KEY ${ownerKey})`
+              : `ONLY ME (KEY: ${ownerKey} REQUIRED)`;
+          } else {
+            simEl.standbyText.textContent = 'NO CLIENT (KEYBOARD READY)';
+          }
         }
 
-        if (pendingClients.size > 0) {
+        // Inline approval banner (never shown in ONLY ME mode)
+        if (!isOnlyMe && pendingClients.size > 0) {
           const firstPending = pendingClients.values().next().value;
           simEl.approvalBanner.classList.remove('hidden');
           simEl.approvalBanner.classList.add('flex');
@@ -1116,6 +1873,62 @@
           simEl.approvalBanner.classList.remove('flex');
         }
       }
+
+      function enableOnlyMeMode() {
+        accessPolicy = 'ONLY ME';
+        // Immediately lock onto any currently connected client
+        if (approvedClient) {
+          ownerClientId = approvedClient.clientId;
+        }
+        // Silently reject any unapproved pending audience requests
+        for (const [, req] of pendingClients) {
+          blockedCount++;
+          sendControlSignalToClient(req, {
+            type: 'REJECTED',
+            clientId: req.clientId,
+            reason: 'ONLY ME MODE'
+          });
+          if (req.transport === 'WEBRTC' && req.peerConn) {
+            setTimeout(() => { try { req.peerConn.close(); } catch {} }, 80);
+          }
+        }
+        pendingClients.clear();
+        renderAccessControlUI();
+        showToast(ownerClientId
+          ? `ONLY ME enabled: locked to ${ownerClientId}`
+          : `ONLY ME enabled: requires Owner Key ${ownerKey}`);
+      }
+
+      function disableOnlyMeMode() {
+        accessPolicy = 'APPROVAL';
+        renderAccessControlUI();
+        showToast('ONLY ME disabled (switched to APPROVAL policy).');
+      }
+
+      simEl.onlyMeToggleBtn.addEventListener('click', () => {
+        if (accessPolicy === 'ONLY ME') disableOnlyMeMode();
+        else enableOnlyMeMode();
+      });
+
+      simEl.accessPolicyBtn.addEventListener('click', () => {
+        if (accessPolicy === 'APPROVAL') {
+          accessPolicy = 'OPEN';
+          if (pendingClients.size > 0) {
+            const nextId = pendingClients.keys().next().value;
+            approveClient(nextId, false);
+          }
+          renderAccessControlUI();
+        } else if (accessPolicy === 'OPEN') {
+          enableOnlyMeMode();
+        } else {
+          disableOnlyMeMode();
+        }
+      });
+
+      simEl.blockedCountBadge.addEventListener('click', () => {
+        blockedCount = 0;
+        renderAccessControlUI();
+      });
 
       function kickCurrentApprovedClient(reason = 'KICKED BY HOST') {
         if (!approvedClient) return;
@@ -1129,7 +1942,7 @@
         renderAccessControlUI();
       }
 
-      function approveClient(clientId) {
+      function approveClient(clientId, lockAsExclusiveOwner = false) {
         const req = pendingClients.get(clientId);
         if (!req) return;
         pendingClients.delete(clientId);
@@ -1137,9 +1950,22 @@
           kickCurrentApprovedClient('REPLACED BY NEW CLIENT');
         }
         approvedClient = req;
+        if (lockAsExclusiveOwner) {
+          ownerClientId = req.clientId;
+          accessPolicy = 'ONLY ME';
+          // Silently clear remaining pending queue
+          for (const [, other] of pendingClients) {
+            blockedCount++;
+            sendControlSignalToClient(other, { type: 'REJECTED', clientId: other.clientId, reason: 'ONLY ME MODE' });
+            if (other.transport === 'WEBRTC' && other.peerConn) {
+              setTimeout(() => { try { other.peerConn.close(); } catch {} }, 80);
+            }
+          }
+          pendingClients.clear();
+        }
         sendControlSignalToClient(req, { type: 'APPROVED', clientId: req.clientId });
         renderAccessControlUI();
-        showToast(`Approved ${req.clientId}`);
+        showToast(lockAsExclusiveOwner ? `Owner locked to ${req.clientId}` : `Approved ${req.clientId}`);
       }
 
       function denyClient(clientId) {
@@ -1154,36 +1980,71 @@
         showToast(`Denied ${req.clientId}`);
       }
 
-      function handleIncomingHandshake(clientId, transport, peerConn = null) {
+      function handleIncomingHandshake(msg, transport, peerConn = null) {
+        const clientId = msg && msg.clientId;
         if (!clientId || typeof clientId !== 'string') return;
+        const suppliedKey = String(msg.ownerKey || '').trim();
+        const isEmbeddedSplit = Boolean(msg.isEmbeddedSplit && clientId === myClientId);
         const clientObj = { clientId, transport, peerConn };
 
-        if (accessPolicy === 'LOCKED') {
-          sendControlSignalToClient(clientObj, { type: 'REJECTED', clientId, reason: 'HOST LOCKED' });
-          if (transport === 'WEBRTC' && peerConn) {
-            setTimeout(() => { try { peerConn.close(); } catch {} }, 80);
+        // 1. EXCLUSIVE "ONLY ME" POLICY CHECK
+        if (accessPolicy === 'ONLY ME') {
+          const isAuthorizedOwner =
+            isEmbeddedSplit ||
+            (suppliedKey !== '' && suppliedKey === ownerKey) ||
+            (ownerClientId !== null && clientId === ownerClientId);
+
+          if (!isAuthorizedOwner) {
+            // Silently increment blocked count and reject without popup banner
+            blockedCount++;
+            sendControlSignalToClient(clientObj, {
+              type: 'REJECTED',
+              clientId,
+              reason: 'ONLY ME MODE'
+            });
+            if (transport === 'WEBRTC' && peerConn) {
+              setTimeout(() => { try { peerConn.close(); } catch {} }, 80);
+            }
+            renderAccessControlUI();
+            return;
           }
-          showToast(`Blocked ${clientId} (Host Locked)`);
+
+          // Authorized owner verified! Bind ownerClientId and connect immediately
+          ownerClientId = clientId;
+          if (approvedClient && approvedClient.clientId !== clientId) {
+            kickCurrentApprovedClient('REPLACED BY OWNER');
+          }
+          approvedClient = clientObj;
+          sendControlSignalToClient(clientObj, { type: 'APPROVED', clientId });
+          renderAccessControlUI();
+          showToast(`Owner connected: ${clientId}`);
           return;
         }
 
+        // 2. OPEN POLICY CHECK
         if (accessPolicy === 'OPEN') {
           pendingClients.delete(clientId);
           if (approvedClient && approvedClient.clientId !== clientId) {
             kickCurrentApprovedClient('REPLACED BY NEW CLIENT');
           }
           approvedClient = clientObj;
+          if (suppliedKey === ownerKey || isEmbeddedSplit) ownerClientId = clientId;
           sendControlSignalToClient(clientObj, { type: 'APPROVED', clientId });
           renderAccessControlUI();
           showToast(`Connected ${clientId}`);
           return;
         }
 
-        // accessPolicy === 'APPROVAL'
-        if (approvedClient && approvedClient.clientId === clientId) {
+        // 3. APPROVAL POLICY CHECK (Auto-approve if Owner Key or Split View matches)
+        if (isEmbeddedSplit || (suppliedKey !== '' && suppliedKey === ownerKey) || (approvedClient && approvedClient.clientId === clientId)) {
+          ownerClientId = clientId;
+          if (approvedClient && approvedClient.clientId !== clientId) {
+            kickCurrentApprovedClient('REPLACED BY OWNER');
+          }
           approvedClient = clientObj;
           sendControlSignalToClient(clientObj, { type: 'APPROVED', clientId });
           renderAccessControlUI();
+          showToast(`Owner connected: ${clientId}`);
           return;
         }
 
@@ -1205,23 +2066,23 @@
         renderAccessControlUI();
       }
 
-      simEl.accessPolicyBtn.addEventListener('click', () => {
-        accessPolicyIdx = (accessPolicyIdx + 1) % ACCESS_POLICIES.length;
-        accessPolicy = ACCESS_POLICIES[accessPolicyIdx];
-        if (accessPolicy === 'LOCKED') {
-          for (const [cid] of pendingClients) denyClient(cid);
-          if (approvedClient) kickCurrentApprovedClient('HOST LOCKED');
-        } else if (accessPolicy === 'OPEN' && pendingClients.size > 0) {
-          const nextId = pendingClients.keys().next().value;
-          approveClient(nextId);
-        }
-        renderAccessControlUI();
+      simEl.setOwnerBtn.addEventListener('click', () => {
+        if (!approvedClient) return;
+        ownerClientId = approvedClient.clientId;
+        enableOnlyMeMode();
       });
 
       simEl.approveClientBtn.addEventListener('click', () => {
         if (pendingClients.size > 0) {
           const firstId = pendingClients.keys().next().value;
-          approveClient(firstId);
+          approveClient(firstId, false);
+        }
+      });
+
+      simEl.approveAsOwnerBtn.addEventListener('click', () => {
+        if (pendingClients.size > 0) {
+          const firstId = pendingClients.keys().next().value;
+          approveClient(firstId, true);
         }
       });
 
@@ -1237,17 +2098,16 @@
         showToast('Client disconnected by host.');
       });
 
-      // Listen on BroadcastChannel for local/same-browser controller tabs & Split View
+      // BroadcastChannel listener for Split View & same-browser tabs
       if (localBusChannel) {
         localBusChannel.onmessage = (ev) => {
           const msg = ev.data;
           if (!msg || typeof msg !== 'object') return;
           if (msg.type === 'HELLO') {
-            handleIncomingHandshake(msg.clientId, 'LOCAL', null);
+            handleIncomingHandshake(msg, 'LOCAL', null);
           } else if (msg.type === 'BYE') {
             handleClientDisconnect(msg.clientId);
           } else if (msg.type === 'CMD') {
-            // Ignore packets unless client is explicitly approved
             if (!approvedClient || approvedClient.clientId !== msg.clientId) return;
             ingestBinaryControlPacket(new Uint8Array(msg.pkt));
           }
@@ -1297,7 +2157,7 @@
         const cleanBase = normalizeHttpBaseUrl(rawInput);
         if (cleanBase) {
           try { localStorage.setItem(STORAGE_HOSTED_URL, cleanBase); } catch {}
-          activeShareableControllerUrl = `${cleanBase}?mode=controller&room=${simRoomDigits}`;
+          activeShareableControllerUrl = `${cleanBase}?mode=controller&room=${simRoomDigits}&key=${ownerKey}`;
           simEl.copyCtrlUrlBtn.disabled = false;
           simEl.qrTargetUrlLabel.textContent = activeShareableControllerUrl;
           simEl.qrActiveBox.classList.remove('hidden');
@@ -1334,11 +2194,11 @@
 
         if (detectedBase) {
           simEl.hostedUrlInput.value = detectedBase;
-          simEl.urlEnvHint.textContent = 'Public URL detected. Scan QR code with your phone to pair.';
+          simEl.urlEnvHint.textContent = 'Public URL detected. QR code embeds Room & Owner Key automatically.';
           updateHostedUrlQrUI(detectedBase);
         } else if (savedBase) {
           simEl.hostedUrlInput.value = savedBase;
-          simEl.urlEnvHint.textContent = 'Loaded saved public URL for phone QR pairing.';
+          simEl.urlEnvHint.textContent = 'Loaded saved public URL (embeds Room & Owner Key).';
           updateHostedUrlQrUI(savedBase);
         } else {
           simEl.hostedUrlInput.value = '';
@@ -1349,6 +2209,14 @@
         simEl.hostedUrlInput.addEventListener('input', (e) => updateHostedUrlQrUI(e.target.value));
         simEl.copyCtrlUrlBtn.addEventListener('click', () => {
           if (activeShareableControllerUrl) copyTextSafe(activeShareableControllerUrl);
+        });
+        simEl.regenOwnerKeyBtn.addEventListener('click', () => {
+          ownerKey = String(Math.floor(1000 + Math.random() * 9000));
+          try { localStorage.setItem(STORAGE_OWNER_KEY, ownerKey); } catch {}
+          if (currentView === 'split') cEl.keyInput.value = ownerKey;
+          renderAccessControlUI();
+          updateHostedUrlQrUI(simEl.hostedUrlInput.value);
+          showToast(`Generated new Owner Key: ${ownerKey}`);
         });
         simEl.modalSwitchSplitBtn.addEventListener('click', () => {
           simEl.pairModal.classList.add('hidden');
@@ -1365,8 +2233,8 @@
           simPeer = new Peer(`team14-sim-${simRoomDigits}`);
 
           simPeer.on('open', () => {
-            simEl.peerStatusLine.textContent = `WebRTC Host Ready (ID: ${simRoomDigits})`;
-            simEl.peerStatusLine.style.color = '#22c55e';
+            simEl.peerStatusLine.textContent = `WebRTC Host Ready (Room: ${simRoomDigits} · Key: ${ownerKey})`;
+            simEl.peerStatusLine.style.color = '#4ade80';
           });
 
           simPeer.on('connection', (conn) => {
@@ -1376,7 +2244,7 @@
               if (data && typeof data === 'object' && !(data instanceof Uint8Array) && !(data instanceof ArrayBuffer) && !Array.isArray(data)) {
                 if (data.type === 'HELLO' && data.clientId) {
                   boundClientId = data.clientId;
-                  handleIncomingHandshake(boundClientId, 'WEBRTC', conn);
+                  handleIncomingHandshake(data, 'WEBRTC', conn);
                 } else if (data.type === 'BYE' && boundClientId) {
                   handleClientDisconnect(boundClientId);
                 }
@@ -1439,7 +2307,9 @@
 
       window.addEventListener('keydown', (e) => {
         if (currentView === 'ctrl') return;
-        if (document.activeElement && document.activeElement.tagName === 'INPUT') return;
+        const tag = document.activeElement ? document.activeElement.tagName : '';
+        if (tag === 'INPUT' || tag === 'TEXTAREA') return;
+
         const k = e.key.toLowerCase();
         if (e.code === 'Space') { e.preventDefault(); localKeys.space = true; keyboardActive = true; return; }
         if (e.key === 'Shift')  { localKeys.shift = true; keyboardActive = true; return; }
@@ -1488,7 +2358,36 @@
         }
       }
 
-      // ==================== CORE 1: 50Hz MOVEMENT & KINEMATICS STEP ====================
+      // ==================== CORE 1: 50Hz MOVEMENT & LIVE TRACE STEP ====================
+      function formatTraceValue(v) {
+        if (typeof v === 'number') {
+          return Number.isInteger(v) ? String(v) : v.toFixed(2);
+        }
+        return String(v);
+      }
+
+      function applyLineTracesToDOM(traceMap) {
+        // Clear previous highlights on all non-editing cards
+        const allCards = [...customLibs, ...inoBlocks];
+        for (const card of allCards) {
+          if (editingState[card.id]) continue;
+          const lineCount = card.code.split('\n').length;
+          for (let ln = 1; ln <= lineCount; ln++) {
+            const rowEl = document.getElementById(`${card.id}_l${ln}`);
+            const valEl = document.getElementById(`v_${card.id}_l${ln}`);
+            if (!rowEl || !valEl) continue;
+            const entry = traceMap.get(`${card.id}:${ln}`);
+            if (entry) {
+              rowEl.className = `ard-row exec-${entry.color}`;
+              valEl.textContent = entry.text;
+            } else {
+              rowEl.className = 'ard-row';
+              valEl.textContent = '-';
+            }
+          }
+        }
+      }
+
       function runCore1MovementLoop() {
         const now = performance.now();
 
@@ -1502,21 +2401,26 @@
         const isAlive = hasSource && (pktAge <= FAILSAFE_MS);
         core1.isAlive = isAlive;
 
-        let nx = 0, ny = 0, nr = 0;
-        let rawFL = 0, rawFR = 0, rawRL = 0, rawRR = 0;
-        let maxMag = 0;
-        let normalizedOverflow = false;
+        const traceMap = new Map();
+        const onTrace = (cardId, lineNo, text, color = 'teal') => {
+          traceMap.set(`${cardId}:${lineNo}`, { text, color });
+        };
+        const onCond = (cardId, lineNo, boolVal) => {
+          traceMap.set(`${cardId}:${lineNo}`, {
+            text: boolVal ? 'true' : 'false',
+            color: boolVal ? 'amber' : 'teal'
+          });
+          return boolVal;
+        };
+        const onRet = (cardId, lineNo, retVal) => {
+          traceMap.set(`${cardId}:${lineNo}`, {
+            text: `ret:${formatTraceValue(retVal)}`,
+            color: 'green'
+          });
+          return retVal;
+        };
+
         let isMoving = false;
-
-        let resScaleFL = { pwm: 0, mag: 0, rawPwm: 0, deadband: true };
-        let resScaleFR = { pwm: 0, mag: 0, rawPwm: 0, deadband: true };
-        let resScaleRL = { pwm: 0, mag: 0, rawPwm: 0, deadband: true };
-        let resScaleRR = { pwm: 0, mag: 0, rawPwm: 0, deadband: true };
-
-        let resRampFL = { next: 0, branch: 'steady', step: 0, norm: 0 };
-        let resRampFR = { next: 0, branch: 'steady', step: 0, norm: 0 };
-        let resRampRL = { next: 0, branch: 'steady', step: 0, norm: 0 };
-        let resRampRR = { next: 0, branch: 'steady', step: 0, norm: 0 };
 
         if (!isAlive) {
           core1.tgt = { fl: 0, fr: 0, rl: 0, rr: 0 };
@@ -1527,48 +2431,35 @@
         } else {
           core1.firePin = Boolean(core1.activeCmd.flags & 0x01);
           core1.defendPin = Boolean(core1.activeCmd.flags & 0x02);
+          isMoving = (core1.activeCmd.x !== 0 || core1.activeCmd.y !== 0 || core1.activeCmd.r !== 0);
 
-          nx = clamp(core1.activeCmd.x / SLIDER_MAX, -1.0, 1.0);
-          ny = clamp(core1.activeCmd.y / SLIDER_MAX, -1.0, 1.0);
-          nr = clamp(core1.activeCmd.r / SLIDER_MAX, -1.0, 1.0);
+          if (compiledStepFn) {
+            try {
+              const out = compiledStepFn(
+                { x: core1.activeCmd.x, y: core1.activeCmd.y, r: core1.activeCmd.r },
+                {
+                  tgtFL: core1.tgt.fl, tgtFR: core1.tgt.fr, tgtRL: core1.tgt.rl, tgtRR: core1.tgt.rr,
+                  curFL: core1.cur.fl, curFR: core1.cur.fr, curRL: core1.cur.rl, curRR: core1.cur.rr
+                },
+                onTrace,
+                onCond,
+                onRet,
+                formatTraceValue
+              );
+              core1.tgt.fl = clamp(Math.round(out.tgtFL || 0), -255, 255);
+              core1.tgt.fr = clamp(Math.round(out.tgtFR || 0), -255, 255);
+              core1.tgt.rl = clamp(Math.round(out.tgtRL || 0), -255, 255);
+              core1.tgt.rr = clamp(Math.round(out.tgtRR || 0), -255, 255);
 
-          isMoving = (nx !== 0 || ny !== 0 || nr !== 0);
-
-          if (isMoving) {
-            rawFL = ny + nx + nr;
-            rawFR = ny - nx - nr;
-            rawRL = ny - nx + nr;
-            rawRR = ny + nx - nr;
-
-            maxMag = Math.max(Math.abs(rawFL), Math.abs(rawFR), Math.abs(rawRL), Math.abs(rawRR));
-            if (maxMag > 1.0) {
-              normalizedOverflow = true;
-              rawFL /= maxMag;
-              rawFR /= maxMag;
-              rawRL /= maxMag;
-              rawRR /= maxMag;
+              core1.cur.fl = clamp(Math.round(out.curFL || 0), -255, 255);
+              core1.cur.fr = clamp(Math.round(out.curFR || 0), -255, 255);
+              core1.cur.rl = clamp(Math.round(out.curRL || 0), -255, 255);
+              core1.cur.rr = clamp(Math.round(out.curRR || 0), -255, 255);
+            } catch {
+              // Keep safe zero output if runtime throws
+              core1.cur = { fl: 0, fr: 0, rl: 0, rr: 0 };
             }
           }
-
-          resScaleFL = ratioToPWMTraced(rawFL, MIN_PWM);
-          resScaleFR = ratioToPWMTraced(rawFR, MIN_PWM);
-          resScaleRL = ratioToPWMTraced(rawRL, MIN_PWM);
-          resScaleRR = ratioToPWMTraced(rawRR, MIN_PWM);
-
-          core1.tgt.fl = resScaleFL.pwm;
-          core1.tgt.fr = resScaleFR.pwm;
-          core1.tgt.rl = resScaleRL.pwm;
-          core1.tgt.rr = resScaleRR.pwm;
-
-          resRampFL = rampPWMTraced(core1.cur.fl, core1.tgt.fl, MIN_PWM);
-          resRampFR = rampPWMTraced(core1.cur.fr, core1.tgt.fr, MIN_PWM);
-          resRampRL = rampPWMTraced(core1.cur.rl, core1.tgt.rl, MIN_PWM);
-          resRampRR = rampPWMTraced(core1.cur.rr, core1.tgt.rr, MIN_PWM);
-
-          core1.cur.fl = resRampFL.next;
-          core1.cur.fr = resRampFR.next;
-          core1.cur.rl = resRampRL.next;
-          core1.cur.rr = resRampRR.next;
 
           core1.braking.fl = isMoving && core1.cur.fl === 0;
           core1.braking.fr = isMoving && core1.cur.fr === 0;
@@ -1648,13 +2539,7 @@
 
         if (currentView !== 'ctrl') {
           updateWheelBarsAndHud(anyDrive, allBrake);
-          updateArduinoCodeBlocks(
-            nx, ny, nr,
-            rawFL, rawFR, rawRL, rawRR,
-            maxMag, normalizedOverflow, isMoving,
-            [resScaleFL, resScaleFR, resScaleRL, resScaleRR],
-            [resRampFL, resRampFR, resRampRL, resRampRR]
-          );
+          applyLineTracesToDOM(traceMap);
         }
       }
 
@@ -1696,7 +2581,7 @@
             w.card.style.borderColor = w.pwm !== 0 ? '#525252' : '#262626';
             w.valEl.textContent = w.pwm > 0 ? `+${w.pwm}` : `${w.pwm}`;
             w.valEl.style.color = '#ffffff';
-            const pct = (Math.abs(w.pwm) / MAX_PWM) * 50;
+            const pct = clamp((Math.abs(w.pwm) / MAX_PWM) * 50, 0, 50);
             if (w.pwm >= 0) {
               w.barEl.style.left = '50%';
               w.barEl.style.width = `${pct}%`;
@@ -1707,114 +2592,6 @@
               w.barEl.style.backgroundColor = '#a3a3a3';
             }
           }
-        }
-      }
-
-      // ==================== REAL-TIME ARDUINO IDE 3-BLOCK TRACER ====================
-      function updateArduinoCodeBlocks(nx, ny, nr, fl, fr, rl, rr, maxMag, overflow, isMoving, scaleList, rampList) {
-        const inputActive = (nx !== 0 || ny !== 0 || nr !== 0);
-        const anyCurNonZero = (core1.cur.fl !== 0 || core1.cur.fr !== 0 || core1.cur.rl !== 0 || core1.cur.rr !== 0);
-
-        // --- BLOCK 1: motorControlTask.ino ---
-        setArdRowHL(b1Lines[1], nx !== 0 ? 'exec-teal' : '');
-        b1Vals[1].textContent = `x:${nx.toFixed(2)}`;
-
-        setArdRowHL(b1Lines[2], ny !== 0 ? 'exec-teal' : '');
-        b1Vals[2].textContent = `y:${ny.toFixed(2)}`;
-
-        setArdRowHL(b1Lines[3], nr !== 0 ? 'exec-teal' : '');
-        b1Vals[3].textContent = `r:${nr.toFixed(2)}`;
-
-        setArdRowHL(b1Lines[4], inputActive ? 'exec-teal' : '');
-        b1Vals[4].textContent = `fl:${fl.toFixed(2)} fr:${fr.toFixed(2)}`;
-
-        setArdRowHL(b1Lines[5], inputActive ? 'exec-teal' : '');
-        b1Vals[5].textContent = `rl:${rl.toFixed(2)} rr:${rr.toFixed(2)}`;
-
-        setArdRowHL(b1Lines[6], inputActive ? 'exec-teal' : '');
-        b1Vals[6].textContent = `max:${maxMag.toFixed(2)}`;
-
-        setArdRowHL(b1Lines[7], overflow ? 'exec-amber' : '');
-        b1Vals[7].textContent = overflow ? 'SCALED /maxMag' : 'norm:off';
-
-        setArdRowHL(b1Lines[8], (core1.tgt.fl !== 0 || core1.tgt.fr !== 0) ? 'exec-teal' : '');
-        b1Vals[8].textContent = `${core1.tgt.fl} / ${core1.tgt.fr}`;
-
-        setArdRowHL(b1Lines[9], (core1.tgt.rl !== 0 || core1.tgt.rr !== 0) ? 'exec-teal' : '');
-        b1Vals[9].textContent = `${core1.tgt.rl} / ${core1.tgt.rr}`;
-
-        setArdRowHL(b1Lines[10], (core1.cur.fl !== 0 || core1.cur.fr !== 0) ? 'exec-green' : '');
-        b1Vals[10].textContent = `${core1.cur.fl} / ${core1.cur.fr}`;
-
-        setArdRowHL(b1Lines[11], (core1.cur.rl !== 0 || core1.cur.rr !== 0) ? 'exec-green' : '');
-        b1Vals[11].textContent = `${core1.cur.rl} / ${core1.cur.rr}`;
-
-        const anyBrake = core1.braking.fl || core1.braking.fr || core1.braking.rl || core1.braking.rr;
-        setArdRowHL(b1Lines[12], anyBrake ? 'exec-red' : (anyCurNonZero ? 'exec-green' : ''));
-        b1Vals[12].textContent = anyBrake ? 'BRAKE' : (anyCurNonZero ? 'DRIVE' : 'COAST');
-
-        // --- BLOCK 2: ratioToPWM.ino (Inspects most active wheel) ---
-        let repScale = scaleList[0];
-        let repRatio = fl;
-        const ratios = [fl, fr, rl, rr];
-        for (let i = 0; i < 4; i++) {
-          if (Math.abs(ratios[i]) > Math.abs(repRatio)) {
-            repRatio = ratios[i];
-            repScale = scaleList[i];
-          }
-        }
-
-        b2Vals[1].textContent = `in:${repRatio.toFixed(2)}`;
-        setArdRowHL(b2Lines[2], !repScale.deadband ? 'exec-teal' : '');
-        b2Vals[2].textContent = `mag:${repScale.mag.toFixed(2)}`;
-
-        if (repScale.deadband) {
-          setArdRowHL(b2Lines[3], 'exec-red');
-          b2Vals[3].textContent = 'return 0';
-          setArdRowHL(b2Lines[4], ''); b2Vals[4].textContent = '-';
-          setArdRowHL(b2Lines[5], ''); b2Vals[5].textContent = '-';
-          setArdRowHL(b2Lines[6], ''); b2Vals[6].textContent = '-';
-        } else {
-          setArdRowHL(b2Lines[3], ''); b2Vals[3].textContent = 'false';
-          setArdRowHL(b2Lines[4], 'exec-teal'); b2Vals[4].textContent = `pwm:${repScale.rawPwm}`;
-          setArdRowHL(b2Lines[5], 'exec-teal'); b2Vals[5].textContent = `[20..150]`;
-          setArdRowHL(b2Lines[6], 'exec-green'); b2Vals[6].textContent = `out:${repScale.pwm}`;
-        }
-
-        // --- BLOCK 3: rampPWM.ino (Inspects active wheel ramp branch) ---
-        let repIdx = 0;
-        for (let i = 1; i < 4; i++) {
-          if (rampList[i].branch !== 'steady' && rampList[repIdx].branch === 'steady') repIdx = i;
-          else if (Math.abs(core1.tgt[['fl','fr','rl','rr'][i]]) > Math.abs(core1.tgt[['fl','fr','rl','rr'][repIdx]])) repIdx = i;
-        }
-        const keys = ['fl', 'fr', 'rl', 'rr'];
-        const repCur = core1.cur[keys[repIdx]];
-        const repTgt = core1.tgt[keys[repIdx]];
-        const repRamp = rampList[repIdx];
-
-        b3Vals[1].textContent = `${repCur} -> ${repTgt}`;
-
-        for (let i = 2; i <= 12; i++) {
-          setArdRowHL(b3Lines[i], '');
-          if (i !== 11) b3Vals[i].textContent = '-';
-        }
-
-        if (repRamp.branch === 'steady') {
-          setArdRowHL(b3Lines[2], anyCurNonZero ? 'exec-teal' : '');
-          b3Vals[2].textContent = `return ${repTgt}`;
-        } else if (repRamp.branch === 'zerocross') {
-          setArdRowHL(b3Lines[3], 'exec-amber'); b3Vals[3].textContent = 'true';
-          setArdRowHL(b3Lines[4], 'exec-amber'); b3Vals[4].textContent = `step:-15 -> ${repRamp.next}`;
-        } else if (repRamp.branch === 'preload') {
-          setArdRowHL(b3Lines[5], 'exec-amber'); b3Vals[5].textContent = 'true';
-          setArdRowHL(b3Lines[6], 'exec-amber'); b3Vals[6].textContent = `jump -> ${repRamp.next}`;
-        } else if (repRamp.branch === 'logaccel') {
-          setArdRowHL(b3Lines[7], 'exec-green'); b3Vals[7].textContent = 'true';
-          setArdRowHL(b3Lines[8], 'exec-green'); b3Vals[8].textContent = `norm:${repRamp.norm.toFixed(2)}`;
-          setArdRowHL(b3Lines[9], 'exec-green'); b3Vals[9].textContent = `step:+${repRamp.step}`;
-          setArdRowHL(b3Lines[10], 'exec-green'); b3Vals[10].textContent = `out:${repRamp.next}`;
-        } else if (repRamp.branch === 'decel') {
-          setArdRowHL(b3Lines[12], 'exec-amber'); b3Vals[12].textContent = `step:-15 -> ${repRamp.next}`;
         }
       }
 
@@ -2001,7 +2778,7 @@
       }
 
       // =========================================================================
-      // PART B: MINIMALIST WEB CONTROLLER (WITH CLIENT ID & ACCESS HANDSHAKE)
+      // PART C: MINIMALIST WEB CONTROLLER (WITH ROOM CODE & OWNER KEY PIN)
       // =========================================================================
       const ctrlState = { x: 0, y: 0, r: 0, fire: false, defend: false };
       let ctrlJoyMode = false;
@@ -2017,6 +2794,7 @@
 
       const cEl = {
         roomInput: document.getElementById('ctrlRoomInput'),
+        keyInput: document.getElementById('ctrlKeyInput'),
         connectBtn: document.getElementById('ctrlConnectBtn'),
         selfIdBadge: document.getElementById('ctrlSelfIdBadge'),
         dockClientIdTag: document.getElementById('dockClientIdTag'),
@@ -2082,7 +2860,7 @@
             navigator.wakeLock.request('screen').then(wl => ctrlWakeLock = wl).catch(() => {});
           }
         } else if (msg.type === 'REJECTED' || msg.type === 'KICKED') {
-          const label = msg.reason ? `REJECTED (${msg.reason})` : 'DISCONNECTED';
+          const label = msg.reason ? `REJECTED: ${msg.reason}` : 'DISCONNECTED';
           disconnectController(label, 'rejected');
         }
       }
@@ -2113,28 +2891,39 @@
         cEl.connectBtn.classList.add('active');
       }
 
-      function connectControllerToRoom(rawRoom) {
+      function connectControllerToRoom(rawRoom, rawKey = '', isEmbeddedSplit = false) {
         const cleanDigits = String(rawRoom || '').replace(/\D/g, '').slice(-4);
+        const cleanKey = String(rawKey || '').replace(/\D/g, '').slice(-4);
         if (cleanDigits.length !== 4) {
           showToast('Enter a 4-digit room code.');
           return;
         }
         cEl.roomInput.value = cleanDigits;
+        if (cleanKey) cEl.keyInput.value = cleanKey;
+
         setCtrlStatus('CONNECTING...', 'pending');
         cEl.connectBtn.textContent = 'CANCEL';
         cEl.connectBtn.classList.remove('active');
 
-        // 1. Same-browser BroadcastChannel handshake (works offline & in Split View)
+        const helloPayload = {
+          type: 'HELLO',
+          clientId: myClientId,
+          room: cleanDigits,
+          ownerKey: cleanKey,
+          isEmbeddedSplit
+        };
+
+        // 1. Same-browser BroadcastChannel handshake (Split View & local tabs)
         if ('BroadcastChannel' in window) {
           try {
             if (ctrlBusChannel) ctrlBusChannel.close();
             ctrlBusChannel = new BroadcastChannel(`team14-room-${cleanDigits}`);
             ctrlBusChannel.onmessage = (ev) => handleHostControlSignal(ev.data);
-            ctrlBusChannel.postMessage({ type: 'HELLO', clientId: myClientId, room: cleanDigits });
+            ctrlBusChannel.postMessage(helloPayload);
           } catch {}
         }
 
-        // 2. Remote PeerJS WebRTC handshake (for external mobile phone)
+        // 2. Remote PeerJS WebRTC handshake (external mobile phone)
         const isSamePageHost = (!isOpenedAsPhoneController && cleanDigits === simRoomDigits);
         if (!isSamePageHost && typeof Peer !== 'undefined') {
           try {
@@ -2143,7 +2932,7 @@
             ctrlPeer.on('open', () => {
               ctrlConn = ctrlPeer.connect(`team14-sim-${cleanDigits}`, { reliable: true });
               ctrlConn.on('open', () => {
-                ctrlConn.send({ type: 'HELLO', clientId: myClientId, room: cleanDigits });
+                ctrlConn.send(helloPayload);
               });
               ctrlConn.on('data', (data) => {
                 if (data && typeof data === 'object') handleHostControlSignal(data);
@@ -2162,8 +2951,12 @@
       }
 
       cEl.connectBtn.addEventListener('click', () => {
-        if (ctrlConnected || ctrlPendingApproval) disconnectController();
-        else connectControllerToRoom(cEl.roomInput.value);
+        if (ctrlConnected || ctrlPendingApproval) {
+          disconnectController();
+        } else {
+          const isSplit = (currentView === 'split');
+          connectControllerToRoom(cEl.roomInput.value, cEl.keyInput.value, isSplit);
+        }
       });
 
       function runCtrlTxLoop() {
@@ -2398,9 +3191,17 @@
       window.addEventListener('resize', resizeArenaCanvas);
 
       window.onload = function () {
+        const paramKey = (urlParams.get('key') && /^\d{4}$/.test(urlParams.get('key')))
+          ? urlParams.get('key')
+          : '';
+
         cEl.roomInput.value = simRoomDigits;
+        cEl.keyInput.value = isOpenedAsPhoneController ? paramKey : ownerKey;
         cEl.selfIdBadge.textContent = myClientId;
         cEl.dockClientIdTag.textContent = myClientId;
+
+        renderArduinoWorkspaceCards();
+        compileAllArduinoCode(true);
 
         renderAccessControlUI();
         setViewMode(currentView);
@@ -2409,7 +3210,7 @@
         initHostPairing();
 
         if (isOpenedAsPhoneController && urlParams.get('room')) {
-          connectControllerToRoom(urlParams.get('room'));
+          connectControllerToRoom(urlParams.get('room'), paramKey, false);
         }
 
         setInterval(runKeyboardFallbackLoop, WEB_LOOP_MS);
