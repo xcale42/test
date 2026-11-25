@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="zh-Hant">
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
-  <title>Team14 ESP32 雙核即時模擬器 &amp; Web Controller</title>
+  <title>Team14 Mecanum Simulator</title>
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- PeerJS (WebRTC DataChannel for Wireless Phone Pairing) -->
@@ -13,18 +13,17 @@
   <!-- Inter & JetBrains Mono Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
 
   <style>
     :root {
-      --sim-bg: #0b0d12;
-      --sim-panel: #12161f;
-      --sim-inner: #0d1017;
-      --sim-border: #232938;
-      --ctrl-bg: #000000;
-      --ctrl-panel: #111111;
-      --ctrl-border: #3a3a3a;
-      --thumb-size: clamp(38px, 11dvh, 50px);
+      --bg-base: #000000;
+      --bg-panel: #0e0e0e;
+      --bg-sub: #141414;
+      --border-line: #262626;
+      --text-main: #ffffff;
+      --text-muted: #8a8a8a;
+      --thumb-size: clamp(38px, 11dvh, 48px);
     }
 
     * {
@@ -40,8 +39,8 @@
       padding: 0;
       width: 100%;
       height: 100%;
-      background-color: var(--sim-bg);
-      color: #f1f5f9;
+      background-color: var(--bg-base);
+      color: var(--text-main);
       font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       overflow-x: hidden;
     }
@@ -55,7 +54,7 @@
 
     body.view-ctrl {
       height: 100dvh;
-      background-color: var(--ctrl-bg);
+      background-color: #000000;
       overflow: hidden;
       touch-action: none;
     }
@@ -65,184 +64,176 @@
       font-variant-numeric: tabular-nums;
     }
 
-    /* ==================== SIMULATOR PANELS & BADGES ==================== */
-    .sim-panel {
-      background: var(--sim-panel);
-      border: 1px solid var(--sim-border);
-      border-radius: 12px;
+    /* ==================== MINIMALIST DARK SHELL PANELS ==================== */
+    .min-panel {
+      background: var(--bg-panel);
+      border: 1px solid var(--border-line);
+      border-radius: 10px;
     }
 
-    .sim-subpanel {
-      background: var(--sim-inner);
-      border: 1px solid #1e2432;
-      border-radius: 9px;
-    }
-
-    /* Battery Badge with exact .holding dim border sync */
-    .bat-badge {
+    .min-btn {
       background: #000000;
-      border: 1.5px solid #ffffff;
       color: #ffffff;
-      transition: border-color 0.25s ease, color 0.25s ease, opacity 0.25s ease;
+      border: 1px solid #2e2e2e;
+      border-radius: 7px;
+      padding: 5px 10px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: background-color 0.12s ease, border-color 0.12s ease, color 0.12s ease;
     }
-    .bat-badge.warn { color: #d4d4d8; border-color: #888888; }
-    .bat-badge.low  { color: #ef4444; border-color: #ef4444; border-style: dashed; }
-    .bat-badge.holding {
-      border-color: #242424 !important;
-      color: #94a3b8;
+    .min-btn:hover {
+      border-color: #666666;
+    }
+    .min-btn.active {
+      background: #ffffff;
+      color: #000000;
+      border-color: #ffffff;
     }
 
-    /* ==================== LIVE C++ CODE LINE TRACER ==================== */
-    .code-line {
+    /* ==================== ARDUINO IDE 2.x DEFAULT LIGHT THEME BLOCKS ==================== */
+    .arduino-card {
+      background: #ffffff;
+      border: 1px solid #d1d5db;
+      border-radius: 8px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      color: #24292e;
+    }
+
+    .arduino-tabbar {
+      background: #f3f4f6;
+      border-bottom: 1px solid #e5e7eb;
+      display: flex;
+      align-items: stretch;
+      justify-content: space-between;
+      padding-right: 10px;
+      flex-shrink: 0;
+    }
+
+    .arduino-tab {
+      background: #ffffff;
+      border-top: 2.5px solid #00979c;
+      border-right: 1px solid #e5e7eb;
+      padding: 5px 12px;
+      font-size: 11px;
+      font-weight: 700;
+      color: #111827;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .arduino-editor {
+      background: #ffffff;
+      overflow-x: auto;
+      overflow-y: auto;
+      flex: 1;
+    }
+
+    .ard-row {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      gap: 6px;
-      padding: 2px 7px 2px 5px;
+      min-height: 20px;
+      padding-right: 8px;
       border-left: 3px solid transparent;
-      border-radius: 0 5px 5px 0;
       font-size: 11px;
-      line-height: 1.42;
-      color: #94a3b8;
-      transition: background-color 0.08s ease, border-color 0.08s ease, color 0.08s ease;
+      line-height: 1.45;
+      transition: background-color 0.07s ease, border-color 0.07s ease;
       white-space: nowrap;
-      overflow: hidden;
     }
 
-    .code-line .ln {
-      display: inline-block;
-      width: 17px;
+    .ard-gutter {
+      background: #f8f9fa;
+      color: #9ca3af;
+      border-right: 1px solid #eceef1;
+      width: 28px;
+      padding: 1px 6px 1px 0;
       text-align: right;
-      color: #475569;
-      margin-right: 6px;
       flex-shrink: 0;
       font-size: 10px;
+      margin-right: 8px;
     }
 
-    .code-line .src {
-      overflow: hidden;
-      text-overflow: ellipsis;
+    .ard-code {
       flex: 1;
       min-width: 0;
+      color: #24292e;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
 
-    .code-line .val-badge {
+    .ard-val {
       flex-shrink: 0;
+      margin-left: 8px;
       font-size: 10px;
-      font-weight: 700;
+      font-weight: 600;
       padding: 0 5px;
       border-radius: 4px;
-      background: rgba(15, 23, 42, 0.85);
-      border: 1px solid #334155;
-      color: #cbd5e1;
-      opacity: 0.75;
-      transition: all 0.08s ease;
+      background: #f3f4f6;
+      border: 1px solid #e5e7eb;
+      color: #6b7280;
+      transition: all 0.07s ease;
     }
 
-    /* Color-Coded Execution States */
-    .code-line.hl-cyan {
-      background: rgba(56, 189, 248, 0.16);
-      border-left-color: #38bdf8;
-      color: #f8fafc;
+    /* Arduino IDE 2.x Authentic Syntax Highlighting */
+    .ard-type { color: #00979c; font-weight: 600; }
+    .ard-ctrl { color: #d35400; font-weight: 600; }
+    .ard-num  { color: #005cc5; }
+    .ard-cm   { color: #7e8e91; font-style: italic; }
+
+    /* Live Execution Line Highlights on Arduino White Canvas */
+    .ard-row.exec-teal {
+      background: #e0f7fa;
+      border-left-color: #00979c;
     }
-    .code-line.hl-cyan .val-badge {
-      background: rgba(56, 189, 248, 0.22);
-      border-color: #38bdf8;
-      color: #7dd3fc;
-      opacity: 1;
+    .ard-row.exec-teal .ard-val {
+      background: #ccf2f4;
+      border-color: #00979c;
+      color: #006669;
     }
 
-    .code-line.hl-red {
-      background: rgba(239, 68, 68, 0.22);
-      border-left-color: #ef4444;
-      color: #ffffff;
+    .ard-row.exec-green {
+      background: #dcfce7;
+      border-left-color: #16a34a;
     }
-    .code-line.hl-red .val-badge {
-      background: rgba(239, 68, 68, 0.28);
-      border-color: #ef4444;
-      color: #fca5a5;
-      opacity: 1;
+    .ard-row.exec-green .ard-val {
+      background: #bbf7d0;
+      border-color: #16a34a;
+      color: #14532d;
     }
 
-    .code-line.hl-amber {
-      background: rgba(245, 158, 11, 0.19);
-      border-left-color: #f59e0b;
-      color: #ffffff;
+    .ard-row.exec-amber {
+      background: #fef3c7;
+      border-left-color: #d97706;
     }
-    .code-line.hl-amber .val-badge {
-      background: rgba(245, 158, 11, 0.26);
-      border-color: #f59e0b;
-      color: #fcd34d;
-      opacity: 1;
+    .ard-row.exec-amber .ard-val {
+      background: #fde68a;
+      border-color: #d97706;
+      color: #78350f;
     }
 
-    .code-line.hl-purple {
-      background: rgba(168, 85, 247, 0.20);
-      border-left-color: #a855f7;
-      color: #ffffff;
+    .ard-row.exec-red {
+      background: #fee2e2;
+      border-left-color: #dc2626;
     }
-    .code-line.hl-purple .val-badge {
-      background: rgba(168, 85, 247, 0.26);
-      border-color: #a855f7;
-      color: #e9d5ff;
-      opacity: 1;
+    .ard-row.exec-red .ard-val {
+      background: #fecaca;
+      border-color: #dc2626;
+      color: #7f1d1d;
     }
 
-    .code-line.hl-green {
-      background: rgba(34, 197, 94, 0.18);
-      border-left-color: #22c55e;
-      color: #ffffff;
-    }
-    .code-line.hl-green .val-badge {
-      background: rgba(34, 197, 94, 0.25);
-      border-color: #22c55e;
-      color: #86efac;
-      opacity: 1;
-    }
-
-    .code-line.hl-orange {
-      background: rgba(249, 115, 22, 0.18);
-      border-left-color: #f97316;
-      color: #ffffff;
-    }
-    .code-line.hl-orange .val-badge {
-      background: rgba(249, 115, 22, 0.25);
-      border-color: #f97316;
-      color: #fdba74;
-      opacity: 1;
-    }
-
-    .code-line.hl-blue {
-      background: rgba(59, 130, 246, 0.20);
-      border-left-color: #3b82f6;
-      color: #ffffff;
-    }
-    .code-line.hl-blue .val-badge {
-      background: rgba(59, 130, 246, 0.26);
-      border-color: #3b82f6;
-      color: #93c5fd;
-      opacity: 1;
-    }
-
-    .code-line.hl-soft {
-      background: rgba(148, 163, 184, 0.08);
-      border-left-color: #64748b;
-      color: #e2e8f0;
-    }
-
-    /* C++ Syntax Tinting */
-    .kw { color: #c084fc; }
-    .fn { color: #60a5fa; }
-    .cm { color: #64748b; font-style: italic; }
-    .num { color: #fbbf24; }
-
-    /* ==================== ORIGINAL TEAM14 DARK MINIMAL WEB CONTROLLER ==================== */
+    /* ==================== MINIMALIST WEB CONTROLLER UI ==================== */
     .ctrl-app {
       display: flex;
       flex-direction: column;
       width: 100%;
       height: 100%;
-      background: var(--ctrl-bg);
+      background: #000000;
       color: #ffffff;
       padding: max(8px, env(safe-area-inset-top))
                max(10px, env(safe-area-inset-right))
@@ -257,8 +248,8 @@
       align-items: center;
       justify-content: space-between;
       gap: 6px;
-      background: var(--ctrl-panel);
-      border: 1px solid var(--ctrl-border);
+      background: #0e0e0e;
+      border: 1px solid #262626;
       border-radius: 10px;
       padding: 6px 8px;
       overflow-x: auto;
@@ -266,85 +257,43 @@
     }
     .ctrl-topbar::-webkit-scrollbar { display: none; }
 
-    .ctrl-btn {
-      background: #000000;
-      color: #ffffff;
-      border: 1px solid var(--ctrl-border);
-      border-radius: 7px;
-      padding: 6px 9px;
-      font-size: 11.5px;
-      font-weight: 700;
-      letter-spacing: 0.04em;
-      cursor: pointer;
-      white-space: nowrap;
-      touch-action: manipulation;
-      outline: none;
-    }
-    .ctrl-btn.primary, .ctrl-btn.active {
-      background: #ffffff;
-      color: #000000;
-      border-color: #ffffff;
-    }
-    .ctrl-btn.danger {
-      background: #000000;
-      color: #ffffff;
-      border: 1px solid #ffffff;
-    }
-
     .ctrl-room-input {
       background: #000000;
       color: #ffffff;
-      border: 1px solid var(--ctrl-border);
+      border: 1px solid #2e2e2e;
       border-radius: 7px;
       padding: 5px 6px;
-      font-size: 11.5px;
+      font-size: 11px;
       font-weight: 700;
-      width: 66px;
+      width: 58px;
       text-align: center;
-      text-transform: uppercase;
       outline: none;
       user-select: text;
       -webkit-user-select: text;
     }
     .ctrl-room-input:focus { border-color: #ffffff; }
 
-    .ctrl-badge {
-      font-size: 11.5px;
-      font-weight: 600;
-      padding: 5px 8px;
-      border-radius: 7px;
-      background: #000000;
-      border: 1px solid var(--ctrl-border);
-      color: #888888;
-      white-space: nowrap;
-      font-variant-numeric: tabular-nums;
-      transition: border-color 0.25s ease, color 0.25s ease;
-    }
-    .ctrl-badge.ok   { color: #ffffff; border-color: #ffffff; }
-    .ctrl-badge.warn { color: #cccccc; border-color: #888888; }
-    .ctrl-badge.low  { color: #ffffff; border-color: #ffffff; border-style: dashed; }
-    .ctrl-badge.holding { border-color: #242424 !important; }
-
-    .ctrl-conn-status {
+    .ctrl-conn-pill {
       display: inline-flex;
       align-items: center;
       gap: 6px;
-      font-size: 11px;
+      font-size: 10.5px;
       font-weight: 700;
-      letter-spacing: 0.08em;
+      letter-spacing: 0.06em;
       padding: 3px 10px;
       border-radius: 999px;
-      background: var(--ctrl-panel);
-      border: 1px solid #ef4444;
-      color: #ef4444;
+      background: #0e0e0e;
+      border: 1px solid #333333;
+      color: #8a8a8a;
     }
-    .ctrl-conn-status.connected { color: #22c55e; border-color: #22c55e; }
-    .ctrl-conn-status.connecting { color: #f59e0b; border-color: #f59e0b; }
+    .ctrl-conn-pill.connected { color: #22c55e; border-color: #22c55e; }
+    .ctrl-conn-pill.pending   { color: #f59e0b; border-color: #f59e0b; }
+    .ctrl-conn-pill.rejected  { color: #ef4444; border-color: #ef4444; }
 
     .ctrl-track {
       position: relative;
-      background: var(--ctrl-panel);
-      border: 1.5px solid var(--ctrl-border);
+      background: #0e0e0e;
+      border: 1.5px solid #2e2e2e;
       border-radius: 999px;
       touch-action: none;
       transition: opacity 0.2s;
@@ -361,34 +310,34 @@
       position: relative;
       width: clamp(130px, 46dvh, 190px);
       height: clamp(130px, 46dvh, 190px);
-      background: radial-gradient(circle, #181818 60%, #050505 100%);
-      border: 1.5px solid var(--ctrl-border);
+      background: radial-gradient(circle, #141414 60%, #050505 100%);
+      border: 1.5px solid #2e2e2e;
       border-radius: 50%;
       touch-action: none;
       transition: opacity 0.2s;
     }
 
-    /* Compact sizing when docked inside Split View */
+    /* Compact sizing when docked in Split View */
     .split-docked .ctrl-track-v {
-      width: 52px;
+      width: 50px;
       height: clamp(125px, 34dvh, 170px);
     }
     .split-docked .ctrl-track-h {
-      width: clamp(105px, 11vw, 145px);
-      height: 48px;
+      width: clamp(100px, 10.5vw, 140px);
+      height: 46px;
     }
     .split-docked .ctrl-joy-pad {
-      width: clamp(125px, 24dvh, 160px);
-      height: clamp(125px, 24dvh, 160px);
+      width: clamp(120px, 24dvh, 155px);
+      height: clamp(120px, 24dvh, 155px);
     }
     .split-docked .ctrl-act-btn {
-      width: 78px;
-      height: 46px;
+      width: 76px;
+      height: 44px;
       font-size: 12px;
     }
     .split-docked .ctrl-thumb {
-      width: 38px;
-      height: 38px;
+      width: 36px;
+      height: 36px;
     }
 
     .ctrl-thumb {
@@ -398,10 +347,11 @@
       height: var(--thumb-size);
       border-radius: 50%;
       background: #ffffff;
-      box-shadow: 0 0 10px rgba(255, 255, 255, 0.35);
+      box-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
       transform: translate(-50%, -50%);
       pointer-events: none;
     }
+
     .ctrl-act-btn {
       width: clamp(82px, 15vw, 108px);
       height: clamp(46px, 17dvh, 60px);
@@ -409,9 +359,9 @@
       font-size: 13px;
       font-weight: 800;
       letter-spacing: 0.06em;
-      background: var(--ctrl-panel);
+      background: #0e0e0e;
       color: #ffffff;
-      border: 1.5px solid var(--ctrl-border);
+      border: 1.5px solid #2e2e2e;
       outline: none;
       cursor: pointer;
     }
@@ -421,21 +371,19 @@
       border-color: #ffffff;
       transform: scale(0.96);
     }
-    .ctrl-disabled { opacity: 0.28; pointer-events: none; }
+    .ctrl-disabled { opacity: 0.25; pointer-events: none; }
 
     /* Custom Scrollbar */
     ::-webkit-scrollbar { width: 5px; height: 5px; }
-    ::-webkit-scrollbar-track { background: #0d1017; }
-    ::-webkit-scrollbar-thumb { background: #2d3748; border-radius: 99px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #333333; border-radius: 99px; }
 
-    /* QR Box Styling */
     #qrContainer img, #qrContainer canvas {
       display: block;
       margin: 0 auto;
       border-radius: 6px;
     }
 
-    /* User-selectable text inputs */
     .selectable-input {
       user-select: text;
       -webkit-user-select: text;
@@ -444,97 +392,126 @@
 </head>
 <body class="view-sim">
 
-  <!-- Non-blocking Toast Banner (Replaces alert/confirm) -->
-  <div id="toastBox" class="fixed bottom-4 left-1/2 -translate-x-1/2 z-[100] hidden px-4 py-2 rounded-lg bg-[#1e293b] border border-[#38bdf8] text-white text-xs font-semibold shadow-2xl"></div>
+  <!-- Non-blocking Minimal Toast Banner -->
+  <div id="toastBox" class="fixed bottom-4 left-1/2 -translate-x-1/2 z-[100] hidden px-4 py-2 rounded-lg bg-[#141414] border border-[#ffffff] text-white text-xs font-semibold shadow-2xl"></div>
 
   <!-- ========================================================================= -->
-  <!-- MAIN SHELL                                                                -->
+  <!-- MAIN APPLICATION SHELL                                                    -->
   <!-- ========================================================================= -->
   <div id="rootShell" class="flex flex-col w-full lg:h-[100dvh] p-2.5 gap-2.5">
 
-    <!-- ==================== SIMULATOR TOP BAR (HIDDEN IN FULL CONTROLLER VIEW) ==================== -->
-    <header id="simHeader" class="sim-panel flex flex-wrap items-center justify-between gap-2 px-3 py-2 shrink-0">
-      <div class="flex items-center gap-2.5">
-        <div class="flex items-center gap-2">
-          <span class="w-2.5 h-2.5 rounded-sm bg-[#38bdf8] shadow-[0_0_8px_#38bdf8]"></span>
+    <!-- ==================== TOP BAR (SIMULATOR & ACCESS CONTROL) ==================== -->
+    <header id="simHeader" class="min-panel flex flex-wrap items-center justify-between gap-2 px-3 py-2 shrink-0">
+      <!-- Left: Brand + Room + Connection & Access Status -->
+      <div class="flex flex-wrap items-center gap-2">
+        <div class="flex items-center gap-2 pr-1">
+          <span class="w-2 h-2 rounded-full bg-white"></span>
           <h1 class="text-xs sm:text-sm font-extrabold tracking-wider text-white">
-            TEAM14 ESP32 雙核即時模擬器
+            TEAM14 MECANUM SIMULATOR
           </h1>
         </div>
 
-        <!-- Connection Status Pill -->
-        <div id="simConnPill" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold mono tracking-wide bg-[#1c1917] border border-[#f59e0b] text-[#f59e0b]">
-          <span id="simConnDot" class="w-2 h-2 rounded-full bg-[#f59e0b]"></span>
-          <span id="simConnText">STANDBY</span>
+        <span id="roomBadge" class="mono text-[11px] font-bold px-2 py-0.5 rounded bg-black border border-[#262626] text-[#a3a3a3]">
+          ROOM: 0000
+        </span>
+
+        <!-- Host Access Policy Toggle Button -->
+        <button id="accessPolicyBtn" class="min-btn mono" title="Click to cycle connection access policy">
+          ACCESS: APPROVAL
+        </button>
+
+        <!-- Active Client Badge + Kick Button (Shown when a client is connected) -->
+        <div id="activeClientBox" class="hidden items-center gap-1.5 px-2.5 py-0.5 rounded-md bg-[#052e16] border border-[#22c55e] text-[11px] font-bold mono text-[#4ade80]">
+          <span class="w-1.5 h-1.5 rounded-full bg-[#22c55e]"></span>
+          <span id="activeClientLabel">CONNECTED: CLIENT-0000</span>
+          <button id="kickClientBtn" class="ml-1 px-1.5 py-0.2 rounded bg-[#ef4444] text-white text-[10px] font-extrabold hover:bg-[#dc2626] cursor-pointer">
+            KICK
+          </button>
         </div>
 
-        <!-- 12V Battery Badge (Synced with Core 0 isHolding) -->
-        <div id="simBatBadge" class="bat-badge mono text-xs font-bold px-2.5 py-1 rounded-lg hidden sm:flex items-center gap-1.5" title="與 Core 0 isHolding 旗標同步：馬達運轉或回彈期間邊框自動變淡">
-          <span id="simBatText">12V: 100% (12.6V)</span>
-          <span id="simBatHoldTag" class="text-[9px] px-1 rounded bg-[#1e293b] text-[#f59e0b]">HOLD</span>
+        <!-- Standby Status Pill (Shown when no client is connected) -->
+        <div id="standbyStatusPill" class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md bg-black border border-[#262626] text-[11px] font-bold mono text-[#8a8a8a]">
+          <span id="standbyDot" class="w-1.5 h-1.5 rounded-full bg-[#8a8a8a]"></span>
+          <span id="standbyText">NO CLIENT (KEYBOARD READY)</span>
         </div>
       </div>
 
-      <!-- 3-Mode Instant View Switcher + Actions -->
+      <!-- Right: View Switcher + Pair QR + Reset -->
       <div class="flex flex-wrap items-center gap-1.5">
-        <div class="inline-flex rounded-lg bg-[#090b10] p-0.5 border border-[#232938]">
-          <button id="btnViewSim" class="px-2.5 py-1 rounded-md text-[11px] font-bold bg-[#38bdf8] text-[#041019] transition cursor-pointer">
-            模擬器視圖
+        <div class="inline-flex rounded-lg bg-black p-0.5 border border-[#262626]">
+          <button id="btnViewSim" class="px-2.5 py-1 rounded-md text-[11px] font-bold bg-white text-black transition cursor-pointer">
+            SIMULATOR
           </button>
-          <button id="btnViewSplit" class="px-2.5 py-1 rounded-md text-[11px] font-bold text-[#cbd5e1] hover:text-white transition cursor-pointer">
-            雙畫面並排 (控制器 + 模擬器)
+          <button id="btnViewSplit" class="px-2.5 py-1 rounded-md text-[11px] font-bold text-[#a3a3a3] hover:text-white transition cursor-pointer">
+            SPLIT VIEW
           </button>
-          <button id="btnViewCtrl" class="px-2.5 py-1 rounded-md text-[11px] font-bold text-[#cbd5e1] hover:text-white transition cursor-pointer">
-            僅控制器 (手機介面)
+          <button id="btnViewCtrl" class="px-2.5 py-1 rounded-md text-[11px] font-bold text-[#a3a3a3] hover:text-white transition cursor-pointer">
+            CONTROLLER
           </button>
         </div>
 
-        <button id="openPairModalBtn" class="px-2.5 py-1.5 rounded-lg text-[11px] font-bold bg-[#1e293b] border border-[#38bdf8]/60 text-[#7dd3fc] hover:bg-[#38bdf8]/15 transition cursor-pointer">
-          手機無線配對 (QR)
+        <button id="openPairModalBtn" class="min-btn">
+          PAIR / QR
         </button>
 
-        <button id="simFailsafeBtn" class="px-2.5 py-1.5 rounded-lg text-[11px] font-bold bg-[#1a0b0e] border border-[#ef4444] text-[#ef4444] hover:bg-[#ef4444]/15 transition cursor-pointer">
-          模擬斷線 (400ms Failsafe)
-        </button>
-
-        <button id="simResetBtn" class="px-2.5 py-1.5 rounded-lg text-[11px] font-bold bg-[#12161f] border border-[#334155] text-[#cbd5e1] hover:text-white hover:border-white transition cursor-pointer">
-          重置車體
+        <button id="simResetBtn" class="min-btn">
+          RESET CAR
         </button>
       </div>
     </header>
 
-    <!-- ==================== UNIFIED WORKSPACE CONTAINER ==================== -->
+    <!-- ==================== INLINE CONNECTION APPROVAL BAR ==================== -->
+    <div id="approvalBanner" class="hidden items-center justify-between gap-3 px-3.5 py-2 rounded-lg bg-[#141414] border border-[#f59e0b] shrink-0">
+      <div class="flex items-center gap-2 mono text-xs">
+        <span class="w-2 h-2 rounded-full bg-[#f59e0b] animate-pulse"></span>
+        <span class="font-bold text-[#f59e0b]">REQUEST:</span>
+        <span id="pendingClientIdText" class="font-extrabold text-white">CLIENT-0000</span>
+        <span id="pendingTransportText" class="text-[10px] text-[#8a8a8a]">(WEBRTC)</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <button id="approveClientBtn" class="px-3 py-1 rounded text-[11px] font-extrabold bg-[#22c55e] text-black hover:bg-[#4ade80] transition cursor-pointer">
+          ALLOW
+        </button>
+        <button id="denyClientBtn" class="px-3 py-1 rounded text-[11px] font-extrabold bg-[#ef4444] text-white hover:bg-[#dc2626] transition cursor-pointer">
+          DENY
+        </button>
+      </div>
+    </div>
+
+    <!-- ==================== WORKSPACE CONTAINER ==================== -->
     <div id="workspaceRow" class="flex-1 min-h-0 flex flex-col lg:flex-row gap-2.5">
 
-      <!-- DOCKABLE WEB CONTROLLER PANEL (Hidden in 'sim', Phone-Frame in 'split', Fullscreen in 'ctrl') -->
+      <!-- DOCKABLE MINIMALIST WEB CONTROLLER PANEL -->
       <aside id="ctrlDockPanel" class="hidden flex-col min-h-[420px] lg:min-h-0">
-        <!-- Phone Bezel Header (Visible only in Split View) -->
-        <div id="splitPhoneHeader" class="hidden items-center justify-between px-3 py-1.5 bg-[#161b26] border-b border-[#2a3244] rounded-t-2xl text-[10px] mono text-[#94a3b8]">
-          <span class="font-bold text-white">TEAM14 WEB CONTROLLER</span>
-          <span class="text-[#22c55e]">● INTERNAL 0xCC/0xBB BUS</span>
+        <!-- Split Mode Dock Header -->
+        <div id="splitPhoneHeader" class="hidden items-center justify-between px-3 py-1.5 bg-[#0e0e0e] border-b border-[#262626] rounded-t-xl text-[10px] mono text-[#8a8a8a]">
+          <span class="font-bold text-white">WEB CONTROLLER</span>
+          <span id="dockClientIdTag" class="text-[#a3a3a3]">CLIENT-0000</span>
         </div>
 
-        <!-- EXACT ORIGINAL TEAM14 DARK MINIMALIST WEB CONTROLLER UI -->
+        <!-- Original Minimalist Dark Web Controller -->
         <div id="ctrlView" class="ctrl-app">
           <div class="ctrl-topbar">
             <div class="flex items-center gap-1.5 shrink-0">
-              <input id="ctrlRoomInput" class="ctrl-room-input mono" type="text" maxlength="8" placeholder="ROOM" title="輸入 4 碼房間號 (例如 4326)" />
-              <button id="ctrlConnectBtn" class="ctrl-btn primary">CONNECT</button>
-              <span id="ctrlBatBadge" class="ctrl-badge">12V: --% (--.-V)</span>
+              <input id="ctrlRoomInput" class="ctrl-room-input mono" type="text" maxlength="4" placeholder="ROOM" title="4-digit simulator room code" />
+              <button id="ctrlConnectBtn" class="min-btn active">CONNECT</button>
+              <span id="ctrlSelfIdBadge" class="mono text-[10px] px-2 py-1 rounded bg-black border border-[#262626] text-[#8a8a8a]">
+                CLIENT-0000
+              </span>
             </div>
             <div class="flex items-center gap-1.5 shrink-0">
-              <button id="ctrlModeBtn" class="ctrl-btn">MODE: SLIDER</button>
-              <button id="ctrlGyroBtn" class="ctrl-btn">GYRO: OFF</button>
-              <button id="ctrlRezeroBtn" class="ctrl-btn hidden">ZERO</button>
-              <button id="ctrlFsBtn" class="ctrl-btn">FULL</button>
-              <button id="ctrlBackToSimBtn" class="ctrl-btn">SIM</button>
+              <button id="ctrlModeBtn" class="min-btn">MODE: SLIDER</button>
+              <button id="ctrlGyroBtn" class="min-btn">GYRO: OFF</button>
+              <button id="ctrlRezeroBtn" class="min-btn hidden">ZERO</button>
+              <button id="ctrlFsBtn" class="min-btn">FULL</button>
+              <button id="ctrlBackToSimBtn" class="min-btn">SIM</button>
             </div>
           </div>
 
           <div class="flex-1 flex flex-col min-h-0 min-w-0">
-            <!-- Centered Connection Status Pill -->
+            <!-- Connection Status Pill -->
             <div class="flex justify-center items-center py-1 shrink-0">
-              <div id="ctrlStatusBadge" class="ctrl-conn-status">
+              <div id="ctrlStatusBadge" class="ctrl-conn-pill mono">
                 <span class="w-[7px] h-[7px] rounded-full bg-current"></span>
                 <span id="ctrlStatusText">DISCONNECTED</span>
               </div>
@@ -542,14 +519,14 @@
 
             <!-- Main 3-Column Touch Controls -->
             <div class="flex-1 grid grid-cols-[1fr_auto_1fr] items-center gap-2 min-h-0 min-w-0">
-              <!-- Left: Throttle (Slider) OR 360° Move Joystick -->
+              <!-- Left: Throttle (Slider) OR 360 Radial Joystick -->
               <div class="flex flex-col items-center justify-center gap-1.5 min-h-0">
                 <div id="ctrlLeftSliderWrap" class="flex flex-col items-center justify-center gap-1.5">
-                  <div class="text-[11px] font-bold tracking-[0.08em] text-[#888888]">THROTTLE (Y)</div>
+                  <div class="text-[11px] font-bold tracking-[0.08em] text-[#8a8a8a]">THROTTLE (Y)</div>
                   <div id="ctrlTrackY" class="ctrl-track ctrl-track-v"><div id="ctrlThumbY" class="ctrl-thumb"></div></div>
                 </div>
                 <div id="ctrlJoyWrap" class="hidden flex flex-col items-center justify-center gap-1.5">
-                  <div class="text-[11px] font-bold tracking-[0.08em] text-[#888888]">360° MOVE (X / Y)</div>
+                  <div class="text-[11px] font-bold tracking-[0.08em] text-[#8a8a8a]">360 MOVE (X / Y)</div>
                   <div id="ctrlJoyPad" class="ctrl-joy-pad"><div id="ctrlJoyThumb" class="ctrl-thumb"></div></div>
                 </div>
               </div>
@@ -563,11 +540,11 @@
               <!-- Right: Strafe (Slider Mode) + Rotate (Always Available) -->
               <div class="flex flex-col items-center justify-center gap-3.5 min-h-0">
                 <div id="ctrlStrafeWrap" class="flex flex-col items-center justify-center gap-1.5">
-                  <div class="text-[11px] font-bold tracking-[0.08em] text-[#888888]">STRAFE (X)</div>
+                  <div class="text-[11px] font-bold tracking-[0.08em] text-[#8a8a8a]">STRAFE (X)</div>
                   <div id="ctrlTrackX" class="ctrl-track ctrl-track-h"><div id="ctrlThumbX" class="ctrl-thumb"></div></div>
                 </div>
                 <div class="flex flex-col items-center justify-center gap-1.5">
-                  <div class="text-[11px] font-bold tracking-[0.08em] text-[#888888]">ROTATE (R)</div>
+                  <div class="text-[11px] font-bold tracking-[0.08em] text-[#8a8a8a]">ROTATE (R)</div>
                   <div id="ctrlTrackR" class="ctrl-track ctrl-track-h"><div id="ctrlThumbR" class="ctrl-thumb"></div></div>
                 </div>
               </div>
@@ -576,146 +553,145 @@
         </div>
       </aside>
 
-      <!-- ==================== SIMULATOR CORE GRID (ARENA+SCOPE | DUAL-CORE C++ TRACER) ==================== -->
-      <main id="simMainGrid" class="flex-1 min-h-0 min-w-0 grid grid-cols-1 lg:grid-cols-[46%_1fr] gap-2.5">
+      <!-- ==================== SIMULATOR CORE GRID (LEFT ARENA | RIGHT ARDUINO BLOCKS) ==================== -->
+      <main id="simMainGrid" class="flex-1 min-h-0 min-w-0 grid grid-cols-1 lg:grid-cols-[44%_1fr] gap-2.5">
 
-        <!-- LEFT COLUMN: 2D MECANUM PHYSICS ARENA + PACKET INSPECTOR + OSCILLOSCOPE -->
-        <section class="flex flex-col gap-2.5 min-h-0">
+        <!-- LEFT PANE: 2D MECANUM ARENA + COMPACT 4-WHEEL PWM BARS (NO OSCILLOSCOPE, NO WAYPOINTS) -->
+        <section class="min-panel flex flex-col p-2.5 gap-2.5 min-h-[360px]">
+          <div class="flex items-center justify-between px-0.5 shrink-0">
+            <span class="text-[11px] font-extrabold tracking-wider text-white">2D MECANUM ARENA</span>
+            <span class="mono text-[10px] text-[#8a8a8a]">WASD MOVE · Q/E ROTATE · SPACE FIRE · SHIFT DEFEND</span>
+          </div>
 
-          <!-- 1. 2D MECANUM PHYSICS ARENA (NO TARGET POINTS) -->
-          <div class="sim-panel flex flex-col p-2.5 gap-2 flex-[1.35] min-h-[280px]">
-            <div class="flex items-center justify-between px-1">
-              <div class="flex items-center gap-2">
-                <span class="text-[11px] font-extrabold tracking-wider text-white">2D MECANUM PHYSICS ARENA</span>
-                <span class="mono text-[10px] text-[#38bdf8]" id="roomMiniTag">ROOM: 0000</span>
-              </div>
-              <div class="flex items-center gap-1.5">
-                <button id="toggleTrailBtn" class="px-2 py-0.5 rounded text-[10px] font-bold bg-[#1e293b] border border-[#38bdf8] text-[#38bdf8] cursor-pointer">
-                  軌跡: ON
-                </button>
-                <button id="clearTrailBtn" class="px-2 py-0.5 rounded text-[10px] font-semibold bg-[#0f172a] border border-[#334155] text-[#cbd5e1] hover:text-white cursor-pointer">
-                  清除軌跡
-                </button>
-              </div>
+          <!-- Clipped 2D Canvas Container (Zero Wall-Edge Color Bleed) -->
+          <div id="arenaContainer" class="relative flex-1 min-h-[240px] w-full rounded-lg overflow-hidden bg-black">
+            <canvas id="arenaCanvas" class="block w-full h-full"></canvas>
+
+            <!-- Top-Left Minimal Velocity Readout -->
+            <div class="pointer-events-none absolute top-2.5 left-2.5 bg-black/85 border border-[#262626] rounded-md px-2.5 py-1 mono text-[10px] text-[#a3a3a3] flex items-center gap-3">
+              <span>Vx <strong id="hudVx" class="text-white">0.00</strong></span>
+              <span>Vy <strong id="hudVy" class="text-white">0.00</strong></span>
+              <span>&omega; <strong id="hudOmega" class="text-white">0.00</strong></span>
             </div>
 
-            <div id="arenaContainer" class="relative flex-1 min-h-0 w-full rounded-lg overflow-hidden border border-[#1e2432] bg-[#07090e]">
-              <canvas id="arenaCanvas" class="block w-full h-full"></canvas>
-
-              <!-- Top-Left Velocity & Keyboard HUD -->
-              <div class="pointer-events-none absolute top-2 left-2 bg-[#0b0d12]/85 backdrop-blur-sm border border-[#232938] rounded-lg px-2.5 py-1.5 mono text-[10px] leading-snug">
-                <div class="flex items-center gap-2.5 text-[#cbd5e1]">
-                  <span>Vx:<strong id="hudVx" class="text-[#38bdf8]">0.00</strong></span>
-                  <span>Vy:<strong id="hudVy" class="text-[#38bdf8]">0.00</strong></span>
-                  <span>ω:<strong id="hudOmega" class="text-[#f59e0b]">0.00</strong></span>
-                </div>
-                <div class="text-[9px] text-[#94a3b8] mt-0.5">
-                  WASD + Q/E + Space(Fire) + Shift(Defend)
-                </div>
-              </div>
-
-              <!-- Top-Right Core 1 State Pill -->
-              <div id="hudModeBadge" class="pointer-events-none absolute top-2 right-2 px-2 py-0.5 rounded border text-[10px] font-bold mono bg-[#1e293b]/90 border-[#64748b] text-[#cbd5e1]">
-                STANDBY (BRAKE)
-              </div>
+            <!-- Top-Right Motor State Pill -->
+            <div id="hudMotorState" class="pointer-events-none absolute top-2.5 right-2.5 px-2 py-0.5 rounded border border-[#262626] bg-black/85 mono text-[10px] font-bold text-[#8a8a8a]">
+              IDLE / BRAKE
             </div>
           </div>
 
-          <!-- 2. LIVE PACKET INSPECTOR & DUAL-TRACE OSCILLOSCOPE -->
-          <div class="sim-panel flex flex-col p-2.5 gap-2 flex-1 min-h-[205px]">
-            <!-- Live Hex Packet Bar -->
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 shrink-0">
-              <div class="sim-subpanel px-2.5 py-1.5">
-                <div class="flex items-center justify-between text-[10px] text-[#94a3b8]">
-                  <span class="font-bold">RX [0xCC] (30Hz / 150ms HB)</span>
-                  <span id="pktAgeText" class="mono font-bold text-[#22c55e]">--ms / 400ms</span>
-                </div>
-                <div class="flex items-center justify-between mt-0.5">
-                  <div id="pktCtrlHex" class="mono text-[11px] font-bold text-[#38bdf8]">
-                    [ 0xCC, 0x00, 0x00, 0x00, 0x00 ]
-                  </div>
-                  <span id="queueOverwriteTag" class="mono text-[9px] px-1.5 py-0.2 rounded bg-[#0f172a] border border-[#334155] text-[#94a3b8]">
-                    xQueueOverwrite
-                  </span>
-                </div>
+          <!-- Compact 4-Wheel PWM Readout Bars (-150 to +150) -->
+          <div class="grid grid-cols-4 gap-2 shrink-0">
+            <div id="wheelCardFL" class="bg-black border border-[#262626] rounded-lg p-2">
+              <div class="flex items-center justify-between mono text-[10px]">
+                <span class="font-bold text-[#a3a3a3]">FL</span>
+                <span id="pwmValFL" class="font-bold text-white">0</span>
               </div>
-
-              <div class="sim-subpanel px-2.5 py-1.5">
-                <div class="flex items-center justify-between text-[10px] text-[#94a3b8]">
-                  <span class="font-bold">TX [0xBB] (1Hz Telemetry)</span>
-                  <span id="pktHoldText" class="mono font-bold text-[#f59e0b]">HOLD: 1</span>
-                </div>
-                <div class="flex items-center justify-between mt-0.5">
-                  <div id="pktBatHex" class="mono text-[11px] font-bold text-[#f59e0b]">
-                    [ 0xBB, 0x64, 0x7E, 0x01 ]
-                  </div>
-                  <span id="stableLockTag" class="mono text-[9px] px-1.5 py-0.2 rounded bg-[#0f172a] border border-[#334155] text-[#94a3b8]">
-                    stable: 0/3
-                  </span>
-                </div>
+              <div class="mt-1.5 h-1.5 w-full bg-[#1a1a1a] rounded-full overflow-hidden relative">
+                <div id="pwmBarFL" class="absolute top-0 bottom-0 bg-white transition-all duration-75" style="left:50%; width:0%;"></div>
               </div>
             </div>
 
-            <!-- Dual-Trace Oscilloscope Canvas -->
-            <div id="scopeContainer" class="relative flex-1 min-h-[120px] w-full rounded-lg bg-[#05070b] border border-[#1e2432] overflow-hidden">
-              <canvas id="scopeCanvas" class="block w-full h-full"></canvas>
+            <div id="wheelCardFR" class="bg-black border border-[#262626] rounded-lg p-2">
+              <div class="flex items-center justify-between mono text-[10px]">
+                <span class="font-bold text-[#a3a3a3]">FR</span>
+                <span id="pwmValFR" class="font-bold text-white">0</span>
+              </div>
+              <div class="mt-1.5 h-1.5 w-full bg-[#1a1a1a] rounded-full overflow-hidden relative">
+                <div id="pwmBarFR" class="absolute top-0 bottom-0 bg-white transition-all duration-75" style="left:50%; width:0%;"></div>
+              </div>
+            </div>
+
+            <div id="wheelCardRL" class="bg-black border border-[#262626] rounded-lg p-2">
+              <div class="flex items-center justify-between mono text-[10px]">
+                <span class="font-bold text-[#a3a3a3]">RL</span>
+                <span id="pwmValRL" class="font-bold text-white">0</span>
+              </div>
+              <div class="mt-1.5 h-1.5 w-full bg-[#1a1a1a] rounded-full overflow-hidden relative">
+                <div id="pwmBarRL" class="absolute top-0 bottom-0 bg-white transition-all duration-75" style="left:50%; width:0%;"></div>
+              </div>
+            </div>
+
+            <div id="wheelCardRR" class="bg-black border border-[#262626] rounded-lg p-2">
+              <div class="flex items-center justify-between mono text-[10px]">
+                <span class="font-bold text-[#a3a3a3]">RR</span>
+                <span id="pwmValRR" class="font-bold text-white">0</span>
+              </div>
+              <div class="mt-1.5 h-1.5 w-full bg-[#1a1a1a] rounded-full overflow-hidden relative">
+                <div id="pwmBarRR" class="absolute top-0 bottom-0 bg-white transition-all duration-75" style="left:50%; width:0%;"></div>
+              </div>
             </div>
           </div>
-
         </section>
 
-        <!-- RIGHT COLUMN: DUAL-CORE FREERTOS C++ LIVE LINE-BY-LINE EXECUTION TRACER -->
-        <section class="flex flex-col gap-2.5 min-h-0">
+        <!-- RIGHT PANE: 3 SEPARATE ARDUINO IDE 2.x MOVEMENT CALCULATION BLOCKS -->
+        <section class="flex flex-col gap-2.5 min-h-0 overflow-y-auto pr-0.5">
 
-          <!-- PANEL 1: CORE 1 — motorControlTask() [50Hz / 20ms] -->
-          <div class="sim-panel flex flex-col p-2.5 flex-[1.55] min-h-0 overflow-hidden">
-            <div class="flex items-center justify-between border-b border-[#232938] pb-1.5 mb-1.5 shrink-0">
-              <div class="flex items-center gap-2">
-                <span id="ledCore1" class="w-2.5 h-2.5 rounded-full bg-[#22c55e] shadow-[0_0_8px_#22c55e]"></span>
-                <span class="text-xs font-extrabold mono text-white">Core 1 — motorControlTask() [50Hz / 20ms]</span>
+          <!-- BLOCK 1: motorControlTask.ino — Mecanum Inverse Kinematics -->
+          <div class="arduino-card shrink-0">
+            <div class="arduino-tabbar">
+              <div class="arduino-tab mono">
+                <span>motorControlTask.ino</span>
               </div>
-              <span class="mono text-[10px] font-bold text-[#94a3b8]" id="c1SummaryBadge">STANDBY</span>
+              <span class="self-center text-[10px] font-semibold text-[#6b7280] mono">Mecanum Inverse Kinematics</span>
             </div>
-
-            <div class="flex-1 overflow-y-auto mono space-y-[1px] pr-1">
-              <div id="c1_l1" class="code-line"><span class="ln">01</span><span class="src"><span class="fn">xQueueReceive</span>(cmdQueue, &amp;incoming, <span class="num">0</span>);</span><span class="val-badge" id="v_c1_l1">EMPTY</span></div>
-              <div id="c1_l2" class="code-line"><span class="ln">02</span><span class="src"><span class="kw">bool</span> isAlive = deviceConnected &amp;&amp; (millis() - timestamp &lt;= <span class="num">400</span>);</span><span class="val-badge" id="v_c1_l2">age=--</span></div>
-              <div id="c1_l3" class="code-line"><span class="ln">03</span><span class="src"><span class="kw">if</span> (!isAlive) {</span><span class="val-badge" id="v_c1_l3">true</span></div>
-              <div id="c1_l4" class="code-line"><span class="ln">04</span><span class="src">&nbsp;&nbsp;curFL = curFR = curRL = curRR = <span class="num">0</span>; MOTOR_A..D.<span class="fn">brake</span>();</span><span class="val-badge" id="v_c1_l4">BRAKE</span></div>
-              <div id="c1_l5" class="code-line"><span class="ln">05</span><span class="src">&nbsp;&nbsp;<span class="fn">digitalWrite</span>(PIN_FIRE, LOW); <span class="fn">digitalWrite</span>(PIN_DEFEND, LOW);</span><span class="val-badge" id="v_c1_l5">LOW</span></div>
-              <div id="c1_l6" class="code-line"><span class="ln">06</span><span class="src">} <span class="kw">else</span> {</span><span class="val-badge" id="v_c1_l6">skip</span></div>
-              <div id="c1_l7" class="code-line"><span class="ln">07</span><span class="src">&nbsp;&nbsp;<span class="fn">digitalWrite</span>(PIN_FIRE, flags &amp; <span class="num">1</span>); <span class="fn">digitalWrite</span>(PIN_DEFEND, flags &amp; <span class="num">2</span>);</span><span class="val-badge" id="v_c1_l7">F:0 D:0</span></div>
-              <div id="c1_l8" class="code-line"><span class="ln">08</span><span class="src">&nbsp;&nbsp;<span class="kw">float</span> fl = y + x + r; fr = y - x - r; rl = y - x + r; rr = y + x - r;</span><span class="val-badge" id="v_c1_l8">x:0 y:0 r:0</span></div>
-              <div id="c1_l9" class="code-line"><span class="ln">09</span><span class="src">&nbsp;&nbsp;tgtFL..RR = <span class="fn">ratioToPWM</span>(fl..rr, minPwm=<span class="num">20</span>);</span><span class="val-badge" id="v_c1_l9">tgtFL:0</span></div>
-              <div id="c1_l10" class="code-line"><span class="ln">10</span><span class="src">&nbsp;&nbsp;<span class="cm">// rampPWM():</span></span><span class="val-badge" id="v_c1_l10">curFL:0</span></div>
-              <div id="c1_l11" class="code-line"><span class="ln">11</span><span class="src">&nbsp;&nbsp;<span class="kw">if</span> (oppositeSign) step = -STEP_DECEL (<span class="num">15</span>); <span class="cm">// Zero-Cross</span></span><span class="val-badge" id="v_c1_l11">-</span></div>
-              <div id="c1_l12" class="code-line"><span class="ln">12</span><span class="src">&nbsp;&nbsp;<span class="kw">else if</span> (cur == <span class="num">0</span> &amp;&amp; |tgt| &gt;= <span class="num">20</span>) cur = ±<span class="num">20</span>; <span class="cm">// Pre-load</span></span><span class="val-badge" id="v_c1_l12">-</span></div>
-              <div id="c1_l13" class="code-line"><span class="ln">13</span><span class="src">&nbsp;&nbsp;<span class="kw">else if</span> (|tgt| &gt; |cur|) step = <span class="fn">logCurve</span>(<span class="num">3..10</span>); <span class="cm">// Log Accel</span></span><span class="val-badge" id="v_c1_l13">-</span></div>
-              <div id="c1_l14" class="code-line"><span class="ln">14</span><span class="src">&nbsp;&nbsp;<span class="kw">else</span> step = STEP_DECEL (<span class="num">15</span>); <span class="cm">// Decel</span></span><span class="val-badge" id="v_c1_l14">-</span></div>
-              <div id="c1_l15" class="code-line"><span class="ln">15</span><span class="src">&nbsp;&nbsp;(isMoving &amp;&amp; cur == <span class="num">0</span>) ? <span class="fn">brake</span>() : <span class="fn">drive</span>(cur);</span><span class="val-badge" id="v_c1_l15">COAST</span></div>
-              <div id="c1_l16" class="code-line"><span class="ln">16</span><span class="src">&nbsp;&nbsp;<span class="kw">if</span> (anyWheel != <span class="num">0</span>) lastMotorActiveMs = <span class="fn">millis</span>();</span><span class="val-badge" id="v_c1_l16">IDLE</span></div>
-              <div id="c1_l17" class="code-line"><span class="ln">17</span><span class="src"><span class="fn">vTaskDelayUntil</span>(&amp;lastWakeTime, <span class="num">20ms</span>);</span><span class="val-badge" id="v_c1_l17">50Hz ●</span></div>
+            <div class="arduino-editor mono py-1">
+              <div id="b1_l1" class="ard-row"><span class="ard-gutter">1</span><span class="ard-code"><span class="ard-type">float</span> x = <span class="ard-ctrl">constrain</span>(cmd.x / <span class="ard-num">100.0f</span>, -<span class="ard-num">1.0f</span>, <span class="ard-num">1.0f</span>);</span><span class="ard-val" id="vb1_l1">x:0.00</span></div>
+              <div id="b1_l2" class="ard-row"><span class="ard-gutter">2</span><span class="ard-code"><span class="ard-type">float</span> y = <span class="ard-ctrl">constrain</span>(cmd.y / <span class="ard-num">100.0f</span>, -<span class="ard-num">1.0f</span>, <span class="ard-num">1.0f</span>);</span><span class="ard-val" id="vb1_l2">y:0.00</span></div>
+              <div id="b1_l3" class="ard-row"><span class="ard-gutter">3</span><span class="ard-code"><span class="ard-type">float</span> r = <span class="ard-ctrl">constrain</span>(cmd.r / <span class="ard-num">100.0f</span>, -<span class="ard-num">1.0f</span>, <span class="ard-num">1.0f</span>);</span><span class="ard-val" id="vb1_l3">r:0.00</span></div>
+              <div id="b1_l4" class="ard-row"><span class="ard-gutter">4</span><span class="ard-code"><span class="ard-type">float</span> fl = y + x + r;  <span class="ard-type">float</span> fr = y - x - r;</span><span class="ard-val" id="vb1_l4">fl:0.00 fr:0.00</span></div>
+              <div id="b1_l5" class="ard-row"><span class="ard-gutter">5</span><span class="ard-code"><span class="ard-type">float</span> rl = y - x + r;  <span class="ard-type">float</span> rr = y + x - r;</span><span class="ard-val" id="vb1_l5">rl:0.00 rr:0.00</span></div>
+              <div id="b1_l6" class="ard-row"><span class="ard-gutter">6</span><span class="ard-code"><span class="ard-type">float</span> maxMag = <span class="ard-ctrl">max</span>(<span class="ard-ctrl">max</span>(<span class="ard-ctrl">fabsf</span>(fl), <span class="ard-ctrl">fabsf</span>(fr)), <span class="ard-ctrl">max</span>(<span class="ard-ctrl">fabsf</span>(rl), <span class="ard-ctrl">fabsf</span>(rr)));</span><span class="ard-val" id="vb1_l6">max:0.00</span></div>
+              <div id="b1_l7" class="ard-row"><span class="ard-gutter">7</span><span class="ard-code"><span class="ard-ctrl">if</span> (maxMag &gt; <span class="ard-num">1.0f</span>) { fl /= maxMag; fr /= maxMag; rl /= maxMag; rr /= maxMag; }</span><span class="ard-val" id="vb1_l7">norm:off</span></div>
+              <div id="b1_l8" class="ard-row"><span class="ard-gutter">8</span><span class="ard-code">tgtFL = ratioToPWM(fl, <span class="ard-num">20</span>);  tgtFR = ratioToPWM(fr, <span class="ard-num">20</span>);</span><span class="ard-val" id="vb1_l8">0 / 0</span></div>
+              <div id="b1_l9" class="ard-row"><span class="ard-gutter">9</span><span class="ard-code">tgtRL = ratioToPWM(rl, <span class="ard-num">20</span>);  tgtRR = ratioToPWM(rr, <span class="ard-num">20</span>);</span><span class="ard-val" id="vb1_l9">0 / 0</span></div>
+              <div id="b1_l10" class="ard-row"><span class="ard-gutter">10</span><span class="ard-code">curFL = rampPWM(curFL, tgtFL, <span class="ard-num">20</span>);  curFR = rampPWM(curFR, tgtFR, <span class="ard-num">20</span>);</span><span class="ard-val" id="vb1_l10">0 / 0</span></div>
+              <div id="b1_l11" class="ard-row"><span class="ard-gutter">11</span><span class="ard-code">curRL = rampPWM(curRL, tgtRL, <span class="ard-num">20</span>);  curRR = rampPWM(curRR, tgtRR, <span class="ard-num">20</span>);</span><span class="ard-val" id="vb1_l11">0 / 0</span></div>
+              <div id="b1_l12" class="ard-row"><span class="ard-gutter">12</span><span class="ard-code">(isMoving &amp;&amp; cur == <span class="ard-num">0</span>) ? motor.brake() : motor.drive(cur);</span><span class="ard-val" id="vb1_l12">BRAKE</span></div>
             </div>
           </div>
 
-          <!-- PANEL 2: CORE 0 — BLE RX & bleMonitorTask() [100ms / 1Hz] -->
-          <div class="sim-panel flex flex-col p-2.5 flex-1 min-h-0 overflow-hidden">
-            <div class="flex items-center justify-between border-b border-[#232938] pb-1.5 mb-1.5 shrink-0">
-              <div class="flex items-center gap-2">
-                <span id="ledCore0" class="w-2.5 h-2.5 rounded-full bg-[#38bdf8] shadow-[0_0_8px_#38bdf8]"></span>
-                <span class="text-xs font-extrabold mono text-white">Core 0 — BLE RX &amp; bleMonitorTask() [100ms / 1Hz]</span>
+          <!-- BLOCK 2: ratioToPWM.ino — Deadband & PWM Scaling -->
+          <div class="arduino-card shrink-0">
+            <div class="arduino-tabbar">
+              <div class="arduino-tab mono">
+                <span>ratioToPWM.ino</span>
               </div>
-              <span class="mono text-[10px] font-bold text-[#94a3b8]" id="c0SummaryBadge">10Hz MONITOR</span>
+              <span class="self-center text-[10px] font-semibold text-[#6b7280] mono">Deadband &amp; PWM Scaling</span>
             </div>
+            <div class="arduino-editor mono py-1">
+              <div id="b2_l1" class="ard-row"><span class="ard-gutter">1</span><span class="ard-code"><span class="ard-type">int</span> ratioToPWM(<span class="ard-type">float</span> ratio, <span class="ard-type">int</span> minPwm) {</span><span class="ard-val" id="vb2_l1">in:0.00</span></div>
+              <div id="b2_l2" class="ard-row"><span class="ard-gutter">2</span><span class="ard-code">&nbsp;&nbsp;<span class="ard-type">float</span> mag = <span class="ard-ctrl">fabsf</span>(ratio);</span><span class="ard-val" id="vb2_l2">mag:0.00</span></div>
+              <div id="b2_l3" class="ard-row"><span class="ard-gutter">3</span><span class="ard-code">&nbsp;&nbsp;<span class="ard-ctrl">if</span> (mag &lt; <span class="ard-num">0.01f</span>) <span class="ard-ctrl">return</span> <span class="ard-num">0</span>;</span><span class="ard-val" id="vb2_l3">0</span></div>
+              <div id="b2_l4" class="ard-row"><span class="ard-gutter">4</span><span class="ard-code">&nbsp;&nbsp;<span class="ard-type">int</span> pwm = <span class="ard-ctrl">roundf</span>(minPwm + mag * (MAX_PWM - minPwm));</span><span class="ard-val" id="vb2_l4">-</span></div>
+              <div id="b2_l5" class="ard-row"><span class="ard-gutter">5</span><span class="ard-code">&nbsp;&nbsp;pwm = <span class="ard-ctrl">constrain</span>(pwm, minPwm, MAX_PWM);</span><span class="ard-val" id="vb2_l5">-</span></div>
+              <div id="b2_l6" class="ard-row"><span class="ard-gutter">6</span><span class="ard-code">&nbsp;&nbsp;<span class="ard-ctrl">return</span> (ratio &gt; <span class="ard-num">0</span>) ? pwm : -pwm;</span><span class="ard-val" id="vb2_l6">-</span></div>
+              <div id="b2_l7" class="ard-row"><span class="ard-gutter">7</span><span class="ard-code">}</span><span class="ard-val" id="vb2_l7"></span></div>
+            </div>
+          </div>
 
-            <div class="flex-1 overflow-y-auto mono space-y-[2px] pr-1">
-              <div id="c0_l1" class="code-line"><span class="ln">01</span><span class="src">CommandCallbacks::<span class="fn">onWrite</span>() -&gt; <span class="fn">xQueueOverwrite</span>(cmdQueue, &amp;cmd);</span><span class="val-badge" id="v_c0_l1">seq#0</span></div>
-              <div id="c0_l2" class="code-line"><span class="ln">02</span><span class="src"><span class="kw">if</span> (inInitWindow &lt; <span class="num">3000ms</span>) <span class="fn">peakHold</span>(<span class="fn">readBatteryVoltage</span>());</span><span class="val-badge" id="v_c0_l2">INIT</span></div>
-              <div id="c0_l3" class="code-line"><span class="ln">03</span><span class="src"><span class="kw">bool</span> motorsStopped = (now - lastMotorActiveMs &gt;= <span class="num">500ms</span>);</span><span class="val-badge" id="v_c0_l3">stopped</span></div>
-              <div id="c0_l4" class="code-line"><span class="ln">04</span><span class="src"><span class="kw">if</span> (!motorsStopped) { stableCount = <span class="num">0</span>; }</span><span class="val-badge" id="v_c0_l4">-</span></div>
-              <div id="c0_l5" class="code-line"><span class="ln">05</span><span class="src"><span class="kw">else if</span> (|currentV - prevV| &lt;= <span class="num">0.05V</span>) { stableCount++; }</span><span class="val-badge" id="v_c0_l5">dV:0.00V 0/3</span></div>
-              <div id="c0_l6" class="code-line"><span class="ln">06</span><span class="src"><span class="kw">if</span> (stableCount &gt;= <span class="num">3</span>) { filteredV = <span class="fn">EMA</span>(<span class="num">0.8</span>, <span class="num">0.2</span>); displayedPct = <span class="fn">LUT</span>(filteredV); }</span><span class="val-badge" id="v_c0_l6">12.6V 100%</span></div>
-              <div id="c0_l7" class="code-line"><span class="ln">07</span><span class="src">pTxChar-&gt;<span class="fn">notify</span>([<span class="num">0xBB</span>, pct, vX10, isHolding]); <span class="cm">// 1Hz</span></span><span class="val-badge" id="v_c0_l7">1Hz</span></div>
+          <!-- BLOCK 3: rampPWM.ino — Logarithmic Slew-Rate Limiter -->
+          <div class="arduino-card shrink-0">
+            <div class="arduino-tabbar">
+              <div class="arduino-tab mono">
+                <span>rampPWM.ino</span>
+              </div>
+              <span class="self-center text-[10px] font-semibold text-[#6b7280] mono">Logarithmic Slew-Rate Limiter</span>
+            </div>
+            <div class="arduino-editor mono py-1">
+              <div id="b3_l1" class="ard-row"><span class="ard-gutter">1</span><span class="ard-code"><span class="ard-type">int</span> rampPWM(<span class="ard-type">int</span> current, <span class="ard-type">int</span> target, <span class="ard-type">int</span> minPwm) {</span><span class="ard-val" id="vb3_l1">0 -&gt; 0</span></div>
+              <div id="b3_l2" class="ard-row"><span class="ard-gutter">2</span><span class="ard-code">&nbsp;&nbsp;<span class="ard-ctrl">if</span> (current == target) <span class="ard-ctrl">return</span> target;</span><span class="ard-val" id="vb3_l2">STEADY</span></div>
+              <div id="b3_l3" class="ard-row"><span class="ard-gutter">3</span><span class="ard-code">&nbsp;&nbsp;<span class="ard-ctrl">if</span> ((current &gt; <span class="ard-num">0</span> &amp;&amp; target &lt; <span class="ard-num">0</span>) || (current &lt; <span class="ard-num">0</span> &amp;&amp; target &gt; <span class="ard-num">0</span>))</span><span class="ard-val" id="vb3_l3">-</span></div>
+              <div id="b3_l4" class="ard-row"><span class="ard-gutter">4</span><span class="ard-code">&nbsp;&nbsp;&nbsp;&nbsp;<span class="ard-ctrl">return</span> (current &gt; <span class="ard-num">0</span>) ? <span class="ard-ctrl">max</span>(current - <span class="ard-num">15</span>, <span class="ard-num">0</span>) : <span class="ard-ctrl">min</span>(current + <span class="ard-num">15</span>, <span class="ard-num">0</span>); <span class="ard-cm">// Zero-Cross</span></span><span class="ard-val" id="vb3_l4">-</span></div>
+              <div id="b3_l5" class="ard-row"><span class="ard-gutter">5</span><span class="ard-code">&nbsp;&nbsp;<span class="ard-ctrl">if</span> (current == <span class="ard-num">0</span> &amp;&amp; <span class="ard-ctrl">abs</span>(target) &gt;= minPwm)</span><span class="ard-val" id="vb3_l5">-</span></div>
+              <div id="b3_l6" class="ard-row"><span class="ard-gutter">6</span><span class="ard-code">&nbsp;&nbsp;&nbsp;&nbsp;<span class="ard-ctrl">return</span> (target &gt; <span class="ard-num">0</span>) ? minPwm : -minPwm; <span class="ard-cm">// Pre-load Jump</span></span><span class="ard-val" id="vb3_l6">-</span></div>
+              <div id="b3_l7" class="ard-row"><span class="ard-gutter">7</span><span class="ard-code">&nbsp;&nbsp;<span class="ard-ctrl">if</span> (<span class="ard-ctrl">abs</span>(target) &gt; <span class="ard-ctrl">abs</span>(current)) { <span class="ard-cm">// Logarithmic Accel (K = 9.0f)</span></span><span class="ard-val" id="vb3_l7">-</span></div>
+              <div id="b3_l8" class="ard-row"><span class="ard-gutter">8</span><span class="ard-code">&nbsp;&nbsp;&nbsp;&nbsp;<span class="ard-type">float</span> norm = <span class="ard-ctrl">constrain</span>(<span class="ard-ctrl">abs</span>(current) / <span class="ard-num">150.0f</span>, <span class="ard-num">0.0f</span>, <span class="ard-num">1.0f</span>);</span><span class="ard-val" id="vb3_l8">-</span></div>
+              <div id="b3_l9" class="ard-row"><span class="ard-gutter">9</span><span class="ard-code">&nbsp;&nbsp;&nbsp;&nbsp;<span class="ard-type">int</span> step = <span class="ard-ctrl">roundf</span>(<span class="ard-num">3</span> + (<span class="ard-ctrl">logf</span>(<span class="ard-num">1.0f</span> + <span class="ard-num">9.0f</span> * norm) / <span class="ard-ctrl">logf</span>(<span class="ard-num">10.0f</span>)) * <span class="ard-num">7</span>);</span><span class="ard-val" id="vb3_l9">-</span></div>
+              <div id="b3_l10" class="ard-row"><span class="ard-gutter">10</span><span class="ard-code">&nbsp;&nbsp;&nbsp;&nbsp;<span class="ard-ctrl">return</span> (target &gt; current) ? <span class="ard-ctrl">min</span>(current + step, target) : <span class="ard-ctrl">max</span>(current - step, target);</span><span class="ard-val" id="vb3_l10">-</span></div>
+              <div id="b3_l11" class="ard-row"><span class="ard-gutter">11</span><span class="ard-code">&nbsp;&nbsp;}</span><span class="ard-val" id="vb3_l11"></span></div>
+              <div id="b3_l12" class="ard-row"><span class="ard-gutter">12</span><span class="ard-code">&nbsp;&nbsp;<span class="ard-ctrl">return</span> (target &gt; current) ? <span class="ard-ctrl">min</span>(current + <span class="ard-num">15</span>, target) : <span class="ard-ctrl">max</span>(current - <span class="ard-num">15</span>, target); <span class="ard-cm">// Decel</span></span><span class="ard-val" id="vb3_l12">-</span></div>
+              <div id="b3_l13" class="ard-row"><span class="ard-gutter">13</span><span class="ard-code">}</span><span class="ard-val" id="vb3_l13"></span></div>
             </div>
           </div>
 
@@ -725,118 +701,84 @@
   </div>
 
   <!-- ========================================================================= -->
-  <!-- SMART WIRELESS PAIRING MODAL (ZERO-404 URL DETECTION + HOSTED URL QR)     -->
+  <!-- WIRELESS PAIRING & QR CODE MODAL (100% ENGLISH, ZERO-404 URL DETECTION)   -->
   <!-- ========================================================================= -->
-  <div id="pairModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/80 backdrop-blur-sm p-4">
-    <div class="sim-panel w-full max-w-lg p-5 shadow-2xl border border-[#334155]">
-      <div class="flex items-center justify-between border-b border-[#232938] pb-3 mb-3.5">
+  <div id="pairModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/85 backdrop-blur-sm p-4">
+    <div class="min-panel w-full max-w-md p-5 shadow-2xl border border-[#333333]">
+      <div class="flex items-center justify-between border-b border-[#262626] pb-3 mb-3.5">
         <div>
-          <h2 class="text-sm font-extrabold text-white tracking-wide">手機無線連線 (Web Controller)</h2>
-          <p class="text-[11px] text-[#94a3b8] mt-0.5">透過 WebRTC DataChannel 傳輸原版 5-byte / 4-byte 二進位協定</p>
+          <h2 class="text-sm font-extrabold text-white tracking-wide">WIRELESS CONTROLLER PAIRING</h2>
+          <p class="text-[11px] text-[#8a8a8a] mt-0.5">Connect a mobile phone via WebRTC or open Split View locally</p>
         </div>
-        <button id="closePairModalBtn" class="px-2.5 py-1 rounded-md text-xs font-bold bg-[#1e293b] text-[#cbd5e1] hover:text-white cursor-pointer">✕</button>
+        <button id="closePairModalBtn" class="min-btn">CLOSE</button>
       </div>
 
-      <!-- Room Code Banner -->
-      <div class="flex items-center justify-between bg-[#080a0f] border border-[#1e2432] rounded-xl px-4 py-3 mb-3">
+      <!-- Room Code Display -->
+      <div class="flex items-center justify-between bg-black border border-[#262626] rounded-lg px-4 py-3 mb-3">
         <div>
-          <div class="text-[10px] font-bold tracking-wider text-[#94a3b8]">模擬器房間代碼 (ROOM CODE)</div>
-          <div id="peerStatusLine" class="mono text-[11px] text-[#22c55e] mt-0.5">PeerJS 連線初始化中...</div>
+          <div class="text-[10px] font-bold tracking-wider text-[#8a8a8a]">HOST ROOM CODE</div>
+          <div id="peerStatusLine" class="mono text-[11px] text-[#a3a3a3] mt-0.5">Initializing WebRTC host...</div>
         </div>
-        <div id="modalRoomCode" class="mono text-3xl font-extrabold tracking-[0.15em] text-[#38bdf8]">4326</div>
+        <div id="modalRoomCode" class="mono text-3xl font-extrabold tracking-[0.15em] text-white">0000</div>
       </div>
 
-      <!-- Hosted URL Input (Prevents 404 from Sandbox UUID URLs) -->
+      <!-- Hosted URL Input (Prevents 404 when running in local/sandbox preview) -->
       <div class="mb-3">
-        <label for="hostedUrlInput" class="block text-[11px] font-bold text-[#cbd5e1] mb-1">
-          自訂部署網址 (Hosted URL)
+        <label for="hostedUrlInput" class="block text-[11px] font-bold text-[#d4d4d4] mb-1">
+          PUBLIC HOSTED URL (FOR PHONE QR CODE)
         </label>
         <div class="flex gap-2">
           <input
             id="hostedUrlInput"
             type="url"
-            class="selectable-input flex-1 bg-[#080a0f] border border-[#334155] focus:border-[#38bdf8] rounded-lg px-3 py-2 text-xs mono text-white outline-none"
-            placeholder="https://你的帳號.github.io/team14/index.html"
+            class="selectable-input flex-1 bg-black border border-[#2e2e2e] focus:border-white rounded-lg px-3 py-2 text-xs mono text-white outline-none"
+            placeholder="https://your-domain.github.io/team14.html"
           />
-          <button id="copyCtrlUrlBtn" class="px-3 py-2 rounded-lg text-xs font-bold bg-[#1e293b] border border-[#334155] text-white hover:border-[#38bdf8] transition cursor-pointer shrink-0 disabled:opacity-40 disabled:pointer-events-none">
-            複製連結
+          <button id="copyCtrlUrlBtn" class="min-btn shrink-0 disabled:opacity-35 disabled:pointer-events-none">
+            COPY URL
           </button>
         </div>
-        <p id="urlEnvHint" class="text-[10px] text-[#94a3b8] mt-1"></p>
+        <p id="urlEnvHint" class="text-[10px] text-[#8a8a8a] mt-1"></p>
       </div>
 
-      <!-- Dynamic QR Code Container (Shown ONLY when a valid http/https Hosted URL is present) -->
-      <div id="qrActiveBox" class="hidden flex-col items-center gap-2 bg-[#080a0f] border border-[#1e2432] rounded-xl p-3.5 mb-3">
-        <div id="qrContainer" class="bg-white p-2.5 rounded-lg"></div>
-        <div id="qrTargetUrlLabel" class="mono text-[10px] text-[#38bdf8] break-all text-center max-w-full"></div>
+      <!-- Dynamic QR Code Box (Shown only when a valid http/https Hosted URL is present) -->
+      <div id="qrActiveBox" class="hidden flex-col items-center gap-2 bg-black border border-[#262626] rounded-lg p-3.5 mb-3">
+        <div id="qrContainer" class="bg-white p-2.5 rounded-md"></div>
+        <div id="qrTargetUrlLabel" class="mono text-[10px] text-[#a3a3a3] break-all text-center max-w-full"></div>
       </div>
 
-      <!-- 2-Step Zero-404 Guide (Shown when inside Sandbox / file:// without Hosted URL) -->
-      <div id="sandboxGuideBox" class="bg-[#0f172a] border border-[#334155] rounded-xl p-3.5 mb-3 space-y-2.5">
-        <div class="flex items-start gap-2.5 text-xs text-[#e2e8f0]">
-          <span class="shrink-0 w-5 h-5 rounded-full bg-[#38bdf8]/20 border border-[#38bdf8] text-[#38bdf8] flex items-center justify-center font-bold text-[11px]">1</span>
-          <div class="leading-relaxed">
-            <strong>手機實體連線：</strong>下載此單一 HTML 檔，拖曳上傳至 <strong>Netlify Drop</strong> / <strong>GitHub Pages</strong>（或在電腦執行 <code class="mono bg-black/50 px-1.5 py-0.5 rounded text-[#38bdf8]">python -m http.server 8000</code>），將公開網址貼入上方欄位即可產生手機掃碼 QR Code。
-          </div>
-        </div>
-        <div class="flex items-start gap-2.5 text-xs text-[#e2e8f0]">
-          <span class="shrink-0 w-5 h-5 rounded-full bg-[#22c55e]/20 border border-[#22c55e] text-[#4ade80] flex items-center justify-center font-bold text-[11px]">2</span>
-          <div class="leading-relaxed">
-            <strong>免伺服器立即演示：</strong>現在就可以直接切換至<strong>「雙畫面並排 (控制器 + 模擬器)」</strong>，在同一視窗用原版網頁控制器即時操控車體！
-          </div>
-        </div>
-      </div>
-
-      <!-- Modal Footer Actions -->
-      <div class="flex flex-col sm:flex-row gap-2">
-        <button id="modalSwitchSplitBtn" class="flex-1 py-2.5 px-3 rounded-lg text-xs font-extrabold bg-[#22c55e] text-[#052e16] hover:bg-[#4ade80] transition cursor-pointer">
-          立即開啟「雙畫面並排」演示 (免伺服器)
-        </button>
-      </div>
+      <!-- Single-Screen Split View Shortcut -->
+      <button id="modalSwitchSplitBtn" class="w-full py-2.5 px-3 rounded-lg text-xs font-extrabold bg-white text-black hover:bg-[#e5e5e5] transition cursor-pointer">
+        OPEN SPLIT VIEW (EMBEDDED CONTROLLER)
+      </button>
     </div>
   </div>
 
   <!-- ========================================================================= -->
-  <!-- UNIFIED DUAL-CORE SIMULATOR + WIRELESS WEB CONTROLLER ENGINE              -->
+  <!-- UNIFIED ENGINE: ACCESS CONTROL + MECANUM KINEMATICS + ARDUINO TRACER      -->
   <!-- ========================================================================= -->
   <script>
     (() => {
       'use strict';
 
-      // ==================== SHARED PROTOCOL & FIRMWARE CONSTANTS ====================
-      const PKT_BATTERY = 0xBB; // [0xBB, pct, vX10, isHolding]
-      const PKT_CONTROL = 0xCC; // [0xCC, x, y, r, flags]
+      // ==================== FIRMWARE CONSTANTS ====================
+      const PKT_CONTROL     = 0xCC; // [0xCC, x, y, r, flags]
+      const WEB_LOOP_MS     = 33;   // ~30Hz controller loop
+      const HEARTBEAT_MS    = 150;  // Keep-alive interval
+      const CORE1_PERIOD_MS = 20;   // 50Hz deterministic control loop
+      const FAILSAFE_MS     = 400;  // 400ms heartbeat timeout
 
-      const WEB_LOOP_MS       = 33;     // ~30Hz control loop
-      const HEARTBEAT_MS      = 150;    // Keep-alive interval
-      const CORE1_PERIOD_MS   = 20;     // 50Hz deterministic motor control
-      const CORE0_PERIOD_MS   = 100;    // 10Hz monitor loop
-      const FAILSAFE_MS       = 400;    // 400ms heartbeat timeout
+      const SLIDER_MAX      = 100.0;
+      const MAX_PWM         = 150;
+      const MIN_PWM         = 20;
+      const STEP_MIN        = 3;
+      const STEP_MAX        = 10;
+      const STEP_DECEL      = 15;
+      const LOG_CURVE_K     = 9.0;
+      const INV_LOG_DENOM   = 1.0 / Math.log(1.0 + LOG_CURVE_K);
 
-      const SLIDER_MAX        = 100.0;
-      const MAX_PWM           = 150;
-      const MIN_PWM           = 20;
-      const STEP_MIN          = 3;
-      const STEP_MAX          = 10;
-      const STEP_DECEL        = 15;
-      const LOG_CURVE_K       = 9.0;
-      const INV_LOG_DENOM     = 1.0 / Math.log(1.0 + LOG_CURVE_K);
-
-      // 11-Point OCV Lookup Table (9.00V - 12.60V)
-      const BAT_LUT_V   = [9.00, 9.60, 10.00, 10.40, 10.72, 11.00, 11.28, 11.56, 11.84, 12.20, 12.60];
-      const BAT_LUT_PCT = [0,    10,   20,    30,    40,    50,    60,    70,    80,    90,    100];
-      const BAT_LUT_SIZE       = BAT_LUT_V.length;
-      const BAT_INIT_WINDOW_MS = 3000;
-      const BAT_SAMPLE_MS      = 200;
-      const BAT_NOTIFY_MS      = 1000;
-      const BAT_MIN_SETTLE_MS  = 500;
-      const BAT_STABLE_DV      = 0.05;
-      const BAT_STABLE_COUNT   = 3;
-
-      const STORAGE_HOSTED_URL = 'team14_hosted_url';
-
+      const STORAGE_HOSTED_URL = 'team14_hosted_url_en';
       const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
-      const toHex = (b) => '0x' + ((b & 0xFF).toString(16).toUpperCase().padStart(2, '0'));
 
       // Non-blocking toast banner
       let toastTimer = null;
@@ -849,7 +791,6 @@
         toastTimer = setTimeout(() => el.classList.add('hidden'), duration);
       }
 
-      // Safe clipboard copy using execCommand fallback (works inside sandboxed iframes)
       function copyTextSafe(text) {
         try {
           const ta = document.createElement('textarea');
@@ -860,24 +801,22 @@
           ta.select();
           document.execCommand('copy');
           document.body.removeChild(ta);
-          showToast('已複製控制器完整網址！');
+          showToast('Controller URL copied to clipboard.');
         } catch {
-          showToast('無法自動複製，請手動選取網址複製');
+          showToast('Copy failed. Please copy the URL manually.');
         }
       }
 
-      // ==================== SMART URL & SANDBOX ENVIRONMENT DETECTION ====================
+      // ==================== SAFE HOSTED URL DETECTION (ZERO 404) ====================
       function detectShareableBaseUrl() {
         try {
           const loc = window.location;
           const proto = loc.protocol;
           const host = loc.hostname || '';
           const path = loc.pathname || '';
-
           if (proto !== 'http:' && proto !== 'https:') return '';
           if (!host) return '';
 
-          // Reject ephemeral sandbox preview hosts & UUID paths that cause 404 externally
           const isEphemeralHost =
             host.includes('googleusercontent.com') ||
             host.includes('usercontent.goog') ||
@@ -886,7 +825,6 @@
             host.includes('codesandbox');
 
           const isUuidPath = /^\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i.test(path);
-
           if (isEphemeralHost || isUuidPath) return '';
 
           return `${loc.origin}${path}`;
@@ -907,7 +845,7 @@
         }
       }
 
-      // ==================== ROOM CODE & 3-VIEW SWITCHER STATE ====================
+      // ==================== ROOM CODE, CLIENT ID & VIEW SWITCHER ====================
       const urlParams = new URLSearchParams(window.location.search);
       const isOpenedAsPhoneController = (urlParams.get('mode') === 'controller');
 
@@ -915,20 +853,22 @@
         ? urlParams.get('room')
         : String(Math.floor(1000 + Math.random() * 9000));
 
-      // View modes: 'sim' | 'split' | 'ctrl'
+      // Unique Client ID for this controller instance (e.g. CLIENT-7A2F)
+      const myClientId = 'CLIENT-' + Math.floor(0x1000 + Math.random() * 0xF000).toString(16).toUpperCase();
+
       let currentView = isOpenedAsPhoneController ? 'ctrl' : 'sim';
 
-      const simHeader       = document.getElementById('simHeader');
-      const ctrlDockPanel   = document.getElementById('ctrlDockPanel');
-      const splitPhoneHdr   = document.getElementById('splitPhoneHeader');
-      const simMainGrid     = document.getElementById('simMainGrid');
-      const btnViewSim      = document.getElementById('btnViewSim');
-      const btnViewSplit    = document.getElementById('btnViewSplit');
-      const btnViewCtrl     = document.getElementById('btnViewCtrl');
+      const simHeader     = document.getElementById('simHeader');
+      const ctrlDockPanel = document.getElementById('ctrlDockPanel');
+      const splitPhoneHdr = document.getElementById('splitPhoneHeader');
+      const simMainGrid   = document.getElementById('simMainGrid');
+      const btnViewSim    = document.getElementById('btnViewSim');
+      const btnViewSplit  = document.getElementById('btnViewSplit');
+      const btnViewCtrl   = document.getElementById('btnViewCtrl');
 
       function updateViewSwitcherButtons(view) {
-        const activeCls = 'px-2.5 py-1 rounded-md text-[11px] font-bold bg-[#38bdf8] text-[#041019] transition cursor-pointer';
-        const idleCls   = 'px-2.5 py-1 rounded-md text-[11px] font-bold text-[#cbd5e1] hover:text-white transition cursor-pointer';
+        const activeCls = 'px-2.5 py-1 rounded-md text-[11px] font-bold bg-white text-black transition cursor-pointer';
+        const idleCls   = 'px-2.5 py-1 rounded-md text-[11px] font-bold text-[#a3a3a3] hover:text-white transition cursor-pointer';
         btnViewSim.className   = (view === 'sim')   ? activeCls : idleCls;
         btnViewSplit.className = (view === 'split') ? activeCls : idleCls;
         btnViewCtrl.className  = (view === 'ctrl')  ? activeCls : idleCls;
@@ -943,35 +883,32 @@
         if (view === 'sim') {
           simHeader.classList.remove('hidden');
           simMainGrid.classList.remove('hidden');
-          simMainGrid.className = 'flex-1 min-h-0 min-w-0 grid grid-cols-1 lg:grid-cols-[46%_1fr] gap-2.5';
+          simMainGrid.className = 'flex-1 min-h-0 min-w-0 grid grid-cols-1 lg:grid-cols-[44%_1fr] gap-2.5';
           ctrlDockPanel.classList.add('hidden');
           ctrlDockPanel.classList.remove('flex', 'split-docked');
           splitPhoneHdr.classList.add('hidden');
           splitPhoneHdr.classList.remove('flex');
-          setTimeout(resizeSimCanvases, 30);
+          setTimeout(resizeArenaCanvas, 30);
         } else if (view === 'split') {
           simHeader.classList.remove('hidden');
           simMainGrid.classList.remove('hidden');
-          simMainGrid.className = 'flex-1 min-h-0 min-w-0 grid grid-cols-1 xl:grid-cols-[44%_1fr] gap-2.5';
+          simMainGrid.className = 'flex-1 min-h-0 min-w-0 grid grid-cols-1 xl:grid-cols-[42%_1fr] gap-2.5';
 
-          // Dock controller as a sleek mobile phone frame on the left
           ctrlDockPanel.classList.remove('hidden', 'fixed', 'inset-0', 'z-40');
-          ctrlDockPanel.className = 'flex flex-col w-full lg:w-[370px] xl:w-[395px] shrink-0 rounded-2xl border-2 border-[#2c3547] bg-black overflow-hidden shadow-2xl split-docked min-h-[430px] lg:min-h-0';
+          ctrlDockPanel.className = 'flex flex-col w-full lg:w-[360px] xl:w-[385px] shrink-0 rounded-xl border border-[#262626] bg-black overflow-hidden split-docked min-h-[420px] lg:min-h-0';
           splitPhoneHdr.classList.remove('hidden');
           splitPhoneHdr.classList.add('flex');
 
-          // Auto-engage internal packet bus in split mode
-          if (!ctrlConnected) {
-            connectControllerInternalBus();
+          if (!ctrlConnected && !ctrlPendingApproval) {
+            connectControllerToRoom(simRoomDigits);
           }
-          setTimeout(resizeSimCanvases, 30);
+          setTimeout(resizeArenaCanvas, 30);
         } else if (view === 'ctrl') {
           simHeader.classList.add('hidden');
           simMainGrid.classList.add('hidden');
           splitPhoneHdr.classList.add('hidden');
           splitPhoneHdr.classList.remove('flex');
 
-          // Full-screen original Team14 Web Controller
           ctrlDockPanel.classList.remove('hidden', 'split-docked');
           ctrlDockPanel.className = 'fixed inset-0 z-40 flex flex-col w-full h-[100dvh] bg-black';
         }
@@ -984,7 +921,7 @@
         setViewMode(currentView === 'ctrl' ? 'split' : 'sim');
       });
 
-      // ==================== EXACT FIRMWARE MATH FUNCTIONS ====================
+      // ==================== EXACT ARDUINO MOVEMENT CALCULATION FUNCTIONS ====================
       function shapeAxis(v, dz = 0.08) {
         const a = Math.abs(v);
         if (a < dz) return 0;
@@ -1003,66 +940,63 @@
         };
       }
 
-      function ratioToPWM(ratio, minPwm = MIN_PWM) {
+      function ratioToPWMTraced(ratio, minPwm = MIN_PWM) {
         const mag = Math.abs(ratio);
-        if (mag < 0.01) return 0;
-        let pwm = Math.round(minPwm + mag * (MAX_PWM - minPwm));
-        pwm = clamp(pwm, minPwm, MAX_PWM);
-        return ratio > 0 ? pwm : -pwm;
+        if (mag < 0.01) {
+          return { pwm: 0, mag, rawPwm: 0, deadband: true };
+        }
+        const rawPwm = Math.round(minPwm + mag * (MAX_PWM - minPwm));
+        const clamped = clamp(rawPwm, minPwm, MAX_PWM);
+        const signed = ratio > 0 ? clamped : -clamped;
+        return { pwm: signed, mag, rawPwm, deadband: false };
       }
 
       function rampPWMTraced(current, target, minPwm = MIN_PWM) {
-        if (current === target) return { next: target, branch: 'steady', step: 0 };
+        if (current === target) {
+          return { next: target, branch: 'steady', step: 0, norm: 0 };
+        }
 
-        // 1. Zero-crossing protection on sudden reversal
+        // Zero-crossing protection on sudden reversal
         if ((current > 0 && target < 0) || (current < 0 && target > 0)) {
           const next = current > 0 ? Math.max(current - STEP_DECEL, 0) : Math.min(current + STEP_DECEL, 0);
-          return { next, branch: 'zerocross', step: STEP_DECEL };
+          return { next, branch: 'zerocross', step: STEP_DECEL, norm: 0 };
         }
 
-        // 2. Startup pre-load jump to minPwm
+        // Pre-load jump to minPwm from zero
         if (current === 0 && Math.abs(target) >= minPwm) {
           const next = target > 0 ? minPwm : -minPwm;
-          return { next, branch: 'preload', step: minPwm };
+          return { next, branch: 'preload', step: minPwm, norm: 0 };
         }
 
-        // 3. Log acceleration vs fixed deceleration
-        const isAccelerating = Math.abs(target) > Math.abs(current);
-        if (isAccelerating) {
+        // Logarithmic acceleration vs fixed deceleration
+        if (Math.abs(target) > Math.abs(current)) {
           const norm = clamp(Math.abs(current) / MAX_PWM, 0.0, 1.0);
           const logFactor = Math.log(1.0 + LOG_CURVE_K * norm) * INV_LOG_DENOM;
           const step = Math.round(STEP_MIN + logFactor * (STEP_MAX - STEP_MIN));
           const next = target > current ? Math.min(current + step, target) : Math.max(current - step, target);
-          return { next, branch: 'logaccel', step };
+          return { next, branch: 'logaccel', step, norm };
         } else {
           const next = target > current ? Math.min(current + STEP_DECEL, target) : Math.max(current - STEP_DECEL, target);
-          return { next, branch: 'decel', step: STEP_DECEL };
+          return { next, branch: 'decel', step: STEP_DECEL, norm: 0 };
         }
-      }
-
-      function voltageToPct(voltage) {
-        if (voltage <= BAT_LUT_V[0]) return 0;
-        if (voltage >= BAT_LUT_V[BAT_LUT_SIZE - 1]) return 100;
-        for (let i = 0; i < BAT_LUT_SIZE - 1; i++) {
-          if (voltage >= BAT_LUT_V[i] && voltage <= BAT_LUT_V[i + 1]) {
-            const ratio = (voltage - BAT_LUT_V[i]) / (BAT_LUT_V[i + 1] - BAT_LUT_V[i]);
-            const pct = BAT_LUT_PCT[i] + ratio * (BAT_LUT_PCT[i + 1] - BAT_LUT_PCT[i]);
-            return clamp(Math.round(pct), 0, 100);
-          }
-        }
-        return 0;
       }
 
       // =========================================================================
-      // PART A: DESKTOP SIMULATOR ENGINE (CORE 0 + CORE 1 + PHYSICS + TRACER)
+      // PART A: SIMULATOR HOST ENGINE + CONNECTION ACCESS CONTROL
       // =========================================================================
       const simEl = {
-        connPill: document.getElementById('simConnPill'),
-        connDot: document.getElementById('simConnDot'),
-        connText: document.getElementById('simConnText'),
-        batBadge: document.getElementById('simBatBadge'),
-        batText: document.getElementById('simBatText'),
-        batHoldTag: document.getElementById('simBatHoldTag'),
+        roomBadge: document.getElementById('roomBadge'),
+        accessPolicyBtn: document.getElementById('accessPolicyBtn'),
+        activeClientBox: document.getElementById('activeClientBox'),
+        activeClientLabel: document.getElementById('activeClientLabel'),
+        kickClientBtn: document.getElementById('kickClientBtn'),
+        standbyStatusPill: document.getElementById('standbyStatusPill'),
+        standbyText: document.getElementById('standbyText'),
+        approvalBanner: document.getElementById('approvalBanner'),
+        pendingClientIdText: document.getElementById('pendingClientIdText'),
+        pendingTransportText: document.getElementById('pendingTransportText'),
+        approveClientBtn: document.getElementById('approveClientBtn'),
+        denyClientBtn: document.getElementById('denyClientBtn'),
         openPairModalBtn: document.getElementById('openPairModalBtn'),
         closePairModalBtn: document.getElementById('closePairModalBtn'),
         pairModal: document.getElementById('pairModal'),
@@ -1072,73 +1006,257 @@
         qrActiveBox: document.getElementById('qrActiveBox'),
         qrContainer: document.getElementById('qrContainer'),
         qrTargetUrlLabel: document.getElementById('qrTargetUrlLabel'),
-        sandboxGuideBox: document.getElementById('sandboxGuideBox'),
         peerStatusLine: document.getElementById('peerStatusLine'),
         copyCtrlUrlBtn: document.getElementById('copyCtrlUrlBtn'),
         modalSwitchSplitBtn: document.getElementById('modalSwitchSplitBtn'),
-        simFailsafeBtn: document.getElementById('simFailsafeBtn'),
         simResetBtn: document.getElementById('simResetBtn'),
-        roomMiniTag: document.getElementById('roomMiniTag'),
-        toggleTrailBtn: document.getElementById('toggleTrailBtn'),
-        clearTrailBtn: document.getElementById('clearTrailBtn'),
         arenaContainer: document.getElementById('arenaContainer'),
         arenaCanvas: document.getElementById('arenaCanvas'),
-        scopeContainer: document.getElementById('scopeContainer'),
-        scopeCanvas: document.getElementById('scopeCanvas'),
         hudVx: document.getElementById('hudVx'),
         hudVy: document.getElementById('hudVy'),
         hudOmega: document.getElementById('hudOmega'),
-        hudModeBadge: document.getElementById('hudModeBadge'),
-        pktAgeText: document.getElementById('pktAgeText'),
-        pktCtrlHex: document.getElementById('pktCtrlHex'),
-        queueOverwriteTag: document.getElementById('queueOverwriteTag'),
-        pktHoldText: document.getElementById('pktHoldText'),
-        pktBatHex: document.getElementById('pktBatHex'),
-        stableLockTag: document.getElementById('stableLockTag'),
-        ledCore1: document.getElementById('ledCore1'),
-        ledCore0: document.getElementById('ledCore0'),
-        c1SummaryBadge: document.getElementById('c1SummaryBadge'),
-        c0SummaryBadge: document.getElementById('c0SummaryBadge')
+        hudMotorState: document.getElementById('hudMotorState'),
+        wheelCardFL: document.getElementById('wheelCardFL'),
+        wheelCardFR: document.getElementById('wheelCardFR'),
+        wheelCardRL: document.getElementById('wheelCardRL'),
+        wheelCardRR: document.getElementById('wheelCardRR'),
+        pwmValFL: document.getElementById('pwmValFL'),
+        pwmValFR: document.getElementById('pwmValFR'),
+        pwmValRL: document.getElementById('pwmValRL'),
+        pwmValRR: document.getElementById('pwmValRR'),
+        pwmBarFL: document.getElementById('pwmBarFL'),
+        pwmBarFR: document.getElementById('pwmBarFR'),
+        pwmBarRL: document.getElementById('pwmBarRL'),
+        pwmBarRR: document.getElementById('pwmBarRR')
       };
 
-      // Cache C++ tracer DOM nodes
-      const c1Lines = {}, c1Vals = {};
-      for (let i = 1; i <= 17; i++) {
-        c1Lines[i] = document.getElementById('c1_l' + i);
-        c1Vals[i]  = document.getElementById('v_c1_l' + i);
+      // Cache Arduino IDE 3-Block DOM nodes
+      const b1Lines = {}, b1Vals = {};
+      for (let i = 1; i <= 12; i++) {
+        b1Lines[i] = document.getElementById('b1_l' + i);
+        b1Vals[i]  = document.getElementById('vb1_l' + i);
       }
-      const c0Lines = {}, c0Vals = {};
+      const b2Lines = {}, b2Vals = {};
       for (let i = 1; i <= 7; i++) {
-        c0Lines[i] = document.getElementById('c0_l' + i);
-        c0Vals[i]  = document.getElementById('v_c0_l' + i);
+        b2Lines[i] = document.getElementById('b2_l' + i);
+        b2Vals[i]  = document.getElementById('vb2_l' + i);
+      }
+      const b3Lines = {}, b3Vals = {};
+      for (let i = 1; i <= 13; i++) {
+        b3Lines[i] = document.getElementById('b3_l' + i);
+        b3Vals[i]  = document.getElementById('vb3_l' + i);
       }
 
-      function setLineHL(el, cls) {
-        if (!el) return;
-        el.className = 'code-line' + (cls ? ' ' + cls : '');
+      function setArdRowHL(rowEl, cls) {
+        if (!rowEl) return;
+        rowEl.className = 'ard-row' + (cls ? ' ' + cls : '');
       }
 
-      // Simulator Wireless & Local State
-      let simPeer = null;
-      let simRemoteConn = null;
-      let simRemoteConnected = false;
-      let simInternalBusConnected = false;
-      let simForceDisconnect = false;
-      let simBootMs = performance.now();
+      // ==================== CONNECTION ACCESS CONTROL STATE ====================
+      // Policies: 'APPROVAL' (default) | 'OPEN' | 'LOCKED'
+      const ACCESS_POLICIES = ['APPROVAL', 'OPEN', 'LOCKED'];
+      let accessPolicyIdx = 0;
+      let accessPolicy = ACCESS_POLICIES[accessPolicyIdx];
 
-      // FreeRTOS IPC State
+      // approvedClient: { clientId, transport: 'WEBRTC'|'LOCAL', peerConn: DataConnection|null }
+      let approvedClient = null;
+      // pendingClients: Map<clientId, { clientId, transport, peerConn }>
+      const pendingClients = new Map();
+
+      const localBusChannel = ('BroadcastChannel' in window)
+        ? new BroadcastChannel(`team14-room-${simRoomDigits}`)
+        : null;
+
+      function sendControlSignalToClient(clientObj, payload) {
+        if (!clientObj) return;
+        if (clientObj.transport === 'WEBRTC' && clientObj.peerConn) {
+          try {
+            if (clientObj.peerConn.open) clientObj.peerConn.send(payload);
+          } catch {}
+        } else if (clientObj.transport === 'LOCAL' && localBusChannel) {
+          localBusChannel.postMessage(payload);
+        }
+      }
+
+      function renderAccessControlUI() {
+        simEl.accessPolicyBtn.textContent = `ACCESS: ${accessPolicy}`;
+        if (accessPolicy === 'LOCKED') {
+          simEl.accessPolicyBtn.style.borderColor = '#ef4444';
+          simEl.accessPolicyBtn.style.color = '#ef4444';
+        } else if (accessPolicy === 'OPEN') {
+          simEl.accessPolicyBtn.style.borderColor = '#22c55e';
+          simEl.accessPolicyBtn.style.color = '#22c55e';
+        } else {
+          simEl.accessPolicyBtn.style.borderColor = '#ffffff';
+          simEl.accessPolicyBtn.style.color = '#ffffff';
+        }
+
+        if (approvedClient) {
+          simEl.activeClientBox.classList.remove('hidden');
+          simEl.activeClientBox.classList.add('flex');
+          simEl.activeClientLabel.textContent = `CONNECTED: ${approvedClient.clientId}`;
+          simEl.standbyStatusPill.classList.add('hidden');
+        } else {
+          simEl.activeClientBox.classList.add('hidden');
+          simEl.activeClientBox.classList.remove('flex');
+          simEl.standbyStatusPill.classList.remove('hidden');
+          simEl.standbyText.textContent = accessPolicy === 'LOCKED'
+            ? 'HOST LOCKED (KEYBOARD ONLY)'
+            : 'NO CLIENT (KEYBOARD READY)';
+        }
+
+        if (pendingClients.size > 0) {
+          const firstPending = pendingClients.values().next().value;
+          simEl.approvalBanner.classList.remove('hidden');
+          simEl.approvalBanner.classList.add('flex');
+          simEl.pendingClientIdText.textContent = firstPending.clientId;
+          simEl.pendingTransportText.textContent = `(${firstPending.transport})`;
+        } else {
+          simEl.approvalBanner.classList.add('hidden');
+          simEl.approvalBanner.classList.remove('flex');
+        }
+      }
+
+      function kickCurrentApprovedClient(reason = 'KICKED BY HOST') {
+        if (!approvedClient) return;
+        const old = approvedClient;
+        approvedClient = null;
+        cmdQueueSlot = { x: 0, y: 0, r: 0, flags: 0, timestamp: 0 };
+        sendControlSignalToClient(old, { type: 'KICKED', clientId: old.clientId, reason });
+        if (old.transport === 'WEBRTC' && old.peerConn) {
+          setTimeout(() => { try { old.peerConn.close(); } catch {} }, 80);
+        }
+        renderAccessControlUI();
+      }
+
+      function approveClient(clientId) {
+        const req = pendingClients.get(clientId);
+        if (!req) return;
+        pendingClients.delete(clientId);
+        if (approvedClient && approvedClient.clientId !== clientId) {
+          kickCurrentApprovedClient('REPLACED BY NEW CLIENT');
+        }
+        approvedClient = req;
+        sendControlSignalToClient(req, { type: 'APPROVED', clientId: req.clientId });
+        renderAccessControlUI();
+        showToast(`Approved ${req.clientId}`);
+      }
+
+      function denyClient(clientId) {
+        const req = pendingClients.get(clientId);
+        if (!req) return;
+        pendingClients.delete(clientId);
+        sendControlSignalToClient(req, { type: 'REJECTED', clientId: req.clientId, reason: 'DENIED BY HOST' });
+        if (req.transport === 'WEBRTC' && req.peerConn) {
+          setTimeout(() => { try { req.peerConn.close(); } catch {} }, 80);
+        }
+        renderAccessControlUI();
+        showToast(`Denied ${req.clientId}`);
+      }
+
+      function handleIncomingHandshake(clientId, transport, peerConn = null) {
+        if (!clientId || typeof clientId !== 'string') return;
+        const clientObj = { clientId, transport, peerConn };
+
+        if (accessPolicy === 'LOCKED') {
+          sendControlSignalToClient(clientObj, { type: 'REJECTED', clientId, reason: 'HOST LOCKED' });
+          if (transport === 'WEBRTC' && peerConn) {
+            setTimeout(() => { try { peerConn.close(); } catch {} }, 80);
+          }
+          showToast(`Blocked ${clientId} (Host Locked)`);
+          return;
+        }
+
+        if (accessPolicy === 'OPEN') {
+          pendingClients.delete(clientId);
+          if (approvedClient && approvedClient.clientId !== clientId) {
+            kickCurrentApprovedClient('REPLACED BY NEW CLIENT');
+          }
+          approvedClient = clientObj;
+          sendControlSignalToClient(clientObj, { type: 'APPROVED', clientId });
+          renderAccessControlUI();
+          showToast(`Connected ${clientId}`);
+          return;
+        }
+
+        // accessPolicy === 'APPROVAL'
+        if (approvedClient && approvedClient.clientId === clientId) {
+          approvedClient = clientObj;
+          sendControlSignalToClient(clientObj, { type: 'APPROVED', clientId });
+          renderAccessControlUI();
+          return;
+        }
+
+        pendingClients.set(clientId, clientObj);
+        sendControlSignalToClient(clientObj, { type: 'PENDING', clientId });
+        renderAccessControlUI();
+        showToast(`Connection request from ${clientId}`);
+      }
+
+      function handleClientDisconnect(clientId) {
+        if (pendingClients.has(clientId)) {
+          pendingClients.delete(clientId);
+        }
+        if (approvedClient && approvedClient.clientId === clientId) {
+          approvedClient = null;
+          cmdQueueSlot = { x: 0, y: 0, r: 0, flags: 0, timestamp: 0 };
+          showToast(`${clientId} disconnected`);
+        }
+        renderAccessControlUI();
+      }
+
+      simEl.accessPolicyBtn.addEventListener('click', () => {
+        accessPolicyIdx = (accessPolicyIdx + 1) % ACCESS_POLICIES.length;
+        accessPolicy = ACCESS_POLICIES[accessPolicyIdx];
+        if (accessPolicy === 'LOCKED') {
+          for (const [cid] of pendingClients) denyClient(cid);
+          if (approvedClient) kickCurrentApprovedClient('HOST LOCKED');
+        } else if (accessPolicy === 'OPEN' && pendingClients.size > 0) {
+          const nextId = pendingClients.keys().next().value;
+          approveClient(nextId);
+        }
+        renderAccessControlUI();
+      });
+
+      simEl.approveClientBtn.addEventListener('click', () => {
+        if (pendingClients.size > 0) {
+          const firstId = pendingClients.keys().next().value;
+          approveClient(firstId);
+        }
+      });
+
+      simEl.denyClientBtn.addEventListener('click', () => {
+        if (pendingClients.size > 0) {
+          const firstId = pendingClients.keys().next().value;
+          denyClient(firstId);
+        }
+      });
+
+      simEl.kickClientBtn.addEventListener('click', () => {
+        kickCurrentApprovedClient('KICKED BY HOST');
+        showToast('Client disconnected by host.');
+      });
+
+      // Listen on BroadcastChannel for local/same-browser controller tabs & Split View
+      if (localBusChannel) {
+        localBusChannel.onmessage = (ev) => {
+          const msg = ev.data;
+          if (!msg || typeof msg !== 'object') return;
+          if (msg.type === 'HELLO') {
+            handleIncomingHandshake(msg.clientId, 'LOCAL', null);
+          } else if (msg.type === 'BYE') {
+            handleClientDisconnect(msg.clientId);
+          } else if (msg.type === 'CMD') {
+            // Ignore packets unless client is explicitly approved
+            if (!approvedClient || approvedClient.clientId !== msg.clientId) return;
+            ingestBinaryControlPacket(new Uint8Array(msg.pkt));
+          }
+        };
+      }
+
+      // ==================== FREE-RTOS QUEUE & CORE 1 MOVEMENT STATE ====================
       let cmdQueueSlot = null;
-      let lastMotorActiveMs = 0;
-      let rxSeqCount = 0;
-      let lastRxFlashMs = 0;
-      let lastTxNotifyFlashMs = 0;
-      let lastRxPacketBytes = new Uint8Array([PKT_CONTROL, 0, 0, 0, 0]);
 
-      // Local Keyboard Fallback
-      const localKeys = { w: false, a: false, s: false, d: false, q: false, e: false, space: false, shift: false };
-      let localKeySourceActive = false;
-
-      // Core 1 State
       const core1 = {
         activeCmd: { x: 0, y: 0, r: 0, flags: 0, timestamp: 0 },
         isAlive: false,
@@ -1146,96 +1264,33 @@
         defendPin: false,
         tgt: { fl: 0, fr: 0, rl: 0, rr: 0 },
         cur: { fl: 0, fr: 0, rl: 0, rr: 0 },
-        braking: { fl: false, fr: false, rl: false, rr: false },
-        tickCount: 0,
-        lastDequeuedMs: 0
+        braking: { fl: false, fr: false, rl: false, rr: false }
       };
 
-      // Physical Battery Plant + Core 0 State
-      const batteryPlant = {
-        trueOCV: 12.60,
-        currentSag: 0.0,
-        terminalV: 12.60
-      };
-
-      const core0 = {
-        lastSampleMs: 0,
-        lastBatSendMs: 0,
-        filteredV: 12.60,
-        prevSampleV: 12.60,
-        displayedPct: 100,
-        stableCount: 0,
-        isHolding: 1,
-        lastDeltaV: 0,
-        lastNotifyPkt: new Uint8Array([PKT_BATTERY, 100, 126, 1])
-      };
-
-      // 2D Robot Physics State
       const robot = {
         x: 0, y: 0,
         theta: 0,
         vxLocal: 0, vyLocal: 0, omega: 0,
         vxWorld: 0, vyWorld: 0,
         wheelPhase: { fl: 0, fr: 0, rl: 0, rr: 0 },
-        trail: [],
-        showTrail: true,
         projectiles: [],
         lastFireMs: 0
       };
 
-      // Dual-Trace Oscilloscope History (200 samples @ 50Hz = 4s)
-      const SCOPE_LEN = 200;
-      const scopeData = {
-        tgtFL: new Float32Array(SCOPE_LEN),
-        curFL: new Float32Array(SCOPE_LEN),
-        termV: new Float32Array(SCOPE_LEN).fill(12.60),
-        filtV: new Float32Array(SCOPE_LEN).fill(12.60),
-        locked: new Uint8Array(SCOPE_LEN).fill(1),
-        idx: 0
-      };
-
-      // Core 0: Receive 5-byte binary control packet [0xCC, x, y, r, flags]
-      function onSimReceiveControlPacket(rawBytes, sourceType = 'bus') {
-        if (simForceDisconnect) return;
-        const bytes = rawBytes instanceof Uint8Array ? rawBytes : new Uint8Array(rawBytes);
-        if (bytes.length !== 5 || bytes[0] !== PKT_CONTROL) return;
-
+      function ingestBinaryControlPacket(bytes) {
+        if (!bytes || bytes.length !== 5 || bytes[0] !== PKT_CONTROL) return;
         const dv = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
-        const now = performance.now();
-
-        lastRxPacketBytes = new Uint8Array(bytes);
-        rxSeqCount++;
-        lastRxFlashMs = now;
-
-        if (sourceType === 'remote') simRemoteConnected = true;
-        else if (sourceType === 'bus') simInternalBusConnected = true;
-
-        // Core 0: CommandCallbacks::onWrite() -> xQueueOverwrite(cmdQueue, &cmd)
         cmdQueueSlot = {
           x: dv.getInt8(1),
           y: dv.getInt8(2),
           r: dv.getInt8(3),
           flags: bytes[4],
-          timestamp: now
+          timestamp: performance.now()
         };
       }
 
-      // Core 0: Broadcast 4-byte battery telemetry [0xBB, pct, vX10, isHolding]
-      function sendSimBatteryTelemetry(pkt) {
-        if (simForceDisconnect) return;
-        // 1. Send to docked/local Web Controller UI
-        if (simInternalBusConnected) {
-          parseCtrlTelemetry(pkt);
-        }
-        // 2. Send to remote PeerJS Phone Controller
-        try {
-          if (simRemoteConn && simRemoteConn.open) {
-            simRemoteConn.send(pkt);
-          }
-        } catch {}
-      }
-
-      // ==================== SMART HOSTED URL & QR GENERATOR (NO 404s!) ====================
+      // ==================== HOST PEERJS & QR MODAL SETUP ====================
+      let simPeer = null;
       let activeShareableControllerUrl = '';
 
       function updateHostedUrlQrUI(rawInput) {
@@ -1245,8 +1300,6 @@
           activeShareableControllerUrl = `${cleanBase}?mode=controller&room=${simRoomDigits}`;
           simEl.copyCtrlUrlBtn.disabled = false;
           simEl.qrTargetUrlLabel.textContent = activeShareableControllerUrl;
-
-          simEl.sandboxGuideBox.classList.add('hidden');
           simEl.qrActiveBox.classList.remove('hidden');
           simEl.qrActiveBox.classList.add('flex');
 
@@ -1255,27 +1308,24 @@
             if (typeof QRCode !== 'undefined') {
               new QRCode(simEl.qrContainer, {
                 text: activeShareableControllerUrl,
-                width: 164,
-                height: 164,
+                width: 156,
+                height: 156,
                 colorDark: '#000000',
                 colorLight: '#ffffff',
                 correctLevel: QRCode.CorrectLevel.M
               });
             }
-          } catch (err) {
-            console.warn('QR render error:', err);
-          }
+          } catch {}
         } else {
           activeShareableControllerUrl = '';
           simEl.copyCtrlUrlBtn.disabled = true;
           simEl.qrActiveBox.classList.add('hidden');
           simEl.qrActiveBox.classList.remove('flex');
-          simEl.sandboxGuideBox.classList.remove('hidden');
         }
       }
 
-      function initPairingModalAndPeerHost() {
-        simEl.roomMiniTag.textContent = `ROOM: ${simRoomDigits}`;
+      function initHostPairing() {
+        simEl.roomBadge.textContent = `ROOM: ${simRoomDigits}`;
         simEl.modalRoomCode.textContent = simRoomDigits;
 
         const detectedBase = detectShareableBaseUrl();
@@ -1284,86 +1334,72 @@
 
         if (detectedBase) {
           simEl.hostedUrlInput.value = detectedBase;
-          simEl.urlEnvHint.textContent = '已自動偵測到有效公開網址，手機掃描下方 QR Code 即可直接連線。';
-          simEl.urlEnvHint.style.color = '#4ade80';
+          simEl.urlEnvHint.textContent = 'Public URL detected. Scan QR code with your phone to pair.';
           updateHostedUrlQrUI(detectedBase);
         } else if (savedBase) {
           simEl.hostedUrlInput.value = savedBase;
-          simEl.urlEnvHint.textContent = '目前處於沙盒預覽環境，已載入您上次儲存的部署網址。';
-          simEl.urlEnvHint.style.color = '#38bdf8';
+          simEl.urlEnvHint.textContent = 'Loaded saved public URL for phone QR pairing.';
           updateHostedUrlQrUI(savedBase);
         } else {
           simEl.hostedUrlInput.value = '';
-          simEl.urlEnvHint.textContent = '偵測到目前為沙盒預覽／本機檔案環境（直接分享預覽網址會產生 404），請輸入部署網址或使用雙畫面並排模式。';
-          simEl.urlEnvHint.style.color = '#f59e0b';
+          simEl.urlEnvHint.textContent = 'Running in local/sandbox preview. Enter your hosted URL above to generate a phone QR code, or use Split View.';
           updateHostedUrlQrUI('');
         }
 
-        simEl.hostedUrlInput.addEventListener('input', (e) => {
-          updateHostedUrlQrUI(e.target.value);
-        });
-
+        simEl.hostedUrlInput.addEventListener('input', (e) => updateHostedUrlQrUI(e.target.value));
         simEl.copyCtrlUrlBtn.addEventListener('click', () => {
-          if (activeShareableControllerUrl) {
-            copyTextSafe(activeShareableControllerUrl);
-          }
+          if (activeShareableControllerUrl) copyTextSafe(activeShareableControllerUrl);
         });
-
         simEl.modalSwitchSplitBtn.addEventListener('click', () => {
           simEl.pairModal.classList.add('hidden');
           simEl.pairModal.classList.remove('flex');
           setViewMode('split');
-          showToast('已開啟雙畫面並排演示！可直接操作左側原版控制器');
         });
 
-        // Initialize PeerJS Host for remote phone connections
         try {
           if (typeof Peer === 'undefined') {
-            simEl.peerStatusLine.textContent = '離線模式（可使用雙畫面並排或鍵盤操控）';
-            simEl.peerStatusLine.style.color = '#f59e0b';
+            simEl.peerStatusLine.textContent = 'WebRTC offline (Split View & Keyboard active)';
             return;
           }
-          if (simPeer) {
-            try { simPeer.destroy(); } catch {}
-          }
-          const peerId = `team14-sim-${simRoomDigits}`;
-          simPeer = new Peer(peerId);
+          if (simPeer) { try { simPeer.destroy(); } catch {} }
+          simPeer = new Peer(`team14-sim-${simRoomDigits}`);
 
           simPeer.on('open', () => {
-            simEl.peerStatusLine.textContent = `WebRTC 伺服器已就緒 (ID: ${simRoomDigits})`;
+            simEl.peerStatusLine.textContent = `WebRTC Host Ready (ID: ${simRoomDigits})`;
             simEl.peerStatusLine.style.color = '#22c55e';
           });
 
           simPeer.on('connection', (conn) => {
-            simRemoteConn = conn;
-            conn.on('open', () => {
-              simRemoteConnected = true;
-              simEl.peerStatusLine.textContent = '手機 Web Controller 已無線連線！';
-              simEl.peerStatusLine.style.color = '#38bdf8';
-              simEl.pairModal.classList.add('hidden');
-              simEl.pairModal.classList.remove('flex');
-              showToast('手機 Web Controller 已無線連線！');
-            });
+            let boundClientId = null;
+
             conn.on('data', (data) => {
-              if (data instanceof ArrayBuffer) onSimReceiveControlPacket(new Uint8Array(data), 'remote');
-              else if (data instanceof Uint8Array) onSimReceiveControlPacket(data, 'remote');
-              else if (Array.isArray(data)) onSimReceiveControlPacket(new Uint8Array(data), 'remote');
-            });
-            conn.on('close', () => {
-              if (simRemoteConn === conn) {
-                simRemoteConn = null;
-                simRemoteConnected = false;
+              if (data && typeof data === 'object' && !(data instanceof Uint8Array) && !(data instanceof ArrayBuffer) && !Array.isArray(data)) {
+                if (data.type === 'HELLO' && data.clientId) {
+                  boundClientId = data.clientId;
+                  handleIncomingHandshake(boundClientId, 'WEBRTC', conn);
+                } else if (data.type === 'BYE' && boundClientId) {
+                  handleClientDisconnect(boundClientId);
+                }
+                return;
               }
+
+              // Binary control packet: accept ONLY if this connection belongs to approvedClient
+              if (!approvedClient || approvedClient.peerConn !== conn) return;
+              if (data instanceof ArrayBuffer) ingestBinaryControlPacket(new Uint8Array(data));
+              else if (data instanceof Uint8Array) ingestBinaryControlPacket(data);
+              else if (Array.isArray(data)) ingestBinaryControlPacket(new Uint8Array(data));
+            });
+
+            conn.on('close', () => {
+              if (boundClientId) handleClientDisconnect(boundClientId);
             });
           });
 
           simPeer.on('error', (err) => {
-            simEl.peerStatusLine.textContent = `PeerJS 狀態: ${err.type}（雙畫面並排仍可離線使用）`;
-            simEl.peerStatusLine.style.color = '#f59e0b';
+            simEl.peerStatusLine.textContent = `WebRTC Status: ${err.type}`;
           });
         } catch {
-          simEl.peerStatusLine.textContent = 'PeerJS 無法連線（雙畫面並排仍可離線使用）';
-          simEl.peerStatusLine.style.color = '#f59e0b';
+          simEl.peerStatusLine.textContent = 'WebRTC unavailable (Use Split View or Keyboard)';
         }
       }
 
@@ -1382,59 +1418,34 @@
         }
       });
 
-      // Failsafe Simulation Button
-      simEl.simFailsafeBtn.addEventListener('click', () => {
-        simForceDisconnect = !simForceDisconnect;
-        if (simForceDisconnect) {
-          simEl.simFailsafeBtn.textContent = '恢復通訊 (RECONNECT)';
-          simEl.simFailsafeBtn.className = 'px-2.5 py-1.5 rounded-lg text-[11px] font-bold bg-[#ef4444] border border-[#ef4444] text-white hover:bg-[#dc2626] transition cursor-pointer';
-          showToast('已切斷封包接收，400ms 後將觸發 Core 1 Failsafe！');
-        } else {
-          simEl.simFailsafeBtn.textContent = '模擬斷線 (400ms Failsafe)';
-          simEl.simFailsafeBtn.className = 'px-2.5 py-1.5 rounded-lg text-[11px] font-bold bg-[#1a0b0e] border border-[#ef4444] text-[#ef4444] hover:bg-[#ef4444]/15 transition cursor-pointer';
-          showToast('通訊已恢復');
-        }
-      });
-
-      // Reset Robot & Boot Window
-      function resetSimulatorRobot() {
+      function resetCarPosition() {
         const rect = simEl.arenaContainer.getBoundingClientRect();
         robot.x = rect.width / 2;
         robot.y = rect.height / 2;
         robot.theta = 0;
         robot.vxLocal = robot.vyLocal = robot.omega = 0;
         robot.vxWorld = robot.vyWorld = 0;
-        robot.trail = [];
         robot.projectiles = [];
-        batteryPlant.trueOCV = 12.60;
-        batteryPlant.currentSag = 0;
-        batteryPlant.terminalV = 12.60;
-        simBootMs = performance.now();
-        core0.filteredV = 12.60;
-        core0.prevSampleV = 12.60;
-        core0.displayedPct = 100;
-        core0.stableCount = 0;
+        core1.cur = { fl: 0, fr: 0, rl: 0, rr: 0 };
+        core1.tgt = { fl: 0, fr: 0, rl: 0, rr: 0 };
       }
+      simEl.simResetBtn.addEventListener('click', resetCarPosition);
 
-      simEl.simResetBtn.addEventListener('click', resetSimulatorRobot);
-      simEl.toggleTrailBtn.addEventListener('click', () => {
-        robot.showTrail = !robot.showTrail;
-        simEl.toggleTrailBtn.textContent = robot.showTrail ? '軌跡: ON' : '軌跡: OFF';
-        simEl.toggleTrailBtn.style.borderColor = robot.showTrail ? '#38bdf8' : '#334155';
-        simEl.toggleTrailBtn.style.color = robot.showTrail ? '#38bdf8' : '#94a3b8';
-      });
-      simEl.clearTrailBtn.addEventListener('click', () => { robot.trail = []; });
+      // ==================== KEYBOARD FALLBACK (WHEN NO REMOTE CLIENT CONNECTED) ====================
+      const localKeys = { w: false, a: false, s: false, d: false, q: false, e: false, space: false, shift: false };
+      let keyboardActive = false;
+      let lastKbKey = '';
+      let lastKbSentMs = 0;
 
-      // Keyboard Fallback for Simulator Mode (WASD + Q/E + Space=Fire + Shift=Defend)
       window.addEventListener('keydown', (e) => {
         if (currentView === 'ctrl') return;
         if (document.activeElement && document.activeElement.tagName === 'INPUT') return;
         const k = e.key.toLowerCase();
-        if (e.code === 'Space') { e.preventDefault(); localKeys.space = true; localKeySourceActive = true; return; }
-        if (e.key === 'Shift')  { localKeys.shift = true; localKeySourceActive = true; return; }
+        if (e.code === 'Space') { e.preventDefault(); localKeys.space = true; keyboardActive = true; return; }
+        if (e.key === 'Shift')  { localKeys.shift = true; keyboardActive = true; return; }
         if (k in localKeys) {
           localKeys[k] = true;
-          localKeySourceActive = true;
+          keyboardActive = true;
         }
       });
       window.addEventListener('keyup', (e) => {
@@ -1444,11 +1455,8 @@
         if (k in localKeys) localKeys[k] = false;
       });
 
-      let localLastKey = '';
-      let localLastSentMs = 0;
-      function runLocalKeyboardLoop() {
-        if (simRemoteConnected || simInternalBusConnected || simForceDisconnect) return;
-        if (!localKeySourceActive) return;
+      function runKeyboardFallbackLoop() {
+        if (approvedClient !== null || !keyboardActive) return;
 
         const kx = (localKeys.d ? 1 : 0) - (localKeys.a ? 1 : 0);
         const ky = (localKeys.w ? 1 : 0) - (localKeys.s ? 1 : 0);
@@ -1473,46 +1481,47 @@
         buf[4] = flags;
 
         const key = buf.join(',');
-        if (key !== localLastKey || now - localLastSentMs >= HEARTBEAT_MS) {
-          localLastKey = key;
-          localLastSentMs = now;
-          onSimReceiveControlPacket(buf, 'keyboard');
+        if (key !== lastKbKey || now - lastKbSentMs >= HEARTBEAT_MS) {
+          lastKbKey = key;
+          lastKbSentMs = now;
+          ingestBinaryControlPacket(buf);
         }
       }
 
-      // ==================== CORE 1 TASK (STRICT 50Hz / 20ms) ====================
-      function runCore1Task() {
+      // ==================== CORE 1: 50Hz MOVEMENT & KINEMATICS STEP ====================
+      function runCore1MovementLoop() {
         const now = performance.now();
-        core1.tickCount++;
 
-        // 1. Non-blocking xQueueReceive()
-        let dequeuedNow = false;
         if (cmdQueueSlot !== null) {
           core1.activeCmd = cmdQueueSlot;
           cmdQueueSlot = null;
-          core1.lastDequeuedMs = now;
-          dequeuedNow = true;
         }
 
-        const hasEverConnected = (simRemoteConnected || simInternalBusConnected || localKeySourceActive);
+        const hasSource = (approvedClient !== null) || (approvedClient === null && keyboardActive);
         const pktAge = core1.activeCmd.timestamp === 0 ? 999 : (now - core1.activeCmd.timestamp);
-        const isAlive = !simForceDisconnect && hasEverConnected && (pktAge <= FAILSAFE_MS);
+        const isAlive = hasSource && (pktAge <= FAILSAFE_MS);
         core1.isAlive = isAlive;
 
-        let anyZeroCross = false;
-        let anyPreload   = false;
-        let anyLogAccel  = false;
-        let anyDecel     = false;
-        let lastLogStep  = 0;
-        let anyBrakeWheel = false;
-        let anyDriveWheel = false;
-        let isMoving = false;
         let nx = 0, ny = 0, nr = 0;
+        let rawFL = 0, rawFR = 0, rawRL = 0, rawRR = 0;
+        let maxMag = 0;
+        let normalizedOverflow = false;
+        let isMoving = false;
+
+        let resScaleFL = { pwm: 0, mag: 0, rawPwm: 0, deadband: true };
+        let resScaleFR = { pwm: 0, mag: 0, rawPwm: 0, deadband: true };
+        let resScaleRL = { pwm: 0, mag: 0, rawPwm: 0, deadband: true };
+        let resScaleRR = { pwm: 0, mag: 0, rawPwm: 0, deadband: true };
+
+        let resRampFL = { next: 0, branch: 'steady', step: 0, norm: 0 };
+        let resRampFR = { next: 0, branch: 'steady', step: 0, norm: 0 };
+        let resRampRL = { next: 0, branch: 'steady', step: 0, norm: 0 };
+        let resRampRR = { next: 0, branch: 'steady', step: 0, norm: 0 };
 
         if (!isAlive) {
-          core1.tgt.fl = core1.tgt.fr = core1.tgt.rl = core1.tgt.rr = 0;
-          core1.cur.fl = core1.cur.fr = core1.cur.rl = core1.cur.rr = 0;
-          core1.braking.fl = core1.braking.fr = core1.braking.rl = core1.braking.rr = true;
+          core1.tgt = { fl: 0, fr: 0, rl: 0, rr: 0 };
+          core1.cur = { fl: 0, fr: 0, rl: 0, rr: 0 };
+          core1.braking = { fl: true, fr: true, rl: true, rr: true };
           core1.firePin = false;
           core1.defendPin = false;
         } else {
@@ -1524,69 +1533,51 @@
           nr = clamp(core1.activeCmd.r / SLIDER_MAX, -1.0, 1.0);
 
           isMoving = (nx !== 0 || ny !== 0 || nr !== 0);
+
           if (isMoving) {
-            let fl = ny + nx + nr;
-            let fr = ny - nx - nr;
-            let rl = ny - nx + nr;
-            let rr = ny + nx - nr;
+            rawFL = ny + nx + nr;
+            rawFR = ny - nx - nr;
+            rawRL = ny - nx + nr;
+            rawRR = ny + nx - nr;
 
-            const maxMag = Math.max(Math.abs(fl), Math.abs(fr), Math.abs(rl), Math.abs(rr));
+            maxMag = Math.max(Math.abs(rawFL), Math.abs(rawFR), Math.abs(rawRL), Math.abs(rawRR));
             if (maxMag > 1.0) {
-              fl /= maxMag; fr /= maxMag; rl /= maxMag; rr /= maxMag;
+              normalizedOverflow = true;
+              rawFL /= maxMag;
+              rawFR /= maxMag;
+              rawRL /= maxMag;
+              rawRR /= maxMag;
             }
-
-            core1.tgt.fl = ratioToPWM(fl, MIN_PWM);
-            core1.tgt.fr = ratioToPWM(fr, MIN_PWM);
-            core1.tgt.rl = ratioToPWM(rl, MIN_PWM);
-            core1.tgt.rr = ratioToPWM(rr, MIN_PWM);
-          } else {
-            core1.tgt.fl = core1.tgt.fr = core1.tgt.rl = core1.tgt.rr = 0;
           }
 
-          const rFL = rampPWMTraced(core1.cur.fl, core1.tgt.fl, MIN_PWM);
-          const rFR = rampPWMTraced(core1.cur.fr, core1.tgt.fr, MIN_PWM);
-          const rRL = rampPWMTraced(core1.cur.rl, core1.tgt.rl, MIN_PWM);
-          const rRR = rampPWMTraced(core1.cur.rr, core1.tgt.rr, MIN_PWM);
+          resScaleFL = ratioToPWMTraced(rawFL, MIN_PWM);
+          resScaleFR = ratioToPWMTraced(rawFR, MIN_PWM);
+          resScaleRL = ratioToPWMTraced(rawRL, MIN_PWM);
+          resScaleRR = ratioToPWMTraced(rawRR, MIN_PWM);
 
-          core1.cur.fl = rFL.next;
-          core1.cur.fr = rFR.next;
-          core1.cur.rl = rRL.next;
-          core1.cur.rr = rRR.next;
+          core1.tgt.fl = resScaleFL.pwm;
+          core1.tgt.fr = resScaleFR.pwm;
+          core1.tgt.rl = resScaleRL.pwm;
+          core1.tgt.rr = resScaleRR.pwm;
 
-          for (const res of [rFL, rFR, rRL, rRR]) {
-            if (res.branch === 'zerocross') anyZeroCross = true;
-            else if (res.branch === 'preload') anyPreload = true;
-            else if (res.branch === 'logaccel') { anyLogAccel = true; lastLogStep = res.step; }
-            else if (res.branch === 'decel') anyDecel = true;
-          }
+          resRampFL = rampPWMTraced(core1.cur.fl, core1.tgt.fl, MIN_PWM);
+          resRampFR = rampPWMTraced(core1.cur.fr, core1.tgt.fr, MIN_PWM);
+          resRampRL = rampPWMTraced(core1.cur.rl, core1.tgt.rl, MIN_PWM);
+          resRampRR = rampPWMTraced(core1.cur.rr, core1.tgt.rr, MIN_PWM);
+
+          core1.cur.fl = resRampFL.next;
+          core1.cur.fr = resRampFR.next;
+          core1.cur.rl = resRampRL.next;
+          core1.cur.rr = resRampRR.next;
 
           core1.braking.fl = isMoving && core1.cur.fl === 0;
           core1.braking.fr = isMoving && core1.cur.fr === 0;
           core1.braking.rl = isMoving && core1.cur.rl === 0;
           core1.braking.rr = isMoving && core1.cur.rr === 0;
-
-          anyBrakeWheel = core1.braking.fl || core1.braking.fr || core1.braking.rl || core1.braking.rr;
-          anyDriveWheel = (core1.cur.fl !== 0 || core1.cur.fr !== 0 || core1.cur.rl !== 0 || core1.cur.rr !== 0);
-
-          if (anyDriveWheel) {
-            lastMotorActiveMs = now;
-          }
         }
 
-        // --- Battery Voltage Sag & Rebound Plant (dt = 20ms) ---
+        // --- Mecanum Forward Kinematics & Arena Wall Clamping (WALL_PAD = 48) ---
         const dt = 0.02;
-        const motorLoad = (Math.abs(core1.cur.fl) + Math.abs(core1.cur.fr) + Math.abs(core1.cur.rl) + Math.abs(core1.cur.rr)) / (4 * MAX_PWM);
-        const auxLoad = (core1.firePin ? 0.08 : 0) + (core1.defendPin ? 0.04 : 0);
-        const totalLoad = clamp(motorLoad + auxLoad, 0, 1.15);
-
-        batteryPlant.trueOCV = Math.max(9.1, batteryPlant.trueOCV - totalLoad * 0.0028 * dt);
-        const targetSag = totalLoad * 1.48;
-        const sagTau = targetSag > batteryPlant.currentSag ? 0.14 : 0.85;
-        batteryPlant.currentSag += (targetSag - batteryPlant.currentSag) * (dt / sagTau);
-        const noise = (Math.random() - 0.5) * 0.022;
-        batteryPlant.terminalV = clamp(batteryPlant.trueOCV - batteryPlant.currentSag + noise, 9.0, 12.6);
-
-        // --- Mecanum Forward Kinematics + Realistic Inertia & Friction ---
         const nFL = core1.cur.fl / MAX_PWM;
         const nFR = core1.cur.fr / MAX_PWM;
         const nRL = core1.cur.rl / MAX_PWM;
@@ -1596,12 +1587,13 @@
         const targetVyLocal = ((nFL + nFR + nRL + nRR) / 4.0) * 240;
         const targetOmega   = ((nFL - nFR + nRL - nRR) / 4.0) * 2.55;
 
-        const allBraking = core1.braking.fl && core1.braking.fr && core1.braking.rl && core1.braking.rr;
-        const responseAlpha = allBraking ? 0.45 : (anyDriveWheel ? 0.24 : 0.14);
+        const anyDrive = (core1.cur.fl !== 0 || core1.cur.fr !== 0 || core1.cur.rl !== 0 || core1.cur.rr !== 0);
+        const allBrake = core1.braking.fl && core1.braking.fr && core1.braking.rl && core1.braking.rr;
+        const alpha = allBrake ? 0.45 : (anyDrive ? 0.24 : 0.14);
 
-        robot.vxLocal += (targetVxLocal - robot.vxLocal) * responseAlpha;
-        robot.vyLocal += (targetVyLocal - robot.vyLocal) * responseAlpha;
-        robot.omega   += (targetOmega   - robot.omega)   * responseAlpha;
+        robot.vxLocal += (targetVxLocal - robot.vxLocal) * alpha;
+        robot.vyLocal += (targetVyLocal - robot.vyLocal) * alpha;
+        robot.omega   += (targetOmega   - robot.omega)   * alpha;
 
         if (Math.abs(robot.vxLocal) < 0.5) robot.vxLocal = 0;
         if (Math.abs(robot.vyLocal) < 0.5) robot.vyLocal = 0;
@@ -1616,10 +1608,15 @@
         robot.y += robot.vyWorld * dt;
         robot.theta += robot.omega * dt;
 
-        const aRect = simEl.arenaContainer.getBoundingClientRect();
-        if (aRect.width > 60 && aRect.height > 60) {
-          robot.x = clamp(robot.x, 42, aRect.width - 42);
-          robot.y = clamp(robot.y, 42, aRect.height - 42);
+        // Clamp center with WALL_PAD = 48 so rotated robot & wheels NEVER touch canvas edges
+        const WALL_PAD = 48;
+        const aW = simEl.arenaContainer.clientWidth;
+        const aH = simEl.arenaContainer.clientHeight;
+        if (aW > WALL_PAD * 2 && aH > WALL_PAD * 2) {
+          if (robot.x <= WALL_PAD) { robot.x = WALL_PAD; if (robot.vxWorld < 0) robot.vxWorld = 0; }
+          if (robot.x >= aW - WALL_PAD) { robot.x = aW - WALL_PAD; if (robot.vxWorld > 0) robot.vxWorld = 0; }
+          if (robot.y <= WALL_PAD) { robot.y = WALL_PAD; if (robot.vyWorld < 0) robot.vyWorld = 0; }
+          if (robot.y >= aH - WALL_PAD) { robot.y = aH - WALL_PAD; if (robot.vyWorld > 0) robot.vyWorld = 0; }
         }
 
         const spinScale = 18.0;
@@ -1628,309 +1625,242 @@
         robot.wheelPhase.rl += nRL * spinScale * dt;
         robot.wheelPhase.rr += nRR * spinScale * dt;
 
-        if (Math.hypot(robot.vxWorld, robot.vyWorld) > 5) {
-          robot.trail.push({ x: robot.x, y: robot.y });
-          if (robot.trail.length > 260) robot.trail.shift();
-        }
-
-        // FIRE orange pulse beam
-        if (core1.firePin && now - robot.lastFireMs >= 130) {
+        // Fire pulse projectiles
+        if (core1.firePin && now - robot.lastFireMs >= 140) {
           robot.lastFireMs = now;
           robot.projectiles.push({
-            x: robot.x + sinT * 34,
-            y: robot.y - cosT * 34,
-            vx: sinT * 480,
-            vy: -cosT * 480,
+            x: robot.x + sinT * 32,
+            y: robot.y - cosT * 32,
+            vx: sinT * 460,
+            vy: -cosT * 460,
             life: 1.0
           });
         }
         for (let i = robot.projectiles.length - 1; i >= 0; i--) {
           const p = robot.projectiles[i];
-          p.x += p.vx * dt; p.y += p.vy * dt; p.life -= dt * 1.5;
-          if (p.life <= 0 || p.x < 0 || p.y < 0 || p.x > aRect.width || p.y > aRect.height) {
+          p.x += p.vx * dt;
+          p.y += p.vy * dt;
+          p.life -= dt * 1.6;
+          if (p.life <= 0 || p.x < 4 || p.y < 4 || p.x > aW - 4 || p.y > aH - 4) {
             robot.projectiles.splice(i, 1);
           }
         }
 
-        // Push oscilloscope data
-        const si = scopeData.idx;
-        scopeData.tgtFL[si]  = core1.tgt.fl;
-        scopeData.curFL[si]  = core1.cur.fl;
-        scopeData.termV[si]  = batteryPlant.terminalV;
-        scopeData.filtV[si]  = core0.filteredV;
-        scopeData.locked[si] = core0.stableCount >= BAT_STABLE_COUNT ? 1 : 0;
-        scopeData.idx = (si + 1) % SCOPE_LEN;
-
         if (currentView !== 'ctrl') {
-          updateCore1UI(now, pktAge, dequeuedNow, nx, ny, nr, anyZeroCross, anyPreload, anyLogAccel, anyDecel, lastLogStep, anyBrakeWheel, anyDriveWheel);
+          updateWheelBarsAndHud(anyDrive, allBrake);
+          updateArduinoCodeBlocks(
+            nx, ny, nr,
+            rawFL, rawFR, rawRL, rawRR,
+            maxMag, normalizedOverflow, isMoving,
+            [resScaleFL, resScaleFR, resScaleRL, resScaleRR],
+            [resRampFL, resRampFR, resRampRL, resRampRR]
+          );
         }
       }
 
-      function updateCore1UI(now, pktAge, dequeuedNow, nx, ny, nr, anyZeroCross, anyPreload, anyLogAccel, anyDecel, lastLogStep, anyBrakeWheel, anyDriveWheel) {
-        const pulse = (core1.tickCount % 4) < 2;
-        simEl.ledCore1.style.opacity = pulse ? '1' : '0.3';
-
-        // Connection Status Pill
-        if (simForceDisconnect || (!core1.isAlive && (simRemoteConnected || simInternalBusConnected || localKeySourceActive))) {
-          simEl.connPill.className = 'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold mono tracking-wide bg-[#2a090d] border border-[#ef4444] text-[#ef4444]';
-          simEl.connDot.className = 'w-2 h-2 rounded-full bg-[#ef4444]';
-          simEl.connText.textContent = 'FAILSAFE (>400ms)';
-          simEl.hudModeBadge.textContent = 'FAILSAFE: BRAKE';
-          simEl.hudModeBadge.className = 'pointer-events-none absolute top-2 right-2 px-2 py-0.5 rounded border text-[10px] font-bold mono bg-[#3b0a0a]/95 border-[#ef4444] text-[#f87171]';
-        } else if (simRemoteConnected) {
-          simEl.connPill.className = 'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold mono tracking-wide bg-[#052e16] border border-[#22c55e] text-[#4ade80]';
-          simEl.connDot.className = 'w-2 h-2 rounded-full bg-[#22c55e]';
-          simEl.connText.textContent = 'PHONE CONNECTED';
-          simEl.hudModeBadge.textContent = '50Hz NORMAL';
-          simEl.hudModeBadge.className = 'pointer-events-none absolute top-2 right-2 px-2 py-0.5 rounded border text-[10px] font-bold mono bg-[#052e16]/90 border-[#22c55e] text-[#4ade80]';
-        } else if (simInternalBusConnected) {
-          simEl.connPill.className = 'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold mono tracking-wide bg-[#052e16] border border-[#22c55e] text-[#4ade80]';
-          simEl.connDot.className = 'w-2 h-2 rounded-full bg-[#22c55e]';
-          simEl.connText.textContent = 'CONTROLLER LINKED';
-          simEl.hudModeBadge.textContent = '50Hz NORMAL';
-          simEl.hudModeBadge.className = 'pointer-events-none absolute top-2 right-2 px-2 py-0.5 rounded border text-[10px] font-bold mono bg-[#052e16]/90 border-[#22c55e] text-[#4ade80]';
-        } else if (localKeySourceActive) {
-          simEl.connPill.className = 'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold mono tracking-wide bg-[#082f49] border border-[#38bdf8] text-[#38bdf8]';
-          simEl.connDot.className = 'w-2 h-2 rounded-full bg-[#38bdf8]';
-          simEl.connText.textContent = 'KEYBOARD ACTIVE';
-          simEl.hudModeBadge.textContent = '50Hz NORMAL';
-          simEl.hudModeBadge.className = 'pointer-events-none absolute top-2 right-2 px-2 py-0.5 rounded border text-[10px] font-bold mono bg-[#052e16]/90 border-[#22c55e] text-[#4ade80]';
-        } else {
-          simEl.connPill.className = 'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold mono tracking-wide bg-[#1c1917] border border-[#f59e0b] text-[#f59e0b]';
-          simEl.connDot.className = 'w-2 h-2 rounded-full bg-[#f59e0b]';
-          simEl.connText.textContent = 'STANDBY';
-          simEl.hudModeBadge.textContent = 'STANDBY (BRAKE)';
-          simEl.hudModeBadge.className = 'pointer-events-none absolute top-2 right-2 px-2 py-0.5 rounded border text-[10px] font-bold mono bg-[#1e293b]/90 border-[#64748b] text-[#cbd5e1]';
-        }
-
-        // Velocity HUD
+      function updateWheelBarsAndHud(anyDrive, allBrake) {
         simEl.hudVx.textContent = (robot.vxLocal / 200).toFixed(2);
         simEl.hudVy.textContent = (robot.vyLocal / 200).toFixed(2);
         simEl.hudOmega.textContent = robot.omega.toFixed(2);
 
-        // RX Hex Packet Inspector
-        const ageDisplay = core1.activeCmd.timestamp === 0 ? '--' : Math.min(9999, Math.round(pktAge));
-        simEl.pktAgeText.textContent = `${ageDisplay}ms / 400ms`;
-        simEl.pktAgeText.style.color = (pktAge > FAILSAFE_MS || simForceDisconnect) ? '#ef4444' : '#22c55e';
-        const b = lastRxPacketBytes;
-        simEl.pktCtrlHex.textContent = `[ ${toHex(b[0])}, ${toHex(b[1])}, ${toHex(b[2])}, ${toHex(b[3])}, ${toHex(b[4])} ]`;
-
-        const rxRecent = (now - lastRxFlashMs) < 120;
-        simEl.queueOverwriteTag.style.borderColor = rxRecent ? '#38bdf8' : '#334155';
-        simEl.queueOverwriteTag.style.color = rxRecent ? '#38bdf8' : '#94a3b8';
-
-        // Core 1 C++ Line-by-Line Highlights
-        const recentlyDequeued = (now - core1.lastDequeuedMs) < 90;
-        setLineHL(c1Lines[1], recentlyDequeued ? 'hl-cyan' : '');
-        c1Vals[1].textContent = dequeuedNow ? 'DEQUEUED!' : (recentlyDequeued ? 'NEW CMD' : 'EMPTY');
-
-        setLineHL(c1Lines[2], core1.isAlive ? 'hl-soft' : 'hl-red');
-        c1Vals[2].textContent = `age=${ageDisplay}ms`;
-
-        if (!core1.isAlive) {
-          simEl.c1SummaryBadge.textContent = 'FAILSAFE ACTIVE';
-          simEl.c1SummaryBadge.style.color = '#ef4444';
-          setLineHL(c1Lines[3], 'hl-red'); c1Vals[3].textContent = 'true';
-          setLineHL(c1Lines[4], 'hl-red'); c1Vals[4].textContent = 'BRAKE ALL';
-          setLineHL(c1Lines[5], 'hl-red'); c1Vals[5].textContent = 'PINS LOW';
-          for (let i = 6; i <= 16; i++) setLineHL(c1Lines[i], '');
-          c1Vals[6].textContent = 'skip';
-          c1Vals[11].textContent = '-'; c1Vals[12].textContent = '-';
-          c1Vals[13].textContent = '-'; c1Vals[14].textContent = '-';
-          c1Vals[15].textContent = 'BRAKE'; c1Vals[16].textContent = 'IDLE';
+        if (anyDrive) {
+          simEl.hudMotorState.textContent = 'DRIVING (50Hz)';
+          simEl.hudMotorState.style.color = '#ffffff';
+          simEl.hudMotorState.style.borderColor = '#ffffff';
+        } else if (allBrake) {
+          simEl.hudMotorState.textContent = 'IDLE / BRAKE';
+          simEl.hudMotorState.style.color = '#8a8a8a';
+          simEl.hudMotorState.style.borderColor = '#262626';
         } else {
-          simEl.c1SummaryBadge.textContent = anyDriveWheel ? 'DRIVING (50Hz)' : 'READY (50Hz)';
-          simEl.c1SummaryBadge.style.color = '#22c55e';
-          setLineHL(c1Lines[3], ''); c1Vals[3].textContent = 'false';
-          setLineHL(c1Lines[4], ''); c1Vals[4].textContent = 'skip';
-          setLineHL(c1Lines[5], ''); c1Vals[5].textContent = 'skip';
-          setLineHL(c1Lines[6], 'hl-soft'); c1Vals[6].textContent = 'enter';
-
-          const pinActive = core1.firePin || core1.defendPin;
-          setLineHL(c1Lines[7], pinActive ? 'hl-orange' : '');
-          c1Vals[7].textContent = `F:${core1.firePin ? 1 : 0} D:${core1.defendPin ? 1 : 0}`;
-
-          const inputNonZero = (nx !== 0 || ny !== 0 || nr !== 0);
-          setLineHL(c1Lines[8], inputNonZero ? 'hl-cyan' : '');
-          c1Vals[8].textContent = `x:${nx.toFixed(1)} y:${ny.toFixed(1)} r:${nr.toFixed(1)}`;
-
-          setLineHL(c1Lines[9], inputNonZero ? 'hl-cyan' : '');
-          c1Vals[9].textContent = `tgtFL:${core1.tgt.fl}`;
-
-          setLineHL(c1Lines[10], '');
-          c1Vals[10].textContent = `curFL:${core1.cur.fl}`;
-
-          setLineHL(c1Lines[11], anyZeroCross ? 'hl-amber' : '');
-          c1Vals[11].textContent = anyZeroCross ? 'ZERO-CROSS!' : '-';
-
-          setLineHL(c1Lines[12], anyPreload ? 'hl-purple' : '');
-          c1Vals[12].textContent = anyPreload ? 'JUMP ±20!' : '-';
-
-          setLineHL(c1Lines[13], anyLogAccel ? 'hl-green' : '');
-          c1Vals[13].textContent = anyLogAccel ? `step=+${lastLogStep}` : '-';
-
-          setLineHL(c1Lines[14], anyDecel ? 'hl-orange' : '');
-          c1Vals[14].textContent = anyDecel ? 'step=-15' : '-';
-
-          setLineHL(c1Lines[15], anyBrakeWheel ? 'hl-red' : (anyDriveWheel ? 'hl-green' : ''));
-          c1Vals[15].textContent = anyBrakeWheel ? 'BRAKE' : (anyDriveWheel ? 'DRIVE' : 'COAST');
-
-          setLineHL(c1Lines[16], anyDriveWheel ? 'hl-cyan' : '');
-          c1Vals[16].textContent = anyDriveWheel ? 'STAMPED' : 'IDLE';
+          simEl.hudMotorState.textContent = 'COASTING';
+          simEl.hudMotorState.style.color = '#a3a3a3';
+          simEl.hudMotorState.style.borderColor = '#262626';
         }
 
-        setLineHL(c1Lines[17], pulse ? 'hl-soft' : '');
-        c1Vals[17].textContent = pulse ? '50Hz ●' : '50Hz ○';
-      }
+        const wheels = [
+          { card: simEl.wheelCardFL, valEl: simEl.pwmValFL, barEl: simEl.pwmBarFL, pwm: core1.cur.fl, brk: core1.braking.fl },
+          { card: simEl.wheelCardFR, valEl: simEl.pwmValFR, barEl: simEl.pwmBarFR, pwm: core1.cur.fr, brk: core1.braking.fr },
+          { card: simEl.wheelCardRL, valEl: simEl.pwmValRL, barEl: simEl.pwmBarRL, pwm: core1.cur.rl, brk: core1.braking.rl },
+          { card: simEl.wheelCardRR, valEl: simEl.pwmValRR, barEl: simEl.pwmBarRR, pwm: core1.cur.rr, brk: core1.braking.rr }
+        ];
 
-      // ==================== CORE 0 TASK (100ms MONITOR / 1Hz TELEMETRY) ====================
-      function runCore0Task() {
-        const now = performance.now();
-        const inInitWindow = (now - simBootMs) < BAT_INIT_WINDOW_MS;
-        let motorsStopped = (lastMotorActiveMs === 0) || (now - lastMotorActiveMs >= BAT_MIN_SETTLE_MS);
-
-        if (inInitWindow) {
-          const v = batteryPlant.terminalV;
-          if (v > core0.filteredV) {
-            core0.filteredV = v;
-            core0.prevSampleV = v;
-            core0.displayedPct = voltageToPct(core0.filteredV);
-          }
-        } else if (now - core0.lastSampleMs >= BAT_SAMPLE_MS) {
-          core0.lastSampleMs = now;
-          motorsStopped = (lastMotorActiveMs === 0) || (now - lastMotorActiveMs >= BAT_MIN_SETTLE_MS);
-
-          if (!motorsStopped) {
-            core0.stableCount = 0;
-            core0.prevSampleV = batteryPlant.terminalV;
-            core0.lastDeltaV = 0;
+        for (const w of wheels) {
+          if (w.brk && anyDrive) {
+            w.card.style.borderColor = '#ef4444';
+            w.valEl.textContent = 'BRK';
+            w.valEl.style.color = '#ef4444';
+            w.barEl.style.left = '0%';
+            w.barEl.style.width = '100%';
+            w.barEl.style.backgroundColor = '#ef4444';
           } else {
-            const currentV = batteryPlant.terminalV;
-            core0.lastDeltaV = Math.abs(currentV - core0.prevSampleV);
-            if (core0.lastDeltaV <= BAT_STABLE_DV) {
-              if (core0.stableCount < BAT_STABLE_COUNT) core0.stableCount++;
+            w.card.style.borderColor = w.pwm !== 0 ? '#525252' : '#262626';
+            w.valEl.textContent = w.pwm > 0 ? `+${w.pwm}` : `${w.pwm}`;
+            w.valEl.style.color = '#ffffff';
+            const pct = (Math.abs(w.pwm) / MAX_PWM) * 50;
+            if (w.pwm >= 0) {
+              w.barEl.style.left = '50%';
+              w.barEl.style.width = `${pct}%`;
+              w.barEl.style.backgroundColor = '#ffffff';
             } else {
-              core0.stableCount = 0;
-            }
-            core0.prevSampleV = currentV;
-
-            if (core0.stableCount >= BAT_STABLE_COUNT) {
-              core0.filteredV = core0.filteredV * 0.8 + currentV * 0.2;
-              const rawPct = voltageToPct(core0.filteredV);
-              if (rawPct < core0.displayedPct) {
-                core0.displayedPct = rawPct;
-              }
+              w.barEl.style.left = `${50 - pct}%`;
+              w.barEl.style.width = `${pct}%`;
+              w.barEl.style.backgroundColor = '#a3a3a3';
             }
           }
         }
+      }
 
-        // 1Hz Telemetry Notify
-        if (now - core0.lastBatSendMs >= BAT_NOTIFY_MS) {
-          core0.lastBatSendMs = now;
-          motorsStopped = (lastMotorActiveMs === 0) || (now - lastMotorActiveMs >= BAT_MIN_SETTLE_MS);
-          core0.isHolding = (inInitWindow || !motorsStopped || core0.stableCount < BAT_STABLE_COUNT) ? 1 : 0;
+      // ==================== REAL-TIME ARDUINO IDE 3-BLOCK TRACER ====================
+      function updateArduinoCodeBlocks(nx, ny, nr, fl, fr, rl, rr, maxMag, overflow, isMoving, scaleList, rampList) {
+        const inputActive = (nx !== 0 || ny !== 0 || nr !== 0);
+        const anyCurNonZero = (core1.cur.fl !== 0 || core1.cur.fr !== 0 || core1.cur.rl !== 0 || core1.cur.rr !== 0);
 
-          const vX10 = clamp(Math.round(core0.filteredV * 10), 0, 255);
-          core0.lastNotifyPkt = new Uint8Array([PKT_BATTERY, core0.displayedPct, vX10, core0.isHolding]);
-          lastTxNotifyFlashMs = now;
+        // --- BLOCK 1: motorControlTask.ino ---
+        setArdRowHL(b1Lines[1], nx !== 0 ? 'exec-teal' : '');
+        b1Vals[1].textContent = `x:${nx.toFixed(2)}`;
 
-          // Update Simulator Battery Badge
-          simEl.batText.textContent = `12V: ${core0.displayedPct}% (${(vX10 / 10).toFixed(1)}V)`;
-          simEl.batHoldTag.classList.toggle('hidden', core0.isHolding !== 1);
-          const lvl = core0.displayedPct <= 20 ? 'low' : core0.displayedPct <= 45 ? 'warn' : '';
-          simEl.batBadge.className = `bat-badge mono text-xs font-bold px-2.5 py-1 rounded-lg hidden sm:flex items-center gap-1.5 ${lvl} ${core0.isHolding === 1 ? 'holding' : ''}`;
+        setArdRowHL(b1Lines[2], ny !== 0 ? 'exec-teal' : '');
+        b1Vals[2].textContent = `y:${ny.toFixed(2)}`;
 
-          // Update TX Hex Inspector
-          const bp = core0.lastNotifyPkt;
-          simEl.pktBatHex.textContent = `[ ${toHex(bp[0])}, ${toHex(bp[1])}, ${toHex(bp[2])}, ${toHex(bp[3])} ]`;
-          simEl.pktHoldText.textContent = `HOLD: ${bp[3]}`;
-          simEl.pktHoldText.style.color = bp[3] === 1 ? '#f59e0b' : '#22c55e';
+        setArdRowHL(b1Lines[3], nr !== 0 ? 'exec-teal' : '');
+        b1Vals[3].textContent = `r:${nr.toFixed(2)}`;
 
-          sendSimBatteryTelemetry(bp);
+        setArdRowHL(b1Lines[4], inputActive ? 'exec-teal' : '');
+        b1Vals[4].textContent = `fl:${fl.toFixed(2)} fr:${fr.toFixed(2)}`;
+
+        setArdRowHL(b1Lines[5], inputActive ? 'exec-teal' : '');
+        b1Vals[5].textContent = `rl:${rl.toFixed(2)} rr:${rr.toFixed(2)}`;
+
+        setArdRowHL(b1Lines[6], inputActive ? 'exec-teal' : '');
+        b1Vals[6].textContent = `max:${maxMag.toFixed(2)}`;
+
+        setArdRowHL(b1Lines[7], overflow ? 'exec-amber' : '');
+        b1Vals[7].textContent = overflow ? 'SCALED /maxMag' : 'norm:off';
+
+        setArdRowHL(b1Lines[8], (core1.tgt.fl !== 0 || core1.tgt.fr !== 0) ? 'exec-teal' : '');
+        b1Vals[8].textContent = `${core1.tgt.fl} / ${core1.tgt.fr}`;
+
+        setArdRowHL(b1Lines[9], (core1.tgt.rl !== 0 || core1.tgt.rr !== 0) ? 'exec-teal' : '');
+        b1Vals[9].textContent = `${core1.tgt.rl} / ${core1.tgt.rr}`;
+
+        setArdRowHL(b1Lines[10], (core1.cur.fl !== 0 || core1.cur.fr !== 0) ? 'exec-green' : '');
+        b1Vals[10].textContent = `${core1.cur.fl} / ${core1.cur.fr}`;
+
+        setArdRowHL(b1Lines[11], (core1.cur.rl !== 0 || core1.cur.rr !== 0) ? 'exec-green' : '');
+        b1Vals[11].textContent = `${core1.cur.rl} / ${core1.cur.rr}`;
+
+        const anyBrake = core1.braking.fl || core1.braking.fr || core1.braking.rl || core1.braking.rr;
+        setArdRowHL(b1Lines[12], anyBrake ? 'exec-red' : (anyCurNonZero ? 'exec-green' : ''));
+        b1Vals[12].textContent = anyBrake ? 'BRAKE' : (anyCurNonZero ? 'DRIVE' : 'COAST');
+
+        // --- BLOCK 2: ratioToPWM.ino (Inspects most active wheel) ---
+        let repScale = scaleList[0];
+        let repRatio = fl;
+        const ratios = [fl, fr, rl, rr];
+        for (let i = 0; i < 4; i++) {
+          if (Math.abs(ratios[i]) > Math.abs(repRatio)) {
+            repRatio = ratios[i];
+            repScale = scaleList[i];
+          }
         }
 
-        // Update Core 0 C++ Tracer
-        if (currentView !== 'ctrl') {
-          const rxFlash = (now - lastRxFlashMs) < 130;
-          const txFlash = (now - lastTxNotifyFlashMs) < 280;
+        b2Vals[1].textContent = `in:${repRatio.toFixed(2)}`;
+        setArdRowHL(b2Lines[2], !repScale.deadband ? 'exec-teal' : '');
+        b2Vals[2].textContent = `mag:${repScale.mag.toFixed(2)}`;
 
-          simEl.ledCore0.style.opacity = (rxFlash || txFlash) ? '1' : '0.35';
-          simEl.stableLockTag.textContent = `stable: ${core0.stableCount}/3`;
-          simEl.stableLockTag.style.color = core0.stableCount >= 3 ? '#4ade80' : '#94a3b8';
+        if (repScale.deadband) {
+          setArdRowHL(b2Lines[3], 'exec-red');
+          b2Vals[3].textContent = 'return 0';
+          setArdRowHL(b2Lines[4], ''); b2Vals[4].textContent = '-';
+          setArdRowHL(b2Lines[5], ''); b2Vals[5].textContent = '-';
+          setArdRowHL(b2Lines[6], ''); b2Vals[6].textContent = '-';
+        } else {
+          setArdRowHL(b2Lines[3], ''); b2Vals[3].textContent = 'false';
+          setArdRowHL(b2Lines[4], 'exec-teal'); b2Vals[4].textContent = `pwm:${repScale.rawPwm}`;
+          setArdRowHL(b2Lines[5], 'exec-teal'); b2Vals[5].textContent = `[20..150]`;
+          setArdRowHL(b2Lines[6], 'exec-green'); b2Vals[6].textContent = `out:${repScale.pwm}`;
+        }
 
-          setLineHL(c0Lines[1], rxFlash ? 'hl-cyan' : '');
-          c0Vals[1].textContent = `seq#${rxSeqCount}`;
+        // --- BLOCK 3: rampPWM.ino (Inspects active wheel ramp branch) ---
+        let repIdx = 0;
+        for (let i = 1; i < 4; i++) {
+          if (rampList[i].branch !== 'steady' && rampList[repIdx].branch === 'steady') repIdx = i;
+          else if (Math.abs(core1.tgt[['fl','fr','rl','rr'][i]]) > Math.abs(core1.tgt[['fl','fr','rl','rr'][repIdx]])) repIdx = i;
+        }
+        const keys = ['fl', 'fr', 'rl', 'rr'];
+        const repCur = core1.cur[keys[repIdx]];
+        const repTgt = core1.tgt[keys[repIdx]];
+        const repRamp = rampList[repIdx];
 
-          setLineHL(c0Lines[2], inInitWindow ? 'hl-purple' : '');
-          c0Vals[2].textContent = inInitWindow ? `${Math.ceil((BAT_INIT_WINDOW_MS - (now - simBootMs)) / 1000)}s` : 'DONE';
+        b3Vals[1].textContent = `${repCur} -> ${repTgt}`;
 
-          setLineHL(c0Lines[3], !inInitWindow ? 'hl-soft' : '');
-          c0Vals[3].textContent = motorsStopped ? 'stopped' : 'active';
+        for (let i = 2; i <= 12; i++) {
+          setArdRowHL(b3Lines[i], '');
+          if (i !== 11) b3Vals[i].textContent = '-';
+        }
 
-          setLineHL(c0Lines[4], (!inInitWindow && !motorsStopped) ? 'hl-amber' : '');
-          c0Vals[4].textContent = (!inInitWindow && !motorsStopped) ? 'RESET 0' : '-';
-
-          const checkingStable = !inInitWindow && motorsStopped;
-          setLineHL(c0Lines[5], (checkingStable && core0.stableCount < 3) ? 'hl-amber' : (checkingStable ? 'hl-soft' : ''));
-          c0Vals[5].textContent = `dV:${core0.lastDeltaV.toFixed(2)}V ${core0.stableCount}/3`;
-
-          setLineHL(c0Lines[6], (!inInitWindow && motorsStopped && core0.stableCount >= 3) ? 'hl-green' : '');
-          c0Vals[6].textContent = `${core0.filteredV.toFixed(1)}V ${core0.displayedPct}%`;
-
-          setLineHL(c0Lines[7], txFlash ? 'hl-blue' : '');
-          c0Vals[7].textContent = txFlash ? 'NOTIFY!' : '1Hz';
+        if (repRamp.branch === 'steady') {
+          setArdRowHL(b3Lines[2], anyCurNonZero ? 'exec-teal' : '');
+          b3Vals[2].textContent = `return ${repTgt}`;
+        } else if (repRamp.branch === 'zerocross') {
+          setArdRowHL(b3Lines[3], 'exec-amber'); b3Vals[3].textContent = 'true';
+          setArdRowHL(b3Lines[4], 'exec-amber'); b3Vals[4].textContent = `step:-15 -> ${repRamp.next}`;
+        } else if (repRamp.branch === 'preload') {
+          setArdRowHL(b3Lines[5], 'exec-amber'); b3Vals[5].textContent = 'true';
+          setArdRowHL(b3Lines[6], 'exec-amber'); b3Vals[6].textContent = `jump -> ${repRamp.next}`;
+        } else if (repRamp.branch === 'logaccel') {
+          setArdRowHL(b3Lines[7], 'exec-green'); b3Vals[7].textContent = 'true';
+          setArdRowHL(b3Lines[8], 'exec-green'); b3Vals[8].textContent = `norm:${repRamp.norm.toFixed(2)}`;
+          setArdRowHL(b3Lines[9], 'exec-green'); b3Vals[9].textContent = `step:+${repRamp.step}`;
+          setArdRowHL(b3Lines[10], 'exec-green'); b3Vals[10].textContent = `out:${repRamp.next}`;
+        } else if (repRamp.branch === 'decel') {
+          setArdRowHL(b3Lines[12], 'exec-amber'); b3Vals[12].textContent = `step:-15 -> ${repRamp.next}`;
         }
       }
 
-      // ==================== CANVAS RENDERING (ARENA + OSCILLOSCOPE) ====================
+      // ==================== 2D ARENA RENDERER (STRICT ZERO WALL-BLEED) ====================
       const arenaCtx = simEl.arenaCanvas.getContext('2d');
-      const scopeCtx = simEl.scopeCanvas.getContext('2d');
 
-      function resizeSimCanvases() {
+      function resizeArenaCanvas() {
         const dpr = window.devicePixelRatio || 1;
-        const aRect = simEl.arenaContainer.getBoundingClientRect();
-        if (aRect.width > 0 && aRect.height > 0) {
-          simEl.arenaCanvas.width = Math.floor(aRect.width * dpr);
-          simEl.arenaCanvas.height = Math.floor(aRect.height * dpr);
-          arenaCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
-          if (robot.x === 0 && robot.y === 0) {
-            robot.x = aRect.width / 2;
-            robot.y = aRect.height / 2;
-          } else {
-            robot.x = clamp(robot.x, 42, aRect.width - 42);
-            robot.y = clamp(robot.y, 42, aRect.height - 42);
-          }
-        }
-        const sRect = simEl.scopeContainer.getBoundingClientRect();
-        if (sRect.width > 0 && sRect.height > 0) {
-          simEl.scopeCanvas.width = Math.floor(sRect.width * dpr);
-          simEl.scopeCanvas.height = Math.floor(sRect.height * dpr);
-          scopeCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        const rect = simEl.arenaContainer.getBoundingClientRect();
+        if (rect.width <= 0 || rect.height <= 0) return;
+
+        simEl.arenaCanvas.width = Math.floor(rect.width * dpr);
+        simEl.arenaCanvas.height = Math.floor(rect.height * dpr);
+
+        const WALL_PAD = 48;
+        if (robot.x === 0 && robot.y === 0) {
+          robot.x = rect.width / 2;
+          robot.y = rect.height / 2;
+        } else if (rect.width > WALL_PAD * 2 && rect.height > WALL_PAD * 2) {
+          robot.x = clamp(robot.x, WALL_PAD, rect.width - WALL_PAD);
+          robot.y = clamp(robot.y, WALL_PAD, rect.height - WALL_PAD);
         }
       }
 
-      function drawMecanumWheelWithBar(ctx, wx, wy, label, angleSign, phase, curPwm, isBraking) {
-        const w = 13, h = 28;
+      function drawMecanumWheel(ctx, wx, wy, label, angleSign, phase, curPwm, isBraking) {
+        const w = 12, h = 26;
         ctx.save();
         ctx.translate(wx, wy);
 
-        ctx.fillStyle = isBraking ? '#3b0a0a' : '#181e29';
-        ctx.strokeStyle = isBraking ? '#ef4444' : (curPwm !== 0 ? '#ffffff' : '#475569');
-        ctx.lineWidth = isBraking ? 2 : 1.3;
+        ctx.fillStyle = isBraking ? '#2a0808' : '#121212';
+        ctx.strokeStyle = isBraking ? '#ef4444' : (curPwm !== 0 ? '#ffffff' : '#404040');
+        ctx.lineWidth = isBraking ? 1.8 : 1.2;
         ctx.beginPath();
-        ctx.roundRect(-w / 2, -h / 2, w, h, 3);
+        ctx.roundRect(-w / 2, -h / 2, w, h, 2.5);
         ctx.fill();
         ctx.stroke();
 
-        // Animated 45° Mecanum Roller Stripes
+        // 45-degree animated roller stripes clipped to wheel housing
         ctx.save();
         ctx.beginPath();
-        ctx.roundRect(-w / 2 + 1, -h / 2 + 1, w - 2, h - 2, 2);
+        ctx.roundRect(-w / 2 + 1, -h / 2 + 1, w - 2, h - 2, 1.5);
         ctx.clip();
-        const spacing = 7;
+        const spacing = 6.5;
         const offset = ((phase % spacing) + spacing) % spacing;
-        ctx.strokeStyle = isBraking ? '#ef4444' : (curPwm !== 0 ? '#38bdf8' : '#334155');
-        ctx.lineWidth = 1.6;
+        ctx.strokeStyle = isBraking ? '#ef4444' : (curPwm !== 0 ? '#ffffff' : '#333333');
+        ctx.lineWidth = 1.4;
         for (let y = -h; y <= h; y += spacing) {
           const yy = y - offset;
           ctx.beginPath();
@@ -1940,108 +1870,80 @@
         }
         ctx.restore();
 
-        // Mini PWM Bar beside wheel
-        const side = wx < 0 ? -1 : 1;
-        const barX = side * (w / 2 + 6);
-        const barH = 26;
-        ctx.fillStyle = '#0f172a';
-        ctx.fillRect(barX - 2, -barH / 2, 4, barH);
-        if (isBraking) {
-          ctx.fillStyle = '#ef4444';
-          ctx.fillRect(barX - 2, -barH / 2, 4, barH);
-        } else if (curPwm !== 0) {
-          const fillH = (Math.abs(curPwm) / MAX_PWM) * (barH / 2);
-          ctx.fillStyle = curPwm > 0 ? '#22c55e' : '#f59e0b';
-          if (curPwm > 0) ctx.fillRect(barX - 2, -fillH, 4, fillH);
-          else ctx.fillRect(barX - 2, 0, 4, fillH);
-        }
-
         // Wheel Label
-        ctx.fillStyle = isBraking ? '#f87171' : '#94a3b8';
+        const side = wx < 0 ? -1 : 1;
+        ctx.fillStyle = isBraking ? '#ef4444' : '#8a8a8a';
         ctx.font = '700 8px "JetBrains Mono", monospace';
         ctx.textAlign = side < 0 ? 'right' : 'left';
         ctx.textBaseline = 'middle';
-        ctx.fillText(label, side * (w / 2 + 11), 0);
+        ctx.fillText(label, side * (w / 2 + 5), 0);
 
         ctx.restore();
       }
 
       function renderArena(now) {
+        const dpr = window.devicePixelRatio || 1;
         const w = simEl.arenaContainer.clientWidth;
         const h = simEl.arenaContainer.clientHeight;
         if (w <= 0 || h <= 0) return;
 
-        arenaCtx.fillStyle = '#07090e';
+        // 1. Completely clear the entire physical backing pixel buffer every frame
+        arenaCtx.setTransform(1, 0, 0, 1, 0, 0);
+        arenaCtx.clearRect(0, 0, simEl.arenaCanvas.width, simEl.arenaCanvas.height);
+
+        // 2. Apply DPR transform and fill pure black background
+        arenaCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        arenaCtx.fillStyle = '#000000';
         arenaCtx.fillRect(0, 0, w, h);
 
-        // Coordinate Grid + Axis Labels
+        // 3. Clip strictly inside the 1px inner arena bounds to prevent any wall-edge color bleed
+        arenaCtx.save();
+        arenaCtx.beginPath();
+        arenaCtx.rect(1, 1, Math.max(0, w - 2), Math.max(0, h - 2));
+        arenaCtx.clip();
+
+        // Subtle Grid
         const cx = w / 2, cy = h / 2;
-        arenaCtx.strokeStyle = '#131824';
+        arenaCtx.strokeStyle = '#121212';
         arenaCtx.lineWidth = 1;
         arenaCtx.beginPath();
         for (let x = cx % 40; x < w; x += 40) { arenaCtx.moveTo(x, 0); arenaCtx.lineTo(x, h); }
         for (let y = cy % 40; y < h; y += 40) { arenaCtx.moveTo(0, y); arenaCtx.lineTo(w, y); }
         arenaCtx.stroke();
 
-        arenaCtx.strokeStyle = '#1e293b';
+        arenaCtx.strokeStyle = '#1f1f1f';
         arenaCtx.beginPath();
         arenaCtx.moveTo(cx, 0); arenaCtx.lineTo(cx, h);
         arenaCtx.moveTo(0, cy); arenaCtx.lineTo(w, cy);
         arenaCtx.stroke();
 
-        arenaCtx.fillStyle = '#475569';
-        arenaCtx.font = '600 9px "JetBrains Mono", monospace';
-        arenaCtx.fillText('+Y (FWD)', cx + 5, 13);
-        arenaCtx.fillText('+X (RIGHT)', w - 62, cy - 5);
-
-        // Toggleable Fading Motion Trail
-        if (robot.showTrail && robot.trail.length > 1) {
-          for (let i = 1; i < robot.trail.length; i++) {
-            const p0 = robot.trail[i - 1];
-            const p1 = robot.trail[i];
-            const alpha = (i / robot.trail.length) * 0.55;
-            arenaCtx.strokeStyle = `rgba(56, 189, 248, ${alpha.toFixed(3)})`;
-            arenaCtx.lineWidth = 2.2;
-            arenaCtx.beginPath();
-            arenaCtx.moveTo(p0.x, p0.y);
-            arenaCtx.lineTo(p1.x, p1.y);
-            arenaCtx.stroke();
-          }
-        }
-
-        // FIRE Orange Glow Beams
+        // Fire Pulse Projectiles
         for (const p of robot.projectiles) {
-          arenaCtx.save();
-          arenaCtx.fillStyle = `rgba(249, 115, 22, ${p.life.toFixed(2)})`;
-          arenaCtx.shadowColor = '#f97316';
-          arenaCtx.shadowBlur = 12;
+          arenaCtx.fillStyle = `rgba(255, 255, 255, ${p.life.toFixed(2)})`;
           arenaCtx.beginPath();
-          arenaCtx.arc(p.x, p.y, 4.2, 0, Math.PI * 2);
+          arenaCtx.arc(p.x, p.y, 3.2, 0, Math.PI * 2);
           arenaCtx.fill();
-          arenaCtx.restore();
         }
 
-        // Real-Time Velocity Vector Arrow
+        // Velocity Vector Arrow
         const speed = Math.hypot(robot.vxWorld, robot.vyWorld);
         if (speed > 6) {
-          const ex = robot.x + robot.vxWorld * 0.3;
-          const ey = robot.y + robot.vyWorld * 0.3;
+          const ex = robot.x + robot.vxWorld * 0.28;
+          const ey = robot.y + robot.vyWorld * 0.28;
           const ang = Math.atan2(ey - robot.y, ex - robot.x);
-          arenaCtx.save();
-          arenaCtx.strokeStyle = '#38bdf8';
-          arenaCtx.fillStyle = '#38bdf8';
-          arenaCtx.lineWidth = 2.4;
+          arenaCtx.strokeStyle = '#ffffff';
+          arenaCtx.fillStyle = '#ffffff';
+          arenaCtx.lineWidth = 2;
           arenaCtx.beginPath();
           arenaCtx.moveTo(robot.x, robot.y);
           arenaCtx.lineTo(ex, ey);
           arenaCtx.stroke();
           arenaCtx.beginPath();
           arenaCtx.moveTo(ex, ey);
-          arenaCtx.lineTo(ex - 8 * Math.cos(ang - 0.45), ey - 8 * Math.sin(ang - 0.45));
-          arenaCtx.lineTo(ex - 8 * Math.cos(ang + 0.45), ey - 8 * Math.sin(ang + 0.45));
+          arenaCtx.lineTo(ex - 7 * Math.cos(ang - 0.45), ey - 7 * Math.sin(ang - 0.45));
+          arenaCtx.lineTo(ex - 7 * Math.cos(ang + 0.45), ey - 7 * Math.sin(ang + 0.45));
           arenaCtx.closePath();
           arenaCtx.fill();
-          arenaCtx.restore();
         }
 
         // Robot Chassis
@@ -2049,175 +1951,66 @@
         arenaCtx.translate(robot.x, robot.y);
         arenaCtx.rotate(robot.theta);
 
-        // DEFEND Cyan Shield Arc
+        // Defend Shield Arc (Fits safely within WALL_PAD = 48)
         if (core1.defendPin) {
-          const pulse = 0.72 + 0.28 * Math.sin(now * 0.014);
-          arenaCtx.save();
-          arenaCtx.strokeStyle = `rgba(56, 189, 248, ${pulse.toFixed(2)})`;
-          arenaCtx.fillStyle = 'rgba(56, 189, 248, 0.12)';
-          arenaCtx.lineWidth = 3;
-          arenaCtx.shadowColor = '#38bdf8';
-          arenaCtx.shadowBlur = 14;
+          const pulse = 0.65 + 0.35 * Math.sin(now * 0.015);
+          arenaCtx.strokeStyle = `rgba(255, 255, 255, ${pulse.toFixed(2)})`;
+          arenaCtx.lineWidth = 2.2;
           arenaCtx.beginPath();
-          arenaCtx.arc(0, 0, 50, -Math.PI * 0.85, -Math.PI * 0.15);
+          arenaCtx.arc(0, 0, 44, -Math.PI * 0.85, -Math.PI * 0.15);
           arenaCtx.stroke();
-          arenaCtx.beginPath();
-          arenaCtx.arc(0, 0, 48, 0, Math.PI * 2);
-          arenaCtx.fill();
-          arenaCtx.restore();
         }
 
-        // 4 Labeled Mecanum Wheels + Mini PWM Bars
-        drawMecanumWheelWithBar(arenaCtx, -28, -21, 'FL/B', +1, robot.wheelPhase.fl, core1.cur.fl, core1.braking.fl);
-        drawMecanumWheelWithBar(arenaCtx, +28, -21, 'FR/A', -1, robot.wheelPhase.fr, core1.cur.fr, core1.braking.fr);
-        drawMecanumWheelWithBar(arenaCtx, -28, +21, 'RL/C', -1, robot.wheelPhase.rl, core1.cur.rl, core1.braking.rl);
-        drawMecanumWheelWithBar(arenaCtx, +28, +21, 'RR/D', +1, robot.wheelPhase.rr, core1.cur.rr, core1.braking.rr);
+        // 4 Labeled Mecanum Wheels
+        drawMecanumWheel(arenaCtx, -26, -19, 'FL', +1, robot.wheelPhase.fl, core1.cur.fl, core1.braking.fl);
+        drawMecanumWheel(arenaCtx, +26, -19, 'FR', -1, robot.wheelPhase.fr, core1.cur.fr, core1.braking.fr);
+        drawMecanumWheel(arenaCtx, -26, +19, 'RL', -1, robot.wheelPhase.rl, core1.cur.rl, core1.braking.rl);
+        drawMecanumWheel(arenaCtx, +26, +19, 'RR', +1, robot.wheelPhase.rr, core1.cur.rr, core1.braking.rr);
 
-        // Chassis Plate
-        arenaCtx.fillStyle = '#111827';
-        arenaCtx.strokeStyle = !core1.isAlive ? '#ef4444' : '#e2e8f0';
-        arenaCtx.lineWidth = 2;
+        // Main Body Plate
+        arenaCtx.fillStyle = '#0e0e0e';
+        arenaCtx.strokeStyle = !core1.isAlive ? '#ef4444' : '#ffffff';
+        arenaCtx.lineWidth = 1.8;
         arenaCtx.beginPath();
-        arenaCtx.roundRect(-20, -30, 40, 60, 7);
+        arenaCtx.roundRect(-18, -28, 36, 56, 6);
         arenaCtx.fill();
         arenaCtx.stroke();
 
-        // Front Direction Arrow + FIRE Orange Emitter
-        arenaCtx.fillStyle = core1.firePin ? '#f97316' : '#38bdf8';
+        // Forward Indicator Triangle
+        arenaCtx.fillStyle = '#ffffff';
         arenaCtx.beginPath();
-        arenaCtx.moveTo(0, -25);
-        arenaCtx.lineTo(-8, -13);
-        arenaCtx.lineTo(8, -13);
+        arenaCtx.moveTo(0, -23);
+        arenaCtx.lineTo(-7, -12);
+        arenaCtx.lineTo(7, -12);
         arenaCtx.closePath();
         arenaCtx.fill();
 
-        if (core1.firePin) {
-          arenaCtx.save();
-          arenaCtx.fillStyle = '#f97316';
-          arenaCtx.shadowColor = '#f97316';
-          arenaCtx.shadowBlur = 12;
-          arenaCtx.fillRect(-3.5, -36, 7, 9);
-          arenaCtx.restore();
-        }
-
-        arenaCtx.fillStyle = '#f8fafc';
-        arenaCtx.font = '800 9px "JetBrains Mono", monospace';
+        arenaCtx.fillStyle = '#ffffff';
+        arenaCtx.font = '800 8.5px "JetBrains Mono", monospace';
         arenaCtx.textAlign = 'center';
         arenaCtx.textBaseline = 'middle';
-        arenaCtx.fillText('T14', 0, 5);
+        arenaCtx.fillText('T14', 0, 6);
 
         arenaCtx.restore();
-      }
+        arenaCtx.restore(); // End inner arena clip
 
-      function renderScope() {
-        const w = simEl.scopeContainer.clientWidth;
-        const h = simEl.scopeContainer.clientHeight;
-        if (w <= 0 || h <= 0) return;
-
-        scopeCtx.fillStyle = '#05070b';
-        scopeCtx.fillRect(0, 0, w, h);
-
-        const topH = h * 0.54;
-        const botTop = topH + 3;
-        const botH = h - botTop;
-
-        scopeCtx.strokeStyle = '#1e293b';
-        scopeCtx.lineWidth = 1;
-        scopeCtx.beginPath();
-        scopeCtx.moveTo(0, topH + 1.5);
-        scopeCtx.lineTo(w, topH + 1.5);
-        scopeCtx.stroke();
-
-        // TOP TRACE: FL Target PWM (Cyan Dashed) vs Actual rampPWM (White Solid)
-        const midY = topH / 2;
-        scopeCtx.strokeStyle = '#111827';
-        scopeCtx.beginPath();
-        scopeCtx.moveTo(0, midY); scopeCtx.lineTo(w, midY);
-        scopeCtx.stroke();
-
-        const mapPwmY = (v) => midY - (v / 165) * (topH / 2 - 6);
-
-        scopeCtx.save();
-        scopeCtx.strokeStyle = '#38bdf8';
-        scopeCtx.lineWidth = 1.4;
-        scopeCtx.setLineDash([4, 3]);
-        scopeCtx.beginPath();
-        for (let i = 0; i < SCOPE_LEN; i++) {
-          const idx = (scopeData.idx + i) % SCOPE_LEN;
-          const x = (i / (SCOPE_LEN - 1)) * w;
-          const y = mapPwmY(scopeData.tgtFL[idx]);
-          i === 0 ? scopeCtx.moveTo(x, y) : scopeCtx.lineTo(x, y);
-        }
-        scopeCtx.stroke();
-        scopeCtx.restore();
-
-        scopeCtx.strokeStyle = '#ffffff';
-        scopeCtx.lineWidth = 2;
-        scopeCtx.beginPath();
-        for (let i = 0; i < SCOPE_LEN; i++) {
-          const idx = (scopeData.idx + i) % SCOPE_LEN;
-          const x = (i / (SCOPE_LEN - 1)) * w;
-          const y = mapPwmY(scopeData.curFL[idx]);
-          i === 0 ? scopeCtx.moveTo(x, y) : scopeCtx.lineTo(x, y);
-        }
-        scopeCtx.stroke();
-
-        scopeCtx.fillStyle = '#94a3b8';
-        scopeCtx.font = '600 9px "JetBrains Mono", monospace';
-        scopeCtx.fillText(`FL PWM (±150)  --Tgt:${core1.tgt.fl}  —Actual:${core1.cur.fl}`, 6, 11);
-
-        // BOTTOM TRACE: Battery Instantaneous Sag (Amber) vs Filtered OCV (Green) + Stability Lock Markers
-        const mapVoltY = (v) => botTop + botH - 5 - ((clamp(v, 9.0, 12.8) - 9.0) / 3.8) * (botH - 14);
-
-        scopeCtx.strokeStyle = '#f59e0b';
-        scopeCtx.lineWidth = 1.5;
-        scopeCtx.beginPath();
-        for (let i = 0; i < SCOPE_LEN; i++) {
-          const idx = (scopeData.idx + i) % SCOPE_LEN;
-          const x = (i / (SCOPE_LEN - 1)) * w;
-          const y = mapVoltY(scopeData.termV[idx]);
-          i === 0 ? scopeCtx.moveTo(x, y) : scopeCtx.lineTo(x, y);
-        }
-        scopeCtx.stroke();
-
-        scopeCtx.strokeStyle = '#22c55e';
-        scopeCtx.lineWidth = 1.5;
-        scopeCtx.beginPath();
-        for (let i = 0; i < SCOPE_LEN; i++) {
-          const idx = (scopeData.idx + i) % SCOPE_LEN;
-          const x = (i / (SCOPE_LEN - 1)) * w;
-          const y = mapVoltY(scopeData.filtV[idx]);
-          i === 0 ? scopeCtx.moveTo(x, y) : scopeCtx.lineTo(x, y);
-        }
-        scopeCtx.stroke();
-
-        // Draw green stability lock dots where stableCount >= 3
-        scopeCtx.fillStyle = '#4ade80';
-        for (let i = 0; i < SCOPE_LEN; i += 10) {
-          const idx = (scopeData.idx + i) % SCOPE_LEN;
-          if (scopeData.locked[idx] === 1) {
-            const x = (i / (SCOPE_LEN - 1)) * w;
-            const y = mapVoltY(scopeData.filtV[idx]);
-            scopeCtx.beginPath();
-            scopeCtx.arc(x, y, 2, 0, Math.PI * 2);
-            scopeCtx.fill();
-          }
-        }
-
-        scopeCtx.fillStyle = '#94a3b8';
-        scopeCtx.fillText(`12V BAT  —Raw:${batteryPlant.terminalV.toFixed(2)}V  —OCV:${core0.filteredV.toFixed(2)}V (${core0.stableCount}/3)`, 6, botTop + 11);
+        // 4. Draw crisp 1px arena wall border LAST so nothing ever bleeds on the boundary
+        arenaCtx.strokeStyle = '#262626';
+        arenaCtx.lineWidth = 1;
+        arenaCtx.strokeRect(0.5, 0.5, w - 1, h - 1);
       }
 
       // =========================================================================
-      // PART B: ORIGINAL TEAM14 WEB CONTROLLER UI (INTERNAL BUS + PEERJS)
+      // PART B: MINIMALIST WEB CONTROLLER (WITH CLIENT ID & ACCESS HANDSHAKE)
       // =========================================================================
       const ctrlState = { x: 0, y: 0, r: 0, fire: false, defend: false };
       let ctrlJoyMode = false;
       let ctrlGyroEnabled = false;
       let ctrlPeer = null;
       let ctrlConn = null;
+      let ctrlBusChannel = null;
       let ctrlConnected = false;
-      let ctrlUseInternalBus = false;
+      let ctrlPendingApproval = false;
       let ctrlLastPktKey = '';
       let ctrlLastSentMs = 0;
       let ctrlWakeLock = null;
@@ -2225,7 +2018,8 @@
       const cEl = {
         roomInput: document.getElementById('ctrlRoomInput'),
         connectBtn: document.getElementById('ctrlConnectBtn'),
-        batBadge: document.getElementById('ctrlBatBadge'),
+        selfIdBadge: document.getElementById('ctrlSelfIdBadge'),
+        dockClientIdTag: document.getElementById('dockClientIdTag'),
         modeBtn: document.getElementById('ctrlModeBtn'),
         gyroBtn: document.getElementById('ctrlGyroBtn'),
         rezeroBtn: document.getElementById('ctrlRezeroBtn'),
@@ -2245,20 +2039,7 @@
 
       function setCtrlStatus(text, cls = '') {
         cEl.statusText.textContent = text;
-        cEl.statusBadge.className = 'ctrl-conn-status' + (cls ? ' ' + cls : '');
-      }
-
-      function parseCtrlTelemetry(rawBytes) {
-        const bytes = rawBytes instanceof Uint8Array ? rawBytes : new Uint8Array(rawBytes);
-        if (bytes.length < 3 || bytes[0] !== PKT_BATTERY) return;
-        const pct = bytes[1];
-        const volts = (bytes[2] / 10).toFixed(1);
-        const isHolding = bytes.length >= 4 && bytes[3] === 1;
-
-        cEl.batBadge.textContent = `12V: ${pct}% (${volts}V)`;
-        cEl.batBadge.className = 'ctrl-badge ' +
-          (pct <= 20 ? 'low' : pct <= 45 ? 'warn' : 'ok') +
-          (isHolding ? ' holding' : '');
+        cEl.statusBadge.className = 'ctrl-conn-pill mono' + (cls ? ' ' + cls : '');
       }
 
       function encodeCtrlPacket(s) {
@@ -2273,106 +2054,118 @@
       }
 
       function sendCtrlPacket(pkt) {
-        if (ctrlUseInternalBus) {
-          onSimReceiveControlPacket(pkt, 'bus');
+        if (!ctrlConnected) return;
+        if (ctrlBusChannel) {
+          ctrlBusChannel.postMessage({ type: 'CMD', clientId: myClientId, pkt: Array.from(pkt) });
         }
         try {
           if (ctrlConn && ctrlConn.open) ctrlConn.send(pkt);
         } catch {}
       }
 
-      function onCtrlConnectedUI(statusLabel = 'CONNECTED') {
-        ctrlConnected = true;
-        ctrlLastPktKey = '';
-        setCtrlStatus(statusLabel, 'connected');
-        cEl.connectBtn.textContent = 'DISCONNECT';
-        cEl.connectBtn.classList.remove('primary');
-        cEl.connectBtn.classList.add('danger');
-        if ('wakeLock' in navigator) {
-          navigator.wakeLock.request('screen').then(wl => ctrlWakeLock = wl).catch(() => {});
+      function handleHostControlSignal(msg) {
+        if (!msg || msg.clientId !== myClientId) return;
+        if (msg.type === 'PENDING') {
+          ctrlConnected = false;
+          ctrlPendingApproval = true;
+          setCtrlStatus('WAITING APPROVAL...', 'pending');
+          cEl.connectBtn.textContent = 'CANCEL';
+          cEl.connectBtn.classList.remove('active');
+        } else if (msg.type === 'APPROVED') {
+          ctrlPendingApproval = false;
+          ctrlConnected = true;
+          ctrlLastPktKey = '';
+          setCtrlStatus('CONNECTED', 'connected');
+          cEl.connectBtn.textContent = 'DISCONNECT';
+          cEl.connectBtn.classList.remove('active');
+          if ('wakeLock' in navigator) {
+            navigator.wakeLock.request('screen').then(wl => ctrlWakeLock = wl).catch(() => {});
+          }
+        } else if (msg.type === 'REJECTED' || msg.type === 'KICKED') {
+          const label = msg.reason ? `REJECTED (${msg.reason})` : 'DISCONNECTED';
+          disconnectController(label, 'rejected');
         }
       }
 
-      function connectControllerInternalBus() {
-        cEl.roomInput.value = simRoomDigits;
-        ctrlUseInternalBus = true;
-        simInternalBusConnected = true;
-        onCtrlConnectedUI('CONNECTED');
-        parseCtrlTelemetry(core0.lastNotifyPkt);
-      }
-
-      function disconnectController() {
-        try { if (ctrlConn) ctrlConn.close(); } catch {}
-        try { if (ctrlPeer) ctrlPeer.destroy(); } catch {}
-        ctrlConn = null; ctrlPeer = null;
+      function disconnectController(statusLabel = 'DISCONNECTED', statusCls = '') {
+        if (ctrlBusChannel) {
+          try { ctrlBusChannel.postMessage({ type: 'BYE', clientId: myClientId }); } catch {}
+          try { ctrlBusChannel.close(); } catch {}
+          ctrlBusChannel = null;
+        }
+        if (ctrlConn) {
+          try { if (ctrlConn.open) ctrlConn.send({ type: 'BYE', clientId: myClientId }); } catch {}
+          try { ctrlConn.close(); } catch {}
+          ctrlConn = null;
+        }
+        if (ctrlPeer) {
+          try { ctrlPeer.destroy(); } catch {}
+          ctrlPeer = null;
+        }
         ctrlConnected = false;
-        ctrlUseInternalBus = false;
-        simInternalBusConnected = false;
+        ctrlPendingApproval = false;
         ctrlState.fire = ctrlState.defend = false;
         syncCtrlFireBtn();
         cEl.defendBtn.classList.remove('pressed');
-        cEl.batBadge.classList.remove('holding');
         if (ctrlWakeLock) { ctrlWakeLock.release().catch(() => {}); ctrlWakeLock = null; }
-        setCtrlStatus('DISCONNECTED');
+        setCtrlStatus(statusLabel, statusCls);
         cEl.connectBtn.textContent = 'CONNECT';
-        cEl.connectBtn.classList.remove('danger');
-        cEl.connectBtn.classList.add('primary');
+        cEl.connectBtn.classList.add('active');
       }
 
       function connectControllerToRoom(rawRoom) {
         const cleanDigits = String(rawRoom || '').replace(/\D/g, '').slice(-4);
         if (cleanDigits.length !== 4) {
-          showToast('請輸入 4 位數字房間代碼（例如 4326）');
+          showToast('Enter a 4-digit room code.');
           return;
         }
         cEl.roomInput.value = cleanDigits;
+        setCtrlStatus('CONNECTING...', 'pending');
+        cEl.connectBtn.textContent = 'CANCEL';
+        cEl.connectBtn.classList.remove('active');
 
-        // If connecting to the local simulator room inside this same page, use the zero-latency internal bus!
-        if (!isOpenedAsPhoneController && cleanDigits === simRoomDigits) {
-          connectControllerInternalBus();
-          return;
+        // 1. Same-browser BroadcastChannel handshake (works offline & in Split View)
+        if ('BroadcastChannel' in window) {
+          try {
+            if (ctrlBusChannel) ctrlBusChannel.close();
+            ctrlBusChannel = new BroadcastChannel(`team14-room-${cleanDigits}`);
+            ctrlBusChannel.onmessage = (ev) => handleHostControlSignal(ev.data);
+            ctrlBusChannel.postMessage({ type: 'HELLO', clientId: myClientId, room: cleanDigits });
+          } catch {}
         }
 
-        setCtrlStatus('CONNECTING...', 'connecting');
-        try {
-          if (typeof Peer === 'undefined') {
-            setCtrlStatus('DISCONNECTED');
-            showToast('PeerJS 無法載入，請檢查網路連線');
-            return;
-          }
-          if (ctrlPeer) { try { ctrlPeer.destroy(); } catch {} }
-          ctrlPeer = new Peer();
-          ctrlPeer.on('open', () => {
-            const targetId = `team14-sim-${cleanDigits}`;
-            ctrlConn = ctrlPeer.connect(targetId, { reliable: false });
-            ctrlConn.on('open', () => {
-              ctrlUseInternalBus = false;
-              onCtrlConnectedUI('CONNECTED');
+        // 2. Remote PeerJS WebRTC handshake (for external mobile phone)
+        const isSamePageHost = (!isOpenedAsPhoneController && cleanDigits === simRoomDigits);
+        if (!isSamePageHost && typeof Peer !== 'undefined') {
+          try {
+            if (ctrlPeer) { try { ctrlPeer.destroy(); } catch {} }
+            ctrlPeer = new Peer();
+            ctrlPeer.on('open', () => {
+              ctrlConn = ctrlPeer.connect(`team14-sim-${cleanDigits}`, { reliable: true });
+              ctrlConn.on('open', () => {
+                ctrlConn.send({ type: 'HELLO', clientId: myClientId, room: cleanDigits });
+              });
+              ctrlConn.on('data', (data) => {
+                if (data && typeof data === 'object') handleHostControlSignal(data);
+              });
+              ctrlConn.on('close', () => {
+                if (ctrlConnected || ctrlPendingApproval) disconnectController('DISCONNECTED');
+              });
             });
-            ctrlConn.on('data', (data) => {
-              if (data instanceof ArrayBuffer) parseCtrlTelemetry(new Uint8Array(data));
-              else if (data instanceof Uint8Array) parseCtrlTelemetry(data);
-              else if (Array.isArray(data)) parseCtrlTelemetry(new Uint8Array(data));
+            ctrlPeer.on('error', () => {
+              if (!ctrlConnected && !ctrlPendingApproval) {
+                disconnectController('ROOM NOT FOUND', 'rejected');
+              }
             });
-            ctrlConn.on('close', () => disconnectController());
-          });
-          ctrlPeer.on('error', () => {
-            if (!ctrlConnected) {
-              setCtrlStatus('DISCONNECTED');
-              showToast('找不到對應的模擬器房間，請確認 4 碼代碼');
-            }
-          });
-        } catch {
-          setCtrlStatus('DISCONNECTED');
+          } catch {}
         }
       }
 
       cEl.connectBtn.addEventListener('click', () => {
-        if (ctrlConnected) disconnectController();
+        if (ctrlConnected || ctrlPendingApproval) disconnectController();
         else connectControllerToRoom(cEl.roomInput.value);
       });
 
-      // Controller 30Hz Control Loop (33ms loop, 150ms heartbeat)
       function runCtrlTxLoop() {
         if (!ctrlConnected) return;
         const now = performance.now();
@@ -2385,10 +2178,10 @@
         }
       }
 
-      // Unified Pointer-Capture Touch Pad Setup (1D Sliders + 2D 360° Joystick)
+      // Unified Pointer-Capture Touch Controls
       function getCtrlMaxTravel(el, thumb, lockX, lockY) {
         const rect = el.getBoundingClientRect();
-        const thumbSize = thumb.offsetWidth || 44;
+        const thumbSize = thumb.offsetWidth || 42;
         if (lockX && !lockY) return { maxRx: 1, maxRy: Math.max(1, (rect.height - rect.width) / 2) };
         if (lockY && !lockX) return { maxRx: Math.max(1, (rect.width - rect.height) / 2), maxRy: 1 };
         const refGap = Math.max(6, (cEl.trackY.offsetWidth - thumbSize) / 2 || 8);
@@ -2478,17 +2271,15 @@
         cEl.defendBtn.addEventListener('pointercancel', rel);
       })();
 
-      // Mode Switch (SLIDER <-> 360° JOY)
       cEl.modeBtn.addEventListener('click', () => {
         ctrlJoyMode = !ctrlJoyMode;
-        cEl.modeBtn.textContent = ctrlJoyMode ? 'MODE: 360° JOY' : 'MODE: SLIDER';
+        cEl.modeBtn.textContent = ctrlJoyMode ? 'MODE: 360 JOY' : 'MODE: SLIDER';
         cEl.leftSliderWrap.classList.toggle('hidden', ctrlJoyMode);
         cEl.strafeWrap.classList.toggle('hidden', ctrlJoyMode);
         cEl.joyWrap.classList.toggle('hidden', !ctrlJoyMode);
         if (!ctrlGyroEnabled) { ctrlState.x = 0; ctrlState.y = 0; }
       });
 
-      // Fullscreen
       cEl.fsBtn.addEventListener('click', async () => {
         try {
           if (!document.fullscreenElement) await document.documentElement.requestFullscreen();
@@ -2496,7 +2287,7 @@
         } catch {}
       });
 
-      // Gyroscope Support (Y: Throttle, X-Tilt: Rotate)
+      // Gyroscope Support
       let baseTiltX = null, baseTiltY = null, smoothTiltX = 0, smoothTiltY = 0, lastMotionMs = 0;
       const GYRO_TAU_MS = 160;
       const accelToDeg = (a) => Math.asin(clamp(a / 9.81, -1, 1)) * (180 / Math.PI);
@@ -2562,8 +2353,8 @@
         if (typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function') {
           try {
             const res = await DeviceMotionEvent.requestPermission();
-            if (res !== 'granted') { showToast('未授權陀螺儀感測器權限'); return; }
-          } catch { showToast('此裝置或環境不支援陀螺儀權限要求'); return; }
+            if (res !== 'granted') { showToast('Motion sensor permission denied.'); return; }
+          } catch { showToast('Gyroscope not supported on this device.'); return; }
         }
         if (ctrlJoyMode) {
           ctrlJoyMode = false;
@@ -2582,7 +2373,6 @@
         [cEl.trackY, cEl.trackR, cEl.joyPad].forEach(x => x.classList.add('ctrl-disabled'));
       });
 
-      // Background visibility failsafe for Controller
       document.addEventListener('visibilitychange', () => {
         if (document.hidden && ctrlConnected) {
           ctrlState.x = ctrlState.y = ctrlState.r = 0;
@@ -2593,33 +2383,38 @@
         }
       });
 
-      // ==================== MAIN RENDER & STARTUP ON WINDOW LOAD ====================
+      window.addEventListener('beforeunload', () => {
+        if (ctrlConnected || ctrlPendingApproval) disconnectController();
+      });
+
+      // ==================== RENDER LOOP & STARTUP ====================
       function animationFrame(now) {
         if (currentView !== 'ctrl') {
           renderArena(now);
-          renderScope();
         }
         requestAnimationFrame(animationFrame);
       }
 
-      window.addEventListener('resize', resizeSimCanvases);
+      window.addEventListener('resize', resizeArenaCanvas);
 
       window.onload = function () {
         cEl.roomInput.value = simRoomDigits;
+        cEl.selfIdBadge.textContent = myClientId;
+        cEl.dockClientIdTag.textContent = myClientId;
+
+        renderAccessControlUI();
         setViewMode(currentView);
-        resizeSimCanvases();
-        resetSimulatorRobot();
-        initPairingModalAndPeerHost();
+        resizeArenaCanvas();
+        resetCarPosition();
+        initHostPairing();
 
         if (isOpenedAsPhoneController && urlParams.get('room')) {
           connectControllerToRoom(urlParams.get('room'));
         }
 
-        // Start Deterministic Firmware & Network Loops
-        setInterval(runLocalKeyboardLoop, WEB_LOOP_MS);   // 30Hz local keyboard fallback
-        setInterval(runCtrlTxLoop, WEB_LOOP_MS);          // 30Hz Web Controller TX
-        setInterval(runCore1Task, CORE1_PERIOD_MS);       // 50Hz Core 1 motor control
-        setInterval(runCore0Task, CORE0_PERIOD_MS);       // 10Hz Core 0 BLE & battery
+        setInterval(runKeyboardFallbackLoop, WEB_LOOP_MS);
+        setInterval(runCtrlTxLoop, WEB_LOOP_MS);
+        setInterval(runCore1MovementLoop, CORE1_PERIOD_MS);
 
         requestAnimationFrame(animationFrame);
       };
