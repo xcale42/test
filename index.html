@@ -92,10 +92,15 @@
       color: #000000;
       border-color: #ffffff;
     }
-    .min-btn.onlyme-on {
+    .min-btn.mode-host-on {
       background: #052e16;
       color: #4ade80;
       border-color: #22c55e;
+    }
+    .min-btn.mode-closed-on {
+      background: #1f0909;
+      color: #f87171;
+      border-color: #ef4444;
     }
 
     /* ==================== ARDUINO IDE 2.x DEFAULT LIGHT THEME BLOCKS ==================== */
@@ -461,9 +466,9 @@
   <!-- ========================================================================= -->
   <div id="rootShell" class="flex flex-col w-full lg:h-[100dvh] p-2.5 gap-2.5">
 
-    <!-- ==================== TOP BAR (SIMULATOR & ONLY ME ACCESS CONTROL) ==================== -->
+    <!-- ==================== TOP BAR (SIMULATOR & 3-MODE ACCESS CONTROL) ==================== -->
     <header id="simHeader" class="min-panel flex flex-wrap items-center justify-between gap-2 px-3 py-2 shrink-0">
-      <!-- Left: Brand + Room + Owner Key + ONLY ME Toggle + Policy + Active Client -->
+      <!-- Left: Brand + Room + 3-Mode Access Selector (OPEN / CLOSED / HOST) + Active Client -->
       <div class="flex flex-wrap items-center gap-1.5">
         <div class="flex items-center gap-2 pr-1">
           <span class="w-2 h-2 rounded-full bg-white"></span>
@@ -476,32 +481,34 @@
           ROOM: 0000
         </span>
 
-        <span id="ownerKeyBadge" class="mono text-[11px] font-bold px-2 py-0.5 rounded bg-black border border-[#262626] text-[#ffffff]" title="4-digit Owner PIN embedded in QR URL">
-          KEY: 0000
-        </span>
+        <!-- 3-Mode Access Selector: OPEN | CLOSED | HOST -->
+        <div class="inline-flex items-center rounded-lg bg-black p-0.5 border border-[#262626] gap-0.5" role="group" aria-label="Connection Access Mode">
+          <span class="mono text-[10px] font-bold text-[#8a8a8a] px-1.5">ACCESS</span>
+          <button id="btnAccessOpen" class="px-2 py-0.5 rounded text-[10.5px] font-extrabold mono bg-white text-black transition cursor-pointer">
+            OPEN
+          </button>
+          <button id="btnAccessClosed" class="px-2 py-0.5 rounded text-[10.5px] font-extrabold mono text-[#a3a3a3] hover:text-white transition cursor-pointer">
+            CLOSED
+          </button>
+          <button id="btnAccessHost" class="px-2 py-0.5 rounded text-[10.5px] font-extrabold mono text-[#a3a3a3] hover:text-white transition cursor-pointer">
+            HOST
+          </button>
+        </div>
 
-        <!-- One-Click Exclusive Demo Lock Button -->
-        <button id="onlyMeToggleBtn" class="min-btn mono" title="Toggle exclusive presenter-only connection lock">
-          ONLY ME: OFF
+        <!-- Set/Change Hidden 4-Digit Host PIN (Visible only in HOST mode) -->
+        <button id="setHostPinBtn" class="hidden min-btn mono" title="Set or update private 4-digit Host PIN">
+          SET PIN
         </button>
 
-        <!-- Synchronized Access Policy Cycle Button -->
-        <button id="accessPolicyBtn" class="min-btn mono" title="Cycle policy: APPROVAL / OPEN / ONLY ME">
-          ACCESS: APPROVAL
-        </button>
-
-        <!-- Quiet Blocked Counter Badge -->
-        <button id="blockedCountBadge" class="hidden mono text-[10.5px] font-bold px-2 py-0.5 rounded bg-[#1f0909] border border-[#ef4444] text-[#f87171] cursor-pointer" title="Unauthorized connection attempts silently blocked (click to reset)">
+        <!-- Silent Blocked Counter Badge (Increments on rejected HOST/CLOSED attempts) -->
+        <button id="blockedCountBadge" class="hidden mono text-[10.5px] font-bold px-2 py-0.5 rounded bg-[#1f0909] border border-[#ef4444] text-[#f87171] cursor-pointer" title="Rejected connection attempts (click to reset)">
           BLOCKED: 0
         </button>
 
-        <!-- Active Client Badge + Set Owner + Kick -->
+        <!-- Active Client Badge + Kick -->
         <div id="activeClientBox" class="hidden items-center gap-1.5 px-2 py-0.5 rounded-md bg-[#052e16] border border-[#22c55e] text-[11px] font-bold mono text-[#4ade80]">
           <span class="w-1.5 h-1.5 rounded-full bg-[#22c55e]"></span>
           <span id="activeClientLabel">CONNECTED: CLIENT-0000</span>
-          <button id="setOwnerBtn" class="px-1.5 py-0.2 rounded bg-white text-black text-[10px] font-extrabold hover:bg-[#e5e5e5] cursor-pointer" title="Lock this client as exclusive owner">
-            SET OWNER
-          </button>
           <button id="kickClientBtn" class="px-1.5 py-0.2 rounded bg-[#ef4444] text-white text-[10px] font-extrabold hover:bg-[#dc2626] cursor-pointer">
             KICK
           </button>
@@ -510,7 +517,7 @@
         <!-- Standby Status Pill (Shown when no client is connected) -->
         <div id="standbyStatusPill" class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-black border border-[#262626] text-[10.5px] font-bold mono text-[#8a8a8a]">
           <span id="standbyDot" class="w-1.5 h-1.5 rounded-full bg-[#8a8a8a]"></span>
-          <span id="standbyText">NO CLIENT (KEYBOARD READY)</span>
+          <span id="standbyText">OPEN · NO CLIENT (KEYBOARD READY)</span>
         </div>
       </div>
 
@@ -538,27 +545,6 @@
       </div>
     </header>
 
-    <!-- ==================== INLINE CONNECTION APPROVAL BAR (ONLY IN APPROVAL MODE) ==================== -->
-    <div id="approvalBanner" class="hidden items-center justify-between gap-3 px-3.5 py-2 rounded-lg bg-[#141414] border border-[#f59e0b] shrink-0">
-      <div class="flex items-center gap-2 mono text-xs">
-        <span class="w-2 h-2 rounded-full bg-[#f59e0b] animate-pulse"></span>
-        <span class="font-bold text-[#f59e0b]">REQUEST:</span>
-        <span id="pendingClientIdText" class="font-extrabold text-white">CLIENT-0000</span>
-        <span id="pendingTransportText" class="text-[10px] text-[#8a8a8a]">(WEBRTC)</span>
-      </div>
-      <div class="flex items-center gap-2">
-        <button id="approveClientBtn" class="px-3 py-1 rounded text-[11px] font-extrabold bg-[#22c55e] text-black hover:bg-[#4ade80] transition cursor-pointer">
-          ALLOW
-        </button>
-        <button id="approveAsOwnerBtn" class="px-3 py-1 rounded text-[11px] font-extrabold bg-white text-black hover:bg-[#e5e5e5] transition cursor-pointer">
-          ALLOW &amp; ONLY ME
-        </button>
-        <button id="denyClientBtn" class="px-3 py-1 rounded text-[11px] font-extrabold bg-[#ef4444] text-white hover:bg-[#dc2626] transition cursor-pointer">
-          DENY
-        </button>
-      </div>
-    </div>
-
     <!-- ==================== WORKSPACE CONTAINER ==================== -->
     <div id="workspaceRow" class="flex-1 min-h-0 flex flex-col lg:flex-row gap-2.5">
 
@@ -566,7 +552,7 @@
       <aside id="ctrlDockPanel" class="hidden flex-col min-h-[420px] lg:min-h-0">
         <!-- Split Mode Dock Header -->
         <div id="splitPhoneHeader" class="hidden items-center justify-between px-3 py-1.5 bg-[#0e0e0e] border-b border-[#262626] rounded-t-xl text-[10px] mono text-[#8a8a8a]">
-          <span class="font-bold text-white">WEB CONTROLLER (HOST EMBEDDED)</span>
+          <span class="font-bold text-white">WEB CONTROLLER (EMBEDDED)</span>
           <span id="dockClientIdTag" class="text-[#a3a3a3]">CLIENT-0000</span>
         </div>
 
@@ -574,8 +560,8 @@
         <div id="ctrlView" class="ctrl-app">
           <div class="ctrl-topbar">
             <div class="flex items-center gap-1.5 shrink-0">
-              <input id="ctrlRoomInput" class="ctrl-pin-input mono" type="text" maxlength="4" placeholder="ROOM" title="4-digit simulator room code" />
-              <input id="ctrlKeyInput" class="ctrl-pin-input mono" type="text" maxlength="4" placeholder="KEY" title="4-digit Owner Key PIN" />
+              <input id="ctrlRoomInput" class="ctrl-pin-input mono" type="text" inputmode="numeric" maxlength="4" placeholder="ROOM" title="4-digit simulator room code" />
+              <input id="ctrlPinInput" class="ctrl-pin-input mono" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="4" autocomplete="new-password" placeholder="PIN" title="4-digit Host PIN (required in HOST mode)" />
               <button id="ctrlConnectBtn" class="min-btn active">CONNECT</button>
               <span id="ctrlSelfIdBadge" class="mono text-[10px] px-2 py-1 rounded bg-black border border-[#262626] text-[#8a8a8a]">
                 CLIENT-0000
@@ -719,24 +705,11 @@
                 </span>
               </div>
               <div class="flex items-center gap-1.5">
-                <button id="showNewLibFormBtn" class="min-btn">+ NEW LIB (.h)</button>
+                <button id="openNewLibModalBtn" class="min-btn">+ NEW LIB (.h)</button>
                 <button id="resetAllCodeBtn" class="min-btn" title="Restore all .h and .ino files to default firmware">
                   RESET ALL CODE
                 </button>
               </div>
-            </div>
-
-            <!-- Inline New Library Creation Bar (Zero window.prompt) -->
-            <div id="newLibFormRow" class="hidden items-center gap-2 bg-black border border-[#2e2e2e] rounded-lg p-2">
-              <input
-                id="newLibNameInput"
-                type="text"
-                maxlength="32"
-                class="selectable-input flex-1 bg-[#0e0e0e] border border-[#2e2e2e] focus:border-white rounded px-2.5 py-1 text-xs mono text-white outline-none"
-                placeholder="LibraryName.h (e.g. BoostCurve.h)"
-              />
-              <button id="createLibConfirmBtn" class="min-btn active">CREATE</button>
-              <button id="createLibCancelBtn" class="min-btn">CANCEL</button>
             </div>
 
             <!-- Compile Error Output Banner (Shown only if user introduces a syntax/runtime error) -->
@@ -755,7 +728,96 @@
   </div>
 
   <!-- ========================================================================= -->
-  <!-- WIRELESS PAIRING & QR CODE MODAL (100% ENGLISH, ZERO-404 URL DETECTION)   -->
+  <!-- PRIVATE 4-DIGIT HOST PIN MODAL (MASKED INPUT · ZERO SCREEN EXPOSURE)      -->
+  <!-- ========================================================================= -->
+  <div id="hostPinModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/85 backdrop-blur-sm p-4">
+    <div class="min-panel w-full max-w-xs p-5 shadow-2xl border border-[#333333]">
+      <div class="flex items-center justify-between border-b border-[#262626] pb-3 mb-3.5">
+        <div>
+          <h2 class="text-sm font-extrabold text-white tracking-wide">HOST ACCESS PIN</h2>
+          <p class="text-[11px] text-[#8a8a8a] mt-0.5">Enter a private 4-digit PIN (never displayed on screen)</p>
+        </div>
+        <button id="closeHostPinModalBtn" class="min-btn">CANCEL</button>
+      </div>
+
+      <div class="mb-4">
+        <label for="hostPinModalInput" class="block text-[10.5px] font-bold tracking-wider text-[#a3a3a3] mb-1.5 mono">
+          4-DIGIT NUMERIC PIN
+        </label>
+        <input
+          id="hostPinModalInput"
+          type="password"
+          inputmode="numeric"
+          pattern="[0-9]*"
+          maxlength="4"
+          autocomplete="new-password"
+          placeholder="••••"
+          class="selectable-input w-full bg-black border border-[#2e2e2e] focus:border-white rounded-lg px-3 py-2.5 text-center text-xl font-extrabold tracking-[0.45em] mono text-white outline-none"
+        />
+        <p id="hostPinErrorText" class="hidden text-[10.5px] mono text-[#f87171] mt-1.5">
+          PIN must be exactly 4 digits (0-9).
+        </p>
+      </div>
+
+      <div class="flex items-center justify-end gap-2">
+        <button id="cancelHostPinBtn" class="min-btn">CANCEL</button>
+        <button id="confirmHostPinBtn" class="min-btn active">ACTIVATE HOST LOCK</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================================= -->
+  <!-- MODAL C++ HEADER EDITOR (.h)                                              -->
+  <!-- ========================================================================= -->
+  <div id="libEditorModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/85 backdrop-blur-sm p-4">
+    <div class="min-panel w-full max-w-lg p-5 shadow-2xl border border-[#333333] flex flex-col gap-3">
+      <div class="flex items-center justify-between border-b border-[#262626] pb-3">
+        <div>
+          <h2 id="libModalTitle" class="text-sm font-extrabold text-white tracking-wide">CUSTOM C++ HEADER (.h)</h2>
+          <p class="text-[11px] text-[#8a8a8a] mt-0.5">Define macros and inline C++ helper functions for movement blocks</p>
+        </div>
+        <button id="closeLibModalBtn" class="min-btn">CLOSE</button>
+      </div>
+
+      <div>
+        <label for="libModalNameInput" class="block text-[10.5px] font-bold tracking-wider text-[#a3a3a3] mb-1 mono">
+          HEADER FILENAME (.h)
+        </label>
+        <input
+          id="libModalNameInput"
+          type="text"
+          maxlength="32"
+          placeholder="CustomKinematics.h"
+          class="selectable-input w-full bg-black border border-[#2e2e2e] focus:border-white rounded-lg px-3 py-1.5 text-xs mono text-white outline-none"
+        />
+      </div>
+
+      <div>
+        <label for="libModalCodeInput" class="block text-[10.5px] font-bold tracking-wider text-[#a3a3a3] mb-1 mono">
+          C++ HEADER SOURCE
+        </label>
+        <div class="rounded-lg overflow-hidden border border-[#d1d5db]">
+          <textarea
+            id="libModalCodeInput"
+            rows="11"
+            class="arduino-textarea"
+            spellcheck="false"
+          ></textarea>
+        </div>
+      </div>
+
+      <div class="flex items-center justify-between pt-1">
+        <button id="deleteLibModalBtn" class="hidden min-btn mode-closed-on mono">DELETE LIBRARY</button>
+        <div class="flex items-center gap-2 ml-auto">
+          <button id="cancelLibModalBtn" class="min-btn">CANCEL</button>
+          <button id="saveLibModalBtn" class="min-btn active">SAVE &amp; COMPILE</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================================= -->
+  <!-- WIRELESS PAIRING & QR CODE MODAL (100% ENGLISH, ZERO PIN EXPOSURE)        -->
   <!-- ========================================================================= -->
   <div id="pairModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/85 backdrop-blur-sm p-4">
     <div class="min-panel w-full max-w-md p-5 shadow-2xl border border-[#333333]">
@@ -767,18 +829,14 @@
         <button id="closePairModalBtn" class="min-btn">CLOSE</button>
       </div>
 
-      <!-- Room Code & Owner Key Grid -->
-      <div class="grid grid-cols-2 gap-2.5 mb-3">
-        <div class="bg-black border border-[#262626] rounded-lg px-3.5 py-2.5">
+      <!-- Room Code Box (PIN is never displayed or embedded in URL) -->
+      <div class="bg-black border border-[#262626] rounded-lg px-3.5 py-2.5 mb-3 flex items-center justify-between">
+        <div>
           <div class="text-[10px] font-bold tracking-wider text-[#8a8a8a]">HOST ROOM CODE</div>
-          <div id="modalRoomCode" class="mono text-2xl font-extrabold tracking-[0.14em] text-white mt-0.5">0000</div>
+          <div id="modalRoomCode" class="mono text-2xl font-extrabold tracking-[0.16em] text-white mt-0.5">0000</div>
         </div>
-        <div class="bg-black border border-[#262626] rounded-lg px-3.5 py-2.5 flex items-center justify-between">
-          <div>
-            <div class="text-[10px] font-bold tracking-wider text-[#8a8a8a]">OWNER KEY (PIN)</div>
-            <div id="modalOwnerKey" class="mono text-2xl font-extrabold tracking-[0.14em] text-[#4ade80] mt-0.5">0000</div>
-          </div>
-          <button id="regenOwnerKeyBtn" class="min-btn" title="Generate a new 4-digit Owner Key">NEW</button>
+        <div id="modalAccessHint" class="mono text-[10.5px] font-bold px-2.5 py-1 rounded bg-[#0e0e0e] border border-[#262626] text-[#a3a3a3]">
+          ACCESS: OPEN
         </div>
       </div>
 
@@ -789,7 +847,7 @@
       <!-- Hosted URL Input (Prevents 404 when running in local/sandbox preview) -->
       <div class="mb-3">
         <label for="hostedUrlInput" class="block text-[11px] font-bold text-[#d4d4d4] mb-1">
-          PUBLIC HOSTED URL (AUTO-EMBEDS ROOM &amp; OWNER KEY)
+          PUBLIC HOSTED URL (EMBEDS ROOM CODE ONLY)
         </label>
         <div class="flex gap-2">
           <input
@@ -819,7 +877,7 @@
   </div>
 
   <!-- ========================================================================= -->
-  <!-- UNIFIED ENGINE: ONLY-ME ACCESS + LIVE ARDUINO TRANSPILER + 2D KINEMATICS  -->
+  <!-- UNIFIED ENGINE: 3-MODE ACCESS + LIVE ARDUINO TRANSPILER + 2D KINEMATICS   -->
   <!-- ========================================================================= -->
   <script>
     (() => {
@@ -836,10 +894,29 @@
       const MAX_PWM            = 150;
       const MIN_PWM            = 20;
 
-      const STORAGE_HOSTED_URL = 'team14_hosted_url_v2';
-      const STORAGE_OWNER_KEY  = 'team14_owner_key_v2';
-      const STORAGE_LIBS       = 'team14_custom_libs_v2';
-      const STORAGE_INOS       = 'team14_ino_blocks_v2';
+      const STORAGE_HOSTED_URL = 'team14_hosted_url_v3';
+      const STORAGE_LIBS       = 'team14_custom_libs_v3';
+      const STORAGE_INOS       = 'team14_ino_blocks_v3';
+
+      // Encapsulated private closure for the 4-digit Host PIN (never logged, stored, or rendered)
+      const hostPinVault = (() => {
+        let _secretPin = null;
+        return {
+          hasPin() {
+            return typeof _secretPin === 'string' && /^\d{4}$/.test(_secretPin);
+          },
+          setPin(candidate) {
+            const clean = String(candidate || '').trim();
+            if (!/^\d{4}$/.test(clean)) return false;
+            _secretPin = clean;
+            return true;
+          },
+          verify(candidate) {
+            if (!this.hasPin()) return false;
+            return String(candidate || '').trim() === _secretPin;
+          }
+        };
+      })();
 
       const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
 
@@ -920,13 +997,14 @@
         try {
           const saved = localStorage.getItem(STORAGE_OWNER_KEY);
           if (saved && /^\d{4}$/.test(saved)) return saved;
-        } catch {}
-        const fresh = String(Math.floor(1000 + Math.random() * 9000));
-        try { localStorage.setItem(STORAGE_OWNER_KEY, fresh); } catch {}
-        return fresh;
-      }
+      // ==================== ROOM CODE, CLIENT ID & VIEW SWITCHER ====================
+      const urlParams = new URLSearchParams(window.location.search);
+      const isOpenedAsPhoneController = (urlParams.get('mode') === 'controller');
 
-      let ownerKey = loadOrCreateOwnerKey();
+      const simRoomDigits = (urlParams.get('room') && /^\d{4}$/.test(urlParams.get('room')))
+        ? urlParams.get('room')
+        : String(Math.floor(1000 + Math.random() * 9000));
+
       const myClientId = 'CLIENT-' + Math.floor(0x1000 + Math.random() * 0xF000).toString(16).toUpperCase();
 
       let currentView = isOpenedAsPhoneController ? 'ctrl' : 'sim';
@@ -972,10 +1050,10 @@
           splitPhoneHdr.classList.remove('hidden');
           splitPhoneHdr.classList.add('flex');
 
-          // Auto-fill Owner Key in embedded Split View controller so presenter connects immediately
-          cEl.keyInput.value = ownerKey;
-          if (!ctrlConnected && !ctrlPendingApproval) {
-            connectControllerToRoom(simRoomDigits, ownerKey, true);
+          // In OPEN mode, embedded Split View controller connects automatically;
+          // in HOST mode, presenter enters their private 4-digit PIN in the masked input.
+          if (accessMode === 'OPEN' && !ctrlConnected) {
+            connectControllerToRoom(simRoomDigits, cEl.pinInput.value);
           }
           setTimeout(resizeArenaCanvas, 30);
         } else if (view === 'ctrl') {
@@ -1030,7 +1108,7 @@
             '',
             '#define CUSTOM_MAX_PWM 150',
             '',
-            'inline float applyCurve(float v) {',
+            'float applyCurve(float v) {',
             '  return v;',
             '}',
             '',
@@ -1043,7 +1121,7 @@
         {
           id: 'b1',
           fileName: 'motorControlTask.ino',
-          subtitle: 'Mecanum Inverse Kinematics',
+          subtitle: 'Mecanum Kinematics & Drive/Brake',
           code: [
             'void computeMecanum(int8_t rawX, int8_t rawY, int8_t rawR) {',
             '  float x = constrain(rawX / 100.0f, -1.0f, 1.0f);',
@@ -1065,6 +1143,11 @@
             '  curFR = rampPWM(curFR, tgtFR, 20);',
             '  curRL = rampPWM(curRL, tgtRL, 20);',
             '  curRR = rampPWM(curRR, tgtRR, 20);',
+            '  bool isMoving = (x != 0.0f || y != 0.0f || r != 0.0f);',
+            '  driveFL = (isMoving && curFL == 0) ? 0 : curFL;',
+            '  driveFR = (isMoving && curFR == 0) ? 0 : curFR;',
+            '  driveRL = (isMoving && curRL == 0) ? 0 : curRL;',
+            '  driveRR = (isMoving && curRR == 0) ? 0 : curRR;',
             '}'
           ].join('\n')
         },
@@ -1379,6 +1462,7 @@
 
             let tgtFL = __state.tgtFL, tgtFR = __state.tgtFR, tgtRL = __state.tgtRL, tgtRR = __state.tgtRR;
             let curFL = __state.curFL, curFR = __state.curFR, curRL = __state.curRL, curRR = __state.curRR;
+            let driveFL = curFL, driveFR = curFR, driveRL = curRL, driveRR = curRR;
 
             ${jsChunks.join('\n\n')}
 
@@ -1386,7 +1470,7 @@
               throw new Error('Missing entry function: void computeMecanum(int8_t rawX, int8_t rawY, int8_t rawR)');
             }
             computeMecanum(__in.x, __in.y, __in.r);
-            return { tgtFL, tgtFR, tgtRL, tgtRR, curFL, curFR, curRL, curRR };
+            return { tgtFL, tgtFR, tgtRL, tgtRR, curFL, curFR, curRL, curRR, driveFL, driveFR, driveRL, driveRR };
           `;
 
           const factory = new Function('__in', '__state', '__trace', '__cond', '__ret', '__fmt', combinedBody);
@@ -1448,10 +1532,9 @@
       }
 
       function renderArduinoWorkspaceCards() {
-        // 1. Render Custom Libraries (.h)
+        // 1. Render Custom Libraries (.h) with #include Checkbox & Modal Editor Trigger
         customLibsContainer.innerHTML = '';
         customLibs.forEach((lib) => {
-          const isEditing = Boolean(editingState[lib.id]);
           const card = document.createElement('div');
           card.className = 'arduino-card shrink-0';
 
@@ -1464,19 +1547,548 @@
           tabBar.appendChild(leftTab);
 
           const actions = document.createElement('div');
-          actions.className = 'flex items-center gap-1.5 py-1';
+          actions.className = 'flex items-center gap-2 py-1';
 
-          // #include toggle button
-          const incBtn = document.createElement('button');
-          incBtn.className = 'ard-tool-btn mono' + (lib.enabled ? ' inc-on' : '');
-          incBtn.textContent = lib.enabled ? '#include ON' : '#include OFF';
-          incBtn.title = 'Toggle whether this .h library is included in compilation';
-          incBtn.addEventListener('click', () => {
-            lib.enabled = !lib.enabled;
+          // Authentic #include toggle checkbox
+          const incLabel = document.createElement('label');
+          incLabel.className = 'inline-flex items-center gap-1 text-[10px] font-bold mono cursor-pointer px-1.5 py-0.5 rounded border ' +
+            (lib.enabled ? 'bg-[#e0f7fa] border-[#00979c] text-[#006669]' : 'bg-white border-[#d1d5db] text-[#6b7280]');
+          incLabel.title = `Toggle #include "${lib.name}"`;
+
+          const incCheckbox = document.createElement('input');
+          incCheckbox.type = 'checkbox';
+          incCheckbox.checked = Boolean(lib.enabled);
+          incCheckbox.className = 'accent-[#00979c] cursor-pointer m-0';
+          incCheckbox.addEventListener('change', () => {
+            lib.enabled = incCheckbox.checked;
             saveArduinoCodeToStorage();
             compileAllArduinoCode(false);
             renderArduinoWorkspaceCards();
           });
+
+          const incSpan = document.createElement('span');
+          incSpan.textContent = '#include';
+          incLabel.appendChild(incCheckbox);
+          incLabel.appendChild(incSpan);
+          actions.appendChild(incLabel);
+
+          const editBtn = document.createElement('button');
+          editBtn.className = 'ard-tool-btn mono';
+          editBtn.textContent = 'EDIT';
+          editBtn.addEventListener('click', () => openLibEditorModal(lib));
+          actions.appendChild(editBtn);
+
+          if (!lib.builtIn) {
+            const delBtn = document.createElement('button');
+            delBtn.className = 'ard-tool-btn danger mono';
+            delBtn.textContent = 'DEL';
+            delBtn.addEventListener('click', () => {
+              customLibs = customLibs.filter((item) => item.id !== lib.id);
+              saveArduinoCodeToStorage();
+              compileAllArduinoCode(false);
+              renderArduinoWorkspaceCards();
+              showToast(`Deleted ${lib.name}`);
+            });
+            actions.appendChild(delBtn);
+          }
+
+          tabBar.appendChild(actions);
+          card.appendChild(tabBar);
+
+          const editorDiv = document.createElement('div');
+          editorDiv.className = 'arduino-editor mono py-1' + (!lib.enabled ? ' opacity-50' : '');
+          editorDiv.innerHTML = renderTraceRowsHtml(lib.id, lib.code);
+          card.appendChild(editorDiv);
+
+          customLibsContainer.appendChild(card);
+        });
+
+        // 2. Render 3 Separate Arduino .ino Movement Cards
+        inoCardsContainer.innerHTML = '';
+        inoBlocks.forEach((blk) => {
+          const isEditing = Boolean(editingState[blk.id]);
+          const card = document.createElement('div');
+          card.className = 'arduino-card shrink-0';
+
+          const tabBar = document.createElement('div');
+          tabBar.className = 'arduino-tabbar';
+
+          const leftGroup = document.createElement('div');
+          leftGroup.className = 'flex items-center gap-2 min-w-0';
+          leftGroup.innerHTML = `
+            <div class="arduino-tab mono"><span>${escapeHtml(blk.fileName)}</span></div>
+            <span class="hidden sm:inline text-[10px] font-semibold text-[#6b7280] mono truncate">${escapeHtml(blk.subtitle)}</span>
+          `;
+          tabBar.appendChild(leftGroup);
+
+          const actions = document.createElement('div');
+          actions.className = 'flex items-center gap-1.5 py-1 shrink-0';
+
+          if (!isEditing) {
+            const editBtn = document.createElement('button');
+            editBtn.className = 'ard-tool-btn mono';
+            editBtn.textContent = 'EDIT';
+            editBtn.addEventListener('click', () => {
+              editingState[blk.id] = true;
+              renderArduinoWorkspaceCards();
+            });
+            actions.appendChild(editBtn);
+          } else {
+            const applyBtn = document.createElement('button');
+            applyBtn.className = 'ard-tool-btn primary mono';
+            applyBtn.textContent = 'APPLY & RUN';
+            const commitInoEdit = () => {
+              const ta = card.querySelector('textarea');
+              if (ta) blk.code = ta.value;
+              editingState[blk.id] = false;
+              saveArduinoCodeToStorage();
+              compileAllArduinoCode(false);
+              renderArduinoWorkspaceCards();
+            };
+            applyBtn.addEventListener('click', commitInoEdit);
+            actions.appendChild(applyBtn);
+
+            const cancelBtn = document.createElement('button');
+            cancelBtn.className = 'ard-tool-btn mono';
+            cancelBtn.textContent = 'CANCEL';
+            cancelBtn.addEventListener('click', () => {
+              editingState[blk.id] = false;
+              renderArduinoWorkspaceCards();
+            });
+            actions.appendChild(cancelBtn);
+          }
+
+          const resetBtn = document.createElement('button');
+          resetBtn.className = 'ard-tool-btn mono';
+          resetBtn.textContent = 'RESET';
+          resetBtn.title = `Restore ${blk.fileName} to default`;
+          resetBtn.addEventListener('click', () => {
+            const def = DEFAULT_INO_BLOCKS.find((d) => d.id === blk.id);
+            if (def) blk.code = def.code;
+            editingState[blk.id] = false;
+            saveArduinoCodeToStorage();
+            compileAllArduinoCode(false);
+            renderArduinoWorkspaceCards();
+          });
+          actions.appendChild(resetBtn);
+
+          tabBar.appendChild(actions);
+          card.appendChild(tabBar);
+
+          if (isEditing) {
+            const ta = document.createElement('textarea');
+            ta.className = 'arduino-textarea';
+            ta.rows = Math.max(7, blk.code.split('\n').length + 1);
+            ta.value = blk.code;
+            attachTabIndentation(ta, () => {
+              blk.code = ta.value;
+              editingState[blk.id] = false;
+              saveArduinoCodeToStorage();
+              compileAllArduinoCode(false);
+              renderArduinoWorkspaceCards();
+            });
+            card.appendChild(ta);
+            setTimeout(() => ta.focus(), 10);
+          } else {
+            const editorDiv = document.createElement('div');
+            editorDiv.className = 'arduino-editor mono py-1';
+            editorDiv.innerHTML = renderTraceRowsHtml(blk.id, blk.code);
+            card.appendChild(editorDiv);
+          }
+
+          inoCardsContainer.appendChild(card);
+        });
+      }
+
+      // Modal C++ Header Editor (.h) Controls
+      const openNewLibModalBtn = document.getElementById('openNewLibModalBtn');
+      const libEditorModal     = document.getElementById('libEditorModal');
+      const libModalTitle      = document.getElementById('libModalTitle');
+      const libModalNameInput  = document.getElementById('libModalNameInput');
+      const libModalCodeInput  = document.getElementById('libModalCodeInput');
+      const closeLibModalBtn   = document.getElementById('closeLibModalBtn');
+      const cancelLibModalBtn  = document.getElementById('cancelLibModalBtn');
+      const saveLibModalBtn    = document.getElementById('saveLibModalBtn');
+      const deleteLibModalBtn  = document.getElementById('deleteLibModalBtn');
+      const resetAllCodeBtn    = document.getElementById('resetAllCodeBtn');
+
+      let editingLibTargetId = null;
+
+      function closeLibEditorModal() {
+        editingLibTargetId = null;
+        libEditorModal.classList.add('hidden');
+        libEditorModal.classList.remove('flex');
+      }
+
+      function openLibEditorModal(libOrNull) {
+        if (libOrNull) {
+          editingLibTargetId = libOrNull.id;
+          libModalTitle.textContent = `EDIT HEADER: ${libOrNull.name}`;
+          libModalNameInput.value = libOrNull.name;
+          libModalNameInput.disabled = Boolean(libOrNull.builtIn);
+          libModalCodeInput.value = libOrNull.code;
+          deleteLibModalBtn.classList.toggle('hidden', Boolean(libOrNull.builtIn));
+        } else {
+          editingLibTargetId = null;
+          libModalTitle.textContent = 'NEW CUSTOM C++ HEADER (.h)';
+          libModalNameInput.value = '';
+          libModalNameInput.disabled = false;
+          libModalCodeInput.value = [
+            '#ifndef CUSTOM_LIB_H',
+            '#define CUSTOM_LIB_H',
+            '',
+            'inline float customHelper(float val) {',
+            '  return val;',
+            '}',
+            '',
+            '#endif'
+          ].join('\n');
+          deleteLibModalBtn.classList.add('hidden');
+        }
+
+        libEditorModal.classList.remove('hidden');
+        libEditorModal.classList.add('flex');
+        setTimeout(() => {
+          if (!libModalNameInput.disabled) libModalNameInput.focus();
+          else libModalCodeInput.focus();
+        }, 15);
+      }
+
+      function commitLibModalSave() {
+        let rawName = libModalNameInput.value.trim().replace(/[^a-zA-Z0-9_.]/g, '');
+        if (!rawName) {
+          showToast('Enter a valid header filename (e.g. CustomCurve.h).');
+          return;
+        }
+        if (!rawName.endsWith('.h')) rawName += '.h';
+
+        if (editingLibTargetId) {
+          const target = customLibs.find((l) => l.id === editingLibTargetId);
+          if (target) {
+            if (!target.builtIn) target.name = rawName;
+            target.code = libModalCodeInput.value;
+          }
+        } else {
+          if (customLibs.some((l) => l.name.toLowerCase() === rawName.toLowerCase())) {
+            showToast(`Library ${rawName} already exists.`);
+            return;
+          }
+          customLibs.push({
+            id: 'lib_' + Date.now().toString(36),
+            name: rawName,
+            enabled: true,
+            builtIn: false,
+            code: libModalCodeInput.value
+          });
+        }
+
+        closeLibEditorModal();
+        saveArduinoCodeToStorage();
+        compileAllArduinoCode(false);
+        renderArduinoWorkspaceCards();
+      }
+
+      attachTabIndentation(libModalCodeInput, commitLibModalSave);
+      openNewLibModalBtn.addEventListener('click', () => openLibEditorModal(null));
+      closeLibModalBtn.addEventListener('click', closeLibEditorModal);
+      cancelLibModalBtn.addEventListener('click', closeLibEditorModal);
+      saveLibModalBtn.addEventListener('click', commitLibModalSave);
+      deleteLibModalBtn.addEventListener('click', () => {
+        if (!editingLibTargetId) return;
+        customLibs = customLibs.filter((l) => l.id !== editingLibTargetId || l.builtIn);
+        closeLibEditorModal();
+        saveArduinoCodeToStorage();
+        compileAllArduinoCode(false);
+        renderArduinoWorkspaceCards();
+      });
+      libEditorModal.addEventListener('click', (e) => {
+        if (e.target === libEditorModal) closeLibEditorModal();
+      });
+
+      resetAllCodeBtn.addEventListener('click', () => {
+        customLibs = JSON.parse(JSON.stringify(DEFAULT_CUSTOM_LIBS));
+        inoBlocks  = JSON.parse(JSON.stringify(DEFAULT_INO_BLOCKS));
+        for (const k of Object.keys(editingState)) delete editingState[k];
+        saveArduinoCodeToStorage();
+        compileAllArduinoCode(true);
+        renderArduinoWorkspaceCards();
+        showToast('Restored all .h libraries and .ino blocks to defaults.');
+      });
+
+      // =========================================================================
+      // PART B: 3-MODE CONNECTION ACCESS CONTROL (OPEN / CLOSED / HOST)
+      // =========================================================================
+      const simEl = {
+        roomBadge: document.getElementById('roomBadge'),
+        btnAccessOpen: document.getElementById('btnAccessOpen'),
+        btnAccessClosed: document.getElementById('btnAccessClosed'),
+        btnAccessHost: document.getElementById('btnAccessHost'),
+        setHostPinBtn: document.getElementById('setHostPinBtn'),
+        blockedCountBadge: document.getElementById('blockedCountBadge'),
+        activeClientBox: document.getElementById('activeClientBox'),
+        activeClientLabel: document.getElementById('activeClientLabel'),
+        kickClientBtn: document.getElementById('kickClientBtn'),
+        standbyStatusPill: document.getElementById('standbyStatusPill'),
+        standbyText: document.getElementById('standbyText'),
+        hostPinModal: document.getElementById('hostPinModal'),
+        hostPinModalInput: document.getElementById('hostPinModalInput'),
+        hostPinErrorText: document.getElementById('hostPinErrorText'),
+        closeHostPinModalBtn: document.getElementById('closeHostPinModalBtn'),
+        cancelHostPinBtn: document.getElementById('cancelHostPinBtn'),
+        confirmHostPinBtn: document.getElementById('confirmHostPinBtn'),
+        openPairModalBtn: document.getElementById('openPairModalBtn'),
+        closePairModalBtn: document.getElementById('closePairModalBtn'),
+        pairModal: document.getElementById('pairModal'),
+        modalRoomCode: document.getElementById('modalRoomCode'),
+        modalAccessHint: document.getElementById('modalAccessHint'),
+        hostedUrlInput: document.getElementById('hostedUrlInput'),
+        urlEnvHint: document.getElementById('urlEnvHint'),
+        qrActiveBox: document.getElementById('qrActiveBox'),
+        qrContainer: document.getElementById('qrContainer'),
+        qrTargetUrlLabel: document.getElementById('qrTargetUrlLabel'),
+        peerStatusLine: document.getElementById('peerStatusLine'),
+        copyCtrlUrlBtn: document.getElementById('copyCtrlUrlBtn'),
+        modalSwitchSplitBtn: document.getElementById('modalSwitchSplitBtn'),
+        simResetBtn: document.getElementById('simResetBtn'),
+        arenaContainer: document.getElementById('arenaContainer'),
+        arenaCanvas: document.getElementById('arenaCanvas'),
+        hudVx: document.getElementById('hudVx'),
+        hudVy: document.getElementById('hudVy'),
+        hudOmega: document.getElementById('hudOmega'),
+        hudMotorState: document.getElementById('hudMotorState'),
+        wheelCardFL: document.getElementById('wheelCardFL'),
+        wheelCardFR: document.getElementById('wheelCardFR'),
+        wheelCardRL: document.getElementById('wheelCardRL'),
+        wheelCardRR: document.getElementById('wheelCardRR'),
+        pwmValFL: document.getElementById('pwmValFL'),
+        pwmValFR: document.getElementById('pwmValFR'),
+        pwmValRL: document.getElementById('pwmValRL'),
+        pwmValRR: document.getElementById('pwmValRR'),
+        pwmBarFL: document.getElementById('pwmBarFL'),
+        pwmBarFR: document.getElementById('pwmBarFR'),
+        pwmBarRL: document.getElementById('pwmBarRL'),
+        pwmBarRR: document.getElementById('pwmBarRR')
+      };
+
+      // 3-Mode Access State: 'OPEN' | 'CLOSED' | 'HOST'
+      let accessMode = 'OPEN';
+      let blockedCount = 0;
+
+      // approvedClient: { clientId, transport: 'WEBRTC'|'LOCAL', peerConn: DataConnection|null }
+      let approvedClient = null;
+
+      const localBusChannel = ('BroadcastChannel' in window)
+        ? new BroadcastChannel(`team14-room-${simRoomDigits}`)
+        : null;
+
+      function sendControlSignalToClient(clientObj, payload) {
+        if (!clientObj) return;
+        if (clientObj.transport === 'WEBRTC' && clientObj.peerConn) {
+          try {
+            if (clientObj.peerConn.open) clientObj.peerConn.send(payload);
+          } catch {}
+        } else if (clientObj.transport === 'LOCAL' && localBusChannel) {
+          localBusChannel.postMessage(payload);
+        }
+      }
+
+      function renderAccessControlUI() {
+        const idleCls   = 'px-2 py-0.5 rounded text-[10.5px] font-extrabold mono text-[#a3a3a3] hover:text-white transition cursor-pointer';
+        const openCls   = 'px-2 py-0.5 rounded text-[10.5px] font-extrabold mono bg-white text-black transition cursor-pointer';
+        const closedCls = 'px-2 py-0.5 rounded text-[10.5px] font-extrabold mono bg-[#ef4444] text-white transition cursor-pointer';
+        const hostCls   = 'px-2 py-0.5 rounded text-[10.5px] font-extrabold mono bg-[#22c55e] text-black transition cursor-pointer';
+
+        simEl.btnAccessOpen.className   = (accessMode === 'OPEN')   ? openCls   : idleCls;
+        simEl.btnAccessClosed.className = (accessMode === 'CLOSED') ? closedCls : idleCls;
+        simEl.btnAccessHost.className   = (accessMode === 'HOST')   ? hostCls   : idleCls;
+
+        simEl.setHostPinBtn.classList.toggle('hidden', accessMode !== 'HOST');
+        simEl.modalAccessHint.textContent = `ACCESS: ${accessMode}`;
+
+        if (blockedCount > 0) {
+          simEl.blockedCountBadge.classList.remove('hidden');
+          simEl.blockedCountBadge.textContent = `BLOCKED: ${blockedCount}`;
+        } else {
+          simEl.blockedCountBadge.classList.add('hidden');
+        }
+
+        if (approvedClient) {
+          simEl.activeClientBox.classList.remove('hidden');
+          simEl.activeClientBox.classList.add('flex');
+          simEl.activeClientLabel.textContent = (accessMode === 'HOST')
+            ? `HOST: ${approvedClient.clientId}`
+            : `CONNECTED: ${approvedClient.clientId}`;
+          simEl.standbyStatusPill.classList.add('hidden');
+        } else {
+          simEl.activeClientBox.classList.add('hidden');
+          simEl.activeClientBox.classList.remove('flex');
+          simEl.standbyStatusPill.classList.remove('hidden');
+          if (accessMode === 'HOST') {
+            simEl.standbyText.textContent = 'HOST LOCKED · PIN REQUIRED';
+          } else if (accessMode === 'CLOSED') {
+            simEl.standbyText.textContent = 'CLOSED · KEYBOARD ONLY';
+          } else {
+            simEl.standbyText.textContent = 'OPEN · NO CLIENT (KEYBOARD READY)';
+          }
+        }
+      }
+
+      function kickCurrentApprovedClient(reason = 'KICKED BY HOST') {
+        if (!approvedClient) return;
+        const old = approvedClient;
+        approvedClient = null;
+        cmdQueueSlot = { x: 0, y: 0, r: 0, flags: 0, timestamp: 0 };
+        sendControlSignalToClient(old, { type: 'KICKED', clientId: old.clientId, reason });
+        if (old.transport === 'WEBRTC' && old.peerConn) {
+          setTimeout(() => { try { old.peerConn.close(); } catch {} }, 80);
+        }
+        renderAccessControlUI();
+      }
+
+      function setAccessMode(nextMode) {
+        if (nextMode === 'OPEN') {
+          accessMode = 'OPEN';
+          renderAccessControlUI();
+          showToast('Access mode: OPEN (any client with Room Code can connect).');
+        } else if (nextMode === 'CLOSED') {
+          accessMode = 'CLOSED';
+          kickCurrentApprovedClient('ACCESS CLOSED');
+          renderAccessControlUI();
+          showToast('Access mode: CLOSED (all remote connections blocked).');
+        } else if (nextMode === 'HOST') {
+          openHostPinModal();
+        }
+      }
+
+      // Masked 4-Digit Host PIN Modal Handlers
+      function openHostPinModal() {
+        simEl.hostPinModalInput.value = '';
+        simEl.hostPinErrorText.classList.add('hidden');
+        simEl.hostPinModal.classList.remove('hidden');
+        simEl.hostPinModal.classList.add('flex');
+        setTimeout(() => simEl.hostPinModalInput.focus(), 15);
+      }
+
+      function closeHostPinModal() {
+        simEl.hostPinModalInput.value = '';
+        simEl.hostPinErrorText.classList.add('hidden');
+        simEl.hostPinModal.classList.add('hidden');
+        simEl.hostPinModal.classList.remove('flex');
+      }
+
+      function submitHostPinModal() {
+        const raw = simEl.hostPinModalInput.value.replace(/\D/g, '').slice(0, 4);
+        if (!hostPinVault.setPin(raw)) {
+          simEl.hostPinErrorText.classList.remove('hidden');
+          simEl.hostPinModalInput.focus();
+          return;
+        }
+        // Clear input immediately so digits are never retained in DOM
+        simEl.hostPinModalInput.value = '';
+        closeHostPinModal();
+
+        accessMode = 'HOST';
+        // Kick any previously connected client so it must reconnect with the 4-digit Host PIN
+        kickCurrentApprovedClient('HOST PIN REQUIRED');
+        renderAccessControlUI();
+        showToast('Access mode: HOST (4-digit PIN lock active).');
+      }
+
+      simEl.hostPinModalInput.addEventListener('input', () => {
+        simEl.hostPinModalInput.value = simEl.hostPinModalInput.value.replace(/\D/g, '').slice(0, 4);
+        simEl.hostPinErrorText.classList.add('hidden');
+      });
+      simEl.hostPinModalInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') submitHostPinModal();
+        if (e.key === 'Escape') closeHostPinModal();
+      });
+
+      simEl.btnAccessOpen.addEventListener('click', () => setAccessMode('OPEN'));
+      simEl.btnAccessClosed.addEventListener('click', () => setAccessMode('CLOSED'));
+      simEl.btnAccessHost.addEventListener('click', () => setAccessMode('HOST'));
+      simEl.setHostPinBtn.addEventListener('click', openHostPinModal);
+      simEl.closeHostPinModalBtn.addEventListener('click', closeHostPinModal);
+      simEl.cancelHostPinBtn.addEventListener('click', closeHostPinModal);
+      simEl.confirmHostPinBtn.addEventListener('click', submitHostPinModal);
+      simEl.hostPinModal.addEventListener('click', (e) => {
+        if (e.target === simEl.hostPinModal) closeHostPinModal();
+      });
+
+      simEl.blockedCountBadge.addEventListener('click', () => {
+        blockedCount = 0;
+        renderAccessControlUI();
+      });
+
+      function handleIncomingHandshake(msg, transport, peerConn = null) {
+        const clientId = msg && msg.clientId;
+        if (!clientId || typeof clientId !== 'string') return;
+        const clientObj = { clientId, transport, peerConn };
+
+        // 1. CLOSED MODE: Immediately reject all incoming connections
+        if (accessMode === 'CLOSED') {
+          blockedCount++;
+          sendControlSignalToClient(clientObj, {
+            type: 'REJECTED',
+            clientId,
+            reason: 'ACCESS CLOSED'
+          });
+          if (transport === 'WEBRTC' && peerConn) {
+            setTimeout(() => { try { peerConn.close(); } catch {} }, 80);
+          }
+          renderAccessControlUI();
+          return;
+        }
+
+        // 2. HOST MODE: Verify private 4-digit PIN silently without any popup interruption
+        if (accessMode === 'HOST') {
+          const isValidPin = hostPinVault.verify(msg.pin);
+          if (!isValidPin) {
+            blockedCount++;
+            sendControlSignalToClient(clientObj, {
+              type: 'REJECTED',
+              clientId,
+              reason: 'INVALID HOST PIN'
+            });
+            if (transport === 'WEBRTC' && peerConn) {
+              setTimeout(() => { try { peerConn.close(); } catch {} }, 80);
+            }
+            renderAccessControlUI();
+            return;
+          }
+
+          if (approvedClient && approvedClient.clientId !== clientId) {
+            kickCurrentApprovedClient('REPLACED BY HOST');
+          }
+          approvedClient = clientObj;
+          sendControlSignalToClient(clientObj, { type: 'APPROVED', clientId });
+          renderAccessControlUI();
+          showToast(`Host authenticated: ${clientId}`);
+          return;
+        }
+
+        // 3. OPEN MODE: Immediately approve any client with matching Room Code
+        if (approvedClient && approvedClient.clientId !== clientId) {
+          kickCurrentApprovedClient('REPLACED BY NEW CLIENT');
+        }
+        approvedClient = clientObj;
+        sendControlSignalToClient(clientObj, { type: 'APPROVED', clientId });
+        renderAccessControlUI();
+        showToast(`Connected: ${clientId}`);
+      }
+
+      function handleClientDisconnect(clientId) {
+        if (approvedClient && approvedClient.clientId === clientId) {
+          approvedClient = null;
+          cmdQueueSlot = { x: 0, y: 0, r: 0, flags: 0, timestamp: 0 };
+          showToast(`${clientId} disconnected`);
+        }
+        renderAccessControlUI();
+      }
+
+      simEl.kickClientBtn.addEventListener('click', () => {
+        kickCurrentApprovedClient('KICKED BY HOST');
+        showToast('Client disconnected.');
+      });
           actions.appendChild(incBtn);
 
           if (!isEditing) {
@@ -2157,7 +2769,8 @@
         const cleanBase = normalizeHttpBaseUrl(rawInput);
         if (cleanBase) {
           try { localStorage.setItem(STORAGE_HOSTED_URL, cleanBase); } catch {}
-          activeShareableControllerUrl = `${cleanBase}?mode=controller&room=${simRoomDigits}&key=${ownerKey}`;
+          // QR code URL embeds Room Code ONLY (never the private Host PIN)
+          activeShareableControllerUrl = `${cleanBase}?mode=controller&room=${simRoomDigits}`;
           simEl.copyCtrlUrlBtn.disabled = false;
           simEl.qrTargetUrlLabel.textContent = activeShareableControllerUrl;
           simEl.qrActiveBox.classList.remove('hidden');
@@ -2194,11 +2807,11 @@
 
         if (detectedBase) {
           simEl.hostedUrlInput.value = detectedBase;
-          simEl.urlEnvHint.textContent = 'Public URL detected. QR code embeds Room & Owner Key automatically.';
+          simEl.urlEnvHint.textContent = 'Public URL detected. QR code embeds Room Code only.';
           updateHostedUrlQrUI(detectedBase);
         } else if (savedBase) {
           simEl.hostedUrlInput.value = savedBase;
-          simEl.urlEnvHint.textContent = 'Loaded saved public URL (embeds Room & Owner Key).';
+          simEl.urlEnvHint.textContent = 'Loaded saved public URL (embeds Room Code only).';
           updateHostedUrlQrUI(savedBase);
         } else {
           simEl.hostedUrlInput.value = '';
@@ -2209,14 +2822,6 @@
         simEl.hostedUrlInput.addEventListener('input', (e) => updateHostedUrlQrUI(e.target.value));
         simEl.copyCtrlUrlBtn.addEventListener('click', () => {
           if (activeShareableControllerUrl) copyTextSafe(activeShareableControllerUrl);
-        });
-        simEl.regenOwnerKeyBtn.addEventListener('click', () => {
-          ownerKey = String(Math.floor(1000 + Math.random() * 9000));
-          try { localStorage.setItem(STORAGE_OWNER_KEY, ownerKey); } catch {}
-          if (currentView === 'split') cEl.keyInput.value = ownerKey;
-          renderAccessControlUI();
-          updateHostedUrlQrUI(simEl.hostedUrlInput.value);
-          showToast(`Generated new Owner Key: ${ownerKey}`);
         });
         simEl.modalSwitchSplitBtn.addEventListener('click', () => {
           simEl.pairModal.classList.add('hidden');
@@ -2233,7 +2838,7 @@
           simPeer = new Peer(`team14-sim-${simRoomDigits}`);
 
           simPeer.on('open', () => {
-            simEl.peerStatusLine.textContent = `WebRTC Host Ready (Room: ${simRoomDigits} · Key: ${ownerKey})`;
+            simEl.peerStatusLine.textContent = `WebRTC Host Ready (Room: ${simRoomDigits})`;
             simEl.peerStatusLine.style.color = '#4ade80';
           });
 
@@ -2787,14 +3392,14 @@
       let ctrlConn = null;
       let ctrlBusChannel = null;
       let ctrlConnected = false;
-      let ctrlPendingApproval = false;
+      let ctrlConnecting = false;
       let ctrlLastPktKey = '';
       let ctrlLastSentMs = 0;
       let ctrlWakeLock = null;
 
       const cEl = {
         roomInput: document.getElementById('ctrlRoomInput'),
-        keyInput: document.getElementById('ctrlKeyInput'),
+        pinInput: document.getElementById('ctrlPinInput'),
         connectBtn: document.getElementById('ctrlConnectBtn'),
         selfIdBadge: document.getElementById('ctrlSelfIdBadge'),
         dockClientIdTag: document.getElementById('dockClientIdTag'),
@@ -2843,14 +3448,8 @@
 
       function handleHostControlSignal(msg) {
         if (!msg || msg.clientId !== myClientId) return;
-        if (msg.type === 'PENDING') {
-          ctrlConnected = false;
-          ctrlPendingApproval = true;
-          setCtrlStatus('WAITING APPROVAL...', 'pending');
-          cEl.connectBtn.textContent = 'CANCEL';
-          cEl.connectBtn.classList.remove('active');
-        } else if (msg.type === 'APPROVED') {
-          ctrlPendingApproval = false;
+        if (msg.type === 'APPROVED') {
+          ctrlConnecting = false;
           ctrlConnected = true;
           ctrlLastPktKey = '';
           setCtrlStatus('CONNECTED', 'connected');
@@ -2881,7 +3480,7 @@
           ctrlPeer = null;
         }
         ctrlConnected = false;
-        ctrlPendingApproval = false;
+        ctrlConnecting = false;
         ctrlState.fire = ctrlState.defend = false;
         syncCtrlFireBtn();
         cEl.defendBtn.classList.remove('pressed');
@@ -2891,16 +3490,16 @@
         cEl.connectBtn.classList.add('active');
       }
 
-      function connectControllerToRoom(rawRoom, rawKey = '', isEmbeddedSplit = false) {
+      function connectControllerToRoom(rawRoom, rawPin = '') {
         const cleanDigits = String(rawRoom || '').replace(/\D/g, '').slice(-4);
-        const cleanKey = String(rawKey || '').replace(/\D/g, '').slice(-4);
+        const cleanPin = String(rawPin || '').replace(/\D/g, '').slice(0, 4);
         if (cleanDigits.length !== 4) {
           showToast('Enter a 4-digit room code.');
           return;
         }
         cEl.roomInput.value = cleanDigits;
-        if (cleanKey) cEl.keyInput.value = cleanKey;
 
+        ctrlConnecting = true;
         setCtrlStatus('CONNECTING...', 'pending');
         cEl.connectBtn.textContent = 'CANCEL';
         cEl.connectBtn.classList.remove('active');
@@ -2909,8 +3508,7 @@
           type: 'HELLO',
           clientId: myClientId,
           room: cleanDigits,
-          ownerKey: cleanKey,
-          isEmbeddedSplit
+          pin: cleanPin
         };
 
         // 1. Same-browser BroadcastChannel handshake (Split View & local tabs)
@@ -2938,11 +3536,11 @@
                 if (data && typeof data === 'object') handleHostControlSignal(data);
               });
               ctrlConn.on('close', () => {
-                if (ctrlConnected || ctrlPendingApproval) disconnectController('DISCONNECTED');
+                if (ctrlConnected || ctrlConnecting) disconnectController('DISCONNECTED');
               });
             });
             ctrlPeer.on('error', () => {
-              if (!ctrlConnected && !ctrlPendingApproval) {
+              if (!ctrlConnected && ctrlConnecting) {
                 disconnectController('ROOM NOT FOUND', 'rejected');
               }
             });
@@ -2950,12 +3548,23 @@
         }
       }
 
+      cEl.roomInput.addEventListener('input', () => {
+        cEl.roomInput.value = cEl.roomInput.value.replace(/\D/g, '').slice(0, 4);
+      });
+      cEl.pinInput.addEventListener('input', () => {
+        cEl.pinInput.value = cEl.pinInput.value.replace(/\D/g, '').slice(0, 4);
+      });
+      cEl.pinInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && !ctrlConnected && !ctrlConnecting) {
+          connectControllerToRoom(cEl.roomInput.value, cEl.pinInput.value);
+        }
+      });
+
       cEl.connectBtn.addEventListener('click', () => {
-        if (ctrlConnected || ctrlPendingApproval) {
+        if (ctrlConnected || ctrlConnecting) {
           disconnectController();
         } else {
-          const isSplit = (currentView === 'split');
-          connectControllerToRoom(cEl.roomInput.value, cEl.keyInput.value, isSplit);
+          connectControllerToRoom(cEl.roomInput.value, cEl.pinInput.value);
         }
       });
 
@@ -3177,7 +3786,7 @@
       });
 
       window.addEventListener('beforeunload', () => {
-        if (ctrlConnected || ctrlPendingApproval) disconnectController();
+        if (ctrlConnected || ctrlConnecting) disconnectController();
       });
 
       // ==================== RENDER LOOP & STARTUP ====================
@@ -3191,12 +3800,8 @@
       window.addEventListener('resize', resizeArenaCanvas);
 
       window.onload = function () {
-        const paramKey = (urlParams.get('key') && /^\d{4}$/.test(urlParams.get('key')))
-          ? urlParams.get('key')
-          : '';
-
         cEl.roomInput.value = simRoomDigits;
-        cEl.keyInput.value = isOpenedAsPhoneController ? paramKey : ownerKey;
+        cEl.pinInput.value = '';
         cEl.selfIdBadge.textContent = myClientId;
         cEl.dockClientIdTag.textContent = myClientId;
 
@@ -3210,7 +3815,7 @@
         initHostPairing();
 
         if (isOpenedAsPhoneController && urlParams.get('room')) {
-          connectControllerToRoom(urlParams.get('room'), paramKey, false);
+          connectControllerToRoom(urlParams.get('room'), '');
         }
 
         setInterval(runKeyboardFallbackLoop, WEB_LOOP_MS);
