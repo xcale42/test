@@ -2951,6 +2951,7 @@ ${globalCode.join('\n')}
             // run every thread that is due up to `target` (virtual ms)
             step(target) {
               if (!started) return;
+              for (const th of rt.threads) th.trace.clear();
               if (target - rt.now > 250) rt.now = target - 20;
               let budget = MAX_RESUMES;
               while (budget-- > 0) {
