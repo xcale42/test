@@ -858,7 +858,7 @@
       const MIN_PWM            = 20;
 
       const STORAGE_HOSTED_URL = 'team14_hosted_url_v3';
-      const STORAGE_FULL_INO   = 'team14_full_sketch_v7';
+      const STORAGE_FULL_INO   = 'team14_full_sketch_v8';
 
       // Encapsulated private closure for the 4-digit Host PIN (never logged, stored, or rendered)
       const hostPinVault = (() => {
@@ -1538,7 +1538,7 @@
         return code.replace(/__STR_(\d+)__/g, (_, idx) => strings[Number(idx)] ?? '""');
       }
 
-      // Normalize C++ numeric literals, casts, and std:: functions
+      // Normalize C++ numeric literals, casts, FreeRTOS queue calls, and std:: functions
       function normalizeCppTokens(expr, macrosMap) {
         let s = expr;
 
@@ -1559,6 +1559,12 @@
         s = s.replace(/\(\s*(?:float|double)\s*\)/g, '');
         s = s.replace(/\(\s*(?:bool|boolean)\s*\)/g, 'Boolean');
         s = s.replace(/\(\s*(?:int|long|short|int8_t|uint8_t|int16_t|uint16_t|int32_t|uint32_t|size_t)\s*\)/g, 'Math.trunc');
+
+        // Convert FreeRTOS xQueueReceive(queue, &targetVar, timeout) address-of pointer arg
+        s = s.replace(/\bxQueueReceive\s*\(\s*([^,]+)\s*,\s*&\s*([A-Za-z_]\w*)\s*,\s*([^)]+)\)/g, '__xQueueReceive($1, (__v) => { $2 = __v; }, $3)');
+
+        // Convert sizeof(x)
+        s = s.replace(/\bsizeof\s*\(\s*([^)]+)\s*\)/g, '__sizeof($1)');
 
         // Convert std:: helpers & nullptr
         s = s.replace(/\bstd::(min|max|abs|sin|cos|tan|atan2|sqrt|pow|log|log10|exp|floor|ceil|round|hypot|isnan|isinf)\b/g, '$1');
@@ -1687,7 +1693,6 @@
         const fields = [];
         const methodLines = [];
 
-        // Extract fields & methods inside struct body
         let innerDepth = 0;
         let currentMethod = null;
 
@@ -1699,7 +1704,6 @@
           if (!currentMethod) {
             if (!trimmed || trimmed === 'public:' || trimmed === 'private:' || trimmed === 'protected:') continue;
 
-            // Check method header: void drive(int power) {
             const mMatch = trimmed.match(new RegExp(`^(?:inline\\s+|static\\s+|const\\s+)*${CPP_TYPE_RE}\\s+([A-Za-z_]\\w*)\\s*\\(([^)]*)\\)\\s*\\{\\s*$`));
             if (mMatch) {
               currentMethod = {
@@ -1712,7 +1716,6 @@
               continue;
             }
 
-            // Otherwise field declaration: int in1; or float kp = 1.0f;
             const fMatch = trimmed.match(new RegExp(`^(?:const\\s+|static\\s+)*${CPP_TYPE_RE}\\s+([A-Za-z_]\\w*)(?:\\s*=\\s*([^;]+))?\\s*;\\s*$`));
             if (fMatch) {
               const fName = fMatch[1];
@@ -1751,7 +1754,6 @@
 
           const bodyJs = m.body.map(({ lineNo, text }) => {
             let line = transpileLineWithTrace('ino_full', lineNo, text, macrosMap, `struct_${structName}_${m.name}`, shadowed);
-            // Bind member fields and sibling methods to `this.`
             for (const fn of fieldNames) {
               if (!shadowed.has(fn)) {
                 line = line.replace(new RegExp(`(?<!\\.)\\b${fn}\\b`, 'g'), `this.${fn}`);
@@ -1806,7 +1808,6 @@
       }
 
       function splitIfConditionAndTail(rawAfterIf) {
-        // Expects string starting right after `if (`
         let depth = 1;
         let idx = 0;
         while (idx < rawAfterIf.length && depth > 0) {
@@ -1863,14 +1864,15 @@
           line = line.replace(/\{\s*$/, '{ if (++__ops > 10000) throw new Error("Loop iteration limit exceeded");');
         }
 
-        // C++ variable declarations (supports static, arrays, structs, multi-var)
+        // C++ variable declarations (supports static, const, arrays, structs, multi-var)
         let declaredVarName = null;
         const declMatch = line.match(
-          new RegExp(`^(\\s*)(static\\s+)?(?:const\\s+|volatile\\s+)*(${CPP_TYPE_RE})\\s+([A-Za-z_]\\w*[\\s\\S]*;\\s*)$`)
+          new RegExp(`^(\\s*)((?:(?:static|const|volatile)\\s+)*)(${CPP_TYPE_RE})\\s+([A-Za-z_]\\w*[\\s\\S]*;\\s*)$`)
         );
         if (declMatch && !/^(?:return|else|if|for|while|switch|case|break|continue)\b/.test(declMatch[3])) {
           const indent = declMatch[1];
-          const isStatic = Boolean(declMatch[2]);
+          const qualifiers = declMatch[2] || '';
+          const isStatic = /\bstatic\b/.test(qualifiers);
           const typeName = declMatch[3];
           const rest = declMatch[4];
           const res = transpileCppDeclaration(indent, isStatic, typeName, rest, scopeId, lineNo);
@@ -1881,8 +1883,8 @@
           }
         }
 
-        // Handle `if (...)` and `} else if (...)` cleanly (both braced and single-statement unbraced!)
-        const ifMatch = line.match(/^(\s*(?:\}\s*else\s+)?)\bif\s*\(([\s\S]*)$/);
+        // Handle `if (...)`, `} else if (...)`, and `else if (...)` cleanly
+        const ifMatch = line.match(/^(\s*(?:(?:\}\s*)?else\s+)?)\bif\s*\(([\s\S]*)$/);
         if (ifMatch) {
           const prefix = ifMatch[1];
           const split = splitIfConditionAndTail(ifMatch[2]);
@@ -1890,12 +1892,10 @@
             const { condExpr, tail } = split;
             const trimTail = tail.trim();
 
-            // Case A: Braced block `if (cond) {`
             if (trimTail.startsWith('{')) {
               return `${prefix}if (__cond("${cardId}", ${lineNo}, Boolean(${condExpr})))${tail}`;
             }
 
-            // Case B: Single-line unbraced `if (cond) return expr;`
             const retMatch = trimTail.match(/^return\s+([^;]+);\s*$/);
             if (retMatch) {
               return `${prefix}if (__cond("${cardId}", ${lineNo}, Boolean(${condExpr}))) { return __ret("${cardId}", ${lineNo}, (${retMatch[1]})); }`;
@@ -1904,7 +1904,6 @@
               return `${prefix}if (__cond("${cardId}", ${lineNo}, Boolean(${condExpr}))) { __trace("${cardId}", ${lineNo}, "void", "amber"); return; }`;
             }
 
-            // Case C: Single-line unbraced statement `if (cond) stmt;`
             if (trimTail.endsWith(';')) {
               const assignM = trimTail.match(/^([A-Za-z_]\w*)\s*(?:\+|-|\*|\/|%|\||&)?=\s*[^=]/);
               const traceInside = assignM
@@ -1938,7 +1937,11 @@
         return line;
       }
 
-      function buildArduinoRuntimePrelude() {
+      function buildArduinoRuntimePrelude(hasCustomControlCmdStruct = false) {
+        const controlCmdCtor = hasCustomControlCmdStruct
+          ? ''
+          : `function ControlCmd(x = 0, y = 0, r = 0, flags = 0, timestamp = 0) { this.x = x; this.y = y; this.r = r; this.flags = flags; this.timestamp = timestamp; }`;
+
         return `
           "use strict";
           let __ops = 0;
@@ -1990,6 +1993,7 @@
           const micros = () => Math.floor(__nowMs * 1000);
           const delay = () => {};
           const delayMicroseconds = () => {};
+          const __sizeof = (v) => Array.isArray(v) ? v.length * 4 : 4;
 
           // Hardware GPIO & LEDC / PWM State
           const pinMode = () => {};
@@ -2023,19 +2027,28 @@
           };
 
           // FreeRTOS & BLE Compatibility Primitives
+          ${controlCmdCtor}
           const pdTRUE = 1, pdFALSE = 0, portMAX_DELAY = 0xffffffff;
           const pdMS_TO_TICKS = (ms) => ms;
           const xTaskGetTickCount = () => Math.floor(__nowMs);
           const vTaskDelay = () => {};
           const vTaskDelayUntil = () => {};
-          const xQueueCreate = () => ({});
+          const cmdQueue = { __simQueue: true };
+          const xQueueCreate = () => ({ __simQueue: true });
+          const __xQueueReceive = (q, setter) => {
+            if (__in && __in.timestamp > 0) {
+              setter(new ControlCmd(__in.x, __in.y, __in.r, __in.flags, __in.timestamp));
+              return 1;
+            }
+            return 0;
+          };
           const xQueueReceive = () => 0;
           const xTaskCreatePinnedToCore = () => 1;
           const initBLE = () => {};
           const deviceConnected = { load: () => __alive, store: () => {} };
           const lastMotorActiveMs = { store: () => {} };
 
-          // Exposed Input Variables (supports both activeCmd struct and direct variables)
+          // Outer-scope Input Defaults (safely shadowable inside user inner block)
           const activeCmd = __in;
           const cmd = __in;
           const isAlive = __alive;
@@ -2097,6 +2110,8 @@
           const enumBlocks   = topBlocks.filter((b) => b.kind === 'enum');
           const funcBlocks   = topBlocks.filter((b) => b.kind === 'function');
 
+          const hasCustomControlCmdStruct = structBlocks.some((s) => s.name === 'ControlCmd');
+
           // Find entry point: FreeRTOS control task (with infinite loop) OR Arduino loop()
           const taskBlk = funcBlocks.find((b) => /task/i.test(b.name) && b.name !== 'bleMonitorTask')
             || funcBlocks.find((b) => b.name !== 'setup' && b.name !== 'loop' && b.lines.some((l) => /\b(?:for\s*\(\s*;\s*;\s*\)|while\s*\(\s*(?:1|true)\s*\))/.test(l)));
@@ -2148,7 +2163,6 @@
               }
             }
 
-            // Find matching closing brace of the infinite loop
             let loopDepth = 0;
             let loopEndOffset = activeEntryBlk.lines.length - 2;
             for (let k = loopHeaderOffset; k < activeEntryBlk.lines.length; k++) {
@@ -2186,8 +2200,6 @@
               const raw = activeEntryBlk.lines[k];
               const tr = raw.trim();
               if (
-                tr.startsWith('ControlCmd incoming') ||
-                tr.startsWith('if (xQueueReceive') ||
                 tr.startsWith('vTaskDelayUntil') ||
                 tr.startsWith('vTaskDelay(')
               ) {
@@ -2239,8 +2251,10 @@
             setupBodyJs = sLines.join('\n');
           }
 
+          // Wrap user declarations & entry block inside an inner `{ ... }` lexical block
+          // so user variables like `activeCmd` or `isAlive` cleanly shadow outer prelude defaults
           const sharedDefinitions = restoreStrings(`
-            ${buildArduinoRuntimePrelude()}
+            ${buildArduinoRuntimePrelude(hasCustomControlCmdStruct)}
             ${enumsJs}
             ${structsJs}
             ${topLevelJs.join('\n')}
@@ -2248,8 +2262,10 @@
 
           const fullStepCode = restoreStrings(`
             ${sharedDefinitions}
-            ${prologueJs}
-            ${stepBodyJs}
+            {
+              ${prologueJs}
+              ${stepBodyJs}
+            }
 
             const firePinNum   = (typeof PIN_FIRE   !== "undefined") ? PIN_FIRE   : 19;
             const defendPinNum = (typeof PIN_DEFEND !== "undefined") ? PIN_DEFEND : 13;
@@ -2267,7 +2283,9 @@
 
           const fullSetupCode = restoreStrings(`
             ${sharedDefinitions}
-            ${setupBodyJs}
+            {
+              ${setupBodyJs}
+            }
           `, strings);
 
           const stepFactory  = new Function('__in', '__alive', '__persist', '__statics', '__hw', '__nowMs', '__trace', '__cond', '__ret', '__fmt', '__serial', fullStepCode);
@@ -3073,6 +3091,9 @@
           return Number.isInteger(v) ? String(v) : v.toFixed(2);
         }
         if (typeof v === 'object' && v !== null) {
+          if ('x' in v && 'y' in v && 'r' in v) {
+            return `${v.x},${v.y},${v.r}`;
+          }
           return '{...}';
         }
         return String(v);
@@ -3948,5 +3969,3 @@
   </script>
 </body>
 </html>
-
-0
