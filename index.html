@@ -236,6 +236,7 @@
     .ard-num  { color: #005cc5; }
     .ard-cm   { color: #7e8e91; font-style: italic; }
     .ard-prep { color: #5c6370; font-weight: 600; }
+    .ard-str  { color: #005cc5; }
 
     /* Live Execution Line Highlights on Arduino White Canvas */
     .ard-row.exec-teal {
@@ -680,7 +681,7 @@
           </div>
         </section>
 
-        <!-- RIGHT PANE: AUTO-SPLITTING FULL ARDUINO SKETCH (.ino) -->
+        <!-- RIGHT PANE: UNIVERSAL C++ / ARDUINO TRANSPILER & LIVE EXECUTION TRACER -->
         <section id="arduinoBlocksColumn" class="flex flex-col gap-2 min-h-0 overflow-y-auto pr-0.5">
 
           <!-- ARDUINO SKETCH WORKSPACE BAR (STANDBY: FULL SKETCH | MOVING: AUTO-SPLIT) -->
@@ -690,6 +691,9 @@
                 <span class="text-[11px] font-extrabold tracking-wider text-white">ARDUINO FIRMWARE</span>
                 <span id="compileStatusPill" class="mono text-[10px] font-bold px-2 py-0.5 rounded bg-[#052e16] border border-[#22c55e] text-[#4ade80]">
                   COMPILED OK
+                </span>
+                <span id="entryModeBadge" class="mono text-[10px] font-bold px-2 py-0.5 rounded bg-black border border-[#262626] text-[#a3a3a3]">
+                  TASK: 50Hz
                 </span>
                 <span id="sketchLayoutBadge" class="ard-mode-pill mono">STANDBY · FULL SKETCH</span>
               </div>
@@ -712,11 +716,22 @@
               </div>
             </div>
 
-            <!-- Compile Error Output Banner (Shown only if user introduces a syntax/runtime error) -->
+            <!-- Compile / Runtime Error Output Banner -->
             <div id="compileErrorBanner" class="hidden px-2.5 py-1.5 rounded bg-[#1f0909] border border-[#ef4444] mono text-[10.5px] text-[#fca5a5] break-words"></div>
 
             <!-- Container for Full Sketch Card (Standby) OR Auto-Split Active Function Cards (Moving) -->
             <div id="inoCardsContainer" class="flex flex-col gap-2 shrink-0"></div>
+
+            <!-- Built-in Serial Monitor (Auto-displays when Serial.print / println is executed) -->
+            <div id="serialMonitorBox" class="hidden flex-col rounded-lg bg-black border border-[#262626] overflow-hidden shrink-0">
+              <div class="flex items-center justify-between px-2.5 py-1 bg-[#141414] border-b border-[#262626]">
+                <span class="mono text-[10px] font-bold text-[#a3a3a3]">SERIAL MONITOR (115200 BAUD)</span>
+                <button id="clearSerialBtn" class="mono text-[9.5px] font-bold text-[#8a8a8a] hover:text-white cursor-pointer">
+                  CLEAR
+                </button>
+              </div>
+              <pre id="serialOutputLog" class="mono text-[10.5px] text-[#4ade80] px-2.5 py-1.5 m-0 max-h-[92px] overflow-y-auto whitespace-pre-wrap break-all"></pre>
+            </div>
           </div>
 
         </section>
@@ -824,7 +839,7 @@
   </div>
 
   <!-- ========================================================================= -->
-  <!-- UNIFIED ENGINE: 3-MODE ACCESS + LIVE ARDUINO TRANSPILER + 2D KINEMATICS   -->
+  <!-- UNIFIED ENGINE: 3-MODE ACCESS + UNIVERSAL C++ COMPILER + 2D KINEMATICS    -->
   <!-- ========================================================================= -->
   <script>
     (() => {
@@ -836,14 +851,14 @@
       const HEARTBEAT_MS       = 150;  // Keep-alive interval
       const CORE1_PERIOD_MS    = 20;   // 50Hz deterministic control loop
       const FAILSAFE_MS        = 400;  // 400ms heartbeat timeout
-      const FIRE_INTERVAL_MS   = 1000;  // 後台直接設定：發射間隔 (ms)
+      const FIRE_INTERVAL_MS   = 140;  // 後台直接設定：發射間隔 (ms)
 
       const SLIDER_MAX         = 100.0;
       const MAX_PWM            = 150;
       const MIN_PWM            = 20;
 
       const STORAGE_HOSTED_URL = 'team14_hosted_url_v3';
-      const STORAGE_FULL_INO   = 'team14_full_sketch_v6';
+      const STORAGE_FULL_INO   = 'team14_full_sketch_v7';
 
       // Encapsulated private closure for the 4-digit Host PIN (never logged, stored, or rendered)
       const hostPinVault = (() => {
@@ -1027,7 +1042,7 @@
       }
 
       // =========================================================================
-      // PART A: COMPLETE ARDUINO SKETCH & AUTO-SPLIT
+      // PART A: UNIVERSAL C++ / ARDUINO TRANSPILER & LIVE EXECUTION ENGINE
       // =========================================================================
       const DEFAULT_FULL_SKETCH = [
         '#include <BLEDevice.h>',
@@ -1216,7 +1231,7 @@
       let isEditingFullIno  = false;
       let isSplitActiveView = false;
       let lastMotionTickMs  = 0;
-      const SPLIT_HOLD_MS   = 450; // Debounce before returning to Full Sketch after stopping
+      const SPLIT_HOLD_MS   = 450;
 
       function saveArduinoCodeToStorage() {
         try {
@@ -1234,7 +1249,7 @@
 
       function highlightArduinoLine(rawLine) {
         const escaped = escapeHtml(rawLine);
-        const tokenRegex = /(\/\/.*$|#(?:include|define|ifndef|ifdef|endif|pragma)\b|\b(?:void|int|float|double|long|short|bool|boolean|char|byte|uint8_t|int8_t|uint16_t|int16_t|uint32_t|int32_t|size_t|TickType_t|ControlCmd|Motor|inline|static|const|constexpr|struct)\b|\b(?:if|else|for|while|return|switch|case|break|continue|static_cast|constrain|map|max|min|abs|fabs|fabsf|round|roundf|floor|floorf|ceil|ceilf|sqrt|sqrtf|pow|powf|log|logf|log10|log10f|exp|expf|sin|sinf|cos|cosf|tan|tanf|atan2|atan2f|sq|radians|degrees|pinMode|digitalWrite|ledcAttach|ledcWrite|millis|vTaskDelay|vTaskDelayUntil|xQueueCreate|xQueueReceive|xTaskCreatePinnedToCore|pdMS_TO_TICKS|portMAX_DELAY|HIGH|LOW|OUTPUT|pdTRUE)\b|\b0x[0-9a-fA-F]+\b|\b\d+(?:\.\d+)?f?\b)/g;
+        const tokenRegex = /(\/\/.*$|#(?:include|define|ifndef|ifdef|endif|pragma)\b|\b(?:void|int|float|double|long|short|bool|boolean|char|byte|uint8_t|int8_t|uint16_t|int16_t|uint32_t|int32_t|size_t|TickType_t|ControlCmd|Motor|inline|static|const|constexpr|struct|class|enum)\b|\b(?:if|else|for|while|do|return|switch|case|default|break|continue|static_cast|constrain|map|max|min|abs|fabs|fabsf|round|roundf|floor|floorf|ceil|ceilf|sqrt|sqrtf|pow|powf|log|logf|log10|log10f|exp|expf|sin|sinf|cos|cosf|tan|tanf|atan2|atan2f|sq|radians|degrees|pinMode|digitalWrite|digitalRead|analogWrite|analogRead|ledcAttach|ledcWrite|ledcRead|millis|micros|delay|delayMicroseconds|random|randomSeed|Serial|vTaskDelay|vTaskDelayUntil|xQueueCreate|xQueueReceive|xTaskCreatePinnedToCore|pdMS_TO_TICKS|portMAX_DELAY|HIGH|LOW|OUTPUT|INPUT|INPUT_PULLUP|pdTRUE|true|false|nullptr)\b|\b0x[0-9a-fA-F]+\b|\b\d+(?:\.\d+)?(?:[uUlLfF]+)?\b)/g;
 
         return escaped.replace(tokenRegex, (match) => {
           if (match.startsWith('//')) {
@@ -1243,7 +1258,7 @@
           if (match.startsWith('#')) {
             return `<span class="ard-prep">${match}</span>`;
           }
-          if (/^(?:void|int|float|double|long|short|bool|boolean|char|byte|uint8_t|int8_t|uint16_t|int16_t|uint32_t|int32_t|size_t|TickType_t|ControlCmd|Motor|inline|static|const|constexpr|struct)$/.test(match)) {
+          if (/^(?:void|int|float|double|long|short|bool|boolean|char|byte|uint8_t|int8_t|uint16_t|int16_t|uint32_t|int32_t|size_t|TickType_t|ControlCmd|Motor|inline|static|const|constexpr|struct|class|enum)$/.test(match)) {
             return `<span class="ard-type">${match}</span>`;
           }
           if (/^(?:0x|\d)/.test(match)) {
@@ -1253,17 +1268,11 @@
         });
       }
 
-      // ==================== FULL-SKETCH C++ SECTION EXTRACTOR ====================
-      function extractBraceBlock(lines, startRegex) {
-        let startIdx = -1;
-        for (let i = 0; i < lines.length; i++) {
-          if (startRegex.test(lines[i])) {
-            startIdx = i;
-            break;
-          }
-        }
-        if (startIdx === -1) return null;
+      // ==================== GENERAL C++ BLOCK & SECTION DISCOVERY ====================
+      const CPP_TYPE_RE = '(?:void|int|float|double|long|short|bool|boolean|char|byte|uint8_t|int8_t|uint16_t|int16_t|uint32_t|int32_t|size_t|[A-Z][A-Za-z0-9_]*)';
 
+      function extractBraceBlockFromIndex(lines, startIdx) {
+        if (startIdx < 0 || startIdx >= lines.length) return null;
         let depth = 0;
         let sawOpen = false;
         let endIdx = startIdx;
@@ -1283,94 +1292,551 @@
         };
       }
 
+      function discoverTopLevelBlocks(lines) {
+        const blocks = [];
+        let depth = 0;
+        let inBlockComment = false;
+
+        for (let i = 0; i < lines.length; i++) {
+          let raw = lines[i];
+
+          // Strip block comments safely while tracking depth
+          let cleaned = '';
+          let c = 0;
+          while (c < raw.length) {
+            if (inBlockComment) {
+              if (raw[c] === '*' && raw[c + 1] === '/') {
+                inBlockComment = false;
+                c += 2;
+              } else {
+                c++;
+              }
+            } else {
+              if (raw[c] === '/' && raw[c + 1] === '/') break;
+              if (raw[c] === '/' && raw[c + 1] === '*') {
+                inBlockComment = true;
+                c += 2;
+              } else {
+                cleaned += raw[c];
+                c++;
+              }
+            }
+          }
+
+          const trimmed = cleaned.trim();
+          if (depth === 0 && trimmed && !trimmed.startsWith('#')) {
+            // Check struct or class
+            const structMatch = trimmed.match(/^(?:typedef\s+)?(?:struct|class)\s+([A-Za-z_]\w*)\b/);
+            if (structMatch && trimmed.includes('{')) {
+              const blk = extractBraceBlockFromIndex(lines, i);
+              if (blk) {
+                blocks.push({
+                  kind: 'struct',
+                  name: structMatch[1],
+                  ...blk
+                });
+                i = blk.endLine - 1;
+                continue;
+              }
+            }
+
+            // Check enum / enum class
+            const enumMatch = trimmed.match(/^enum(?:\s+class)?\s+([A-Za-z_]\w*)\b/);
+            if (enumMatch && trimmed.includes('{')) {
+              const blk = extractBraceBlockFromIndex(lines, i);
+              if (blk) {
+                blocks.push({
+                  kind: 'enum',
+                  name: enumMatch[1],
+                  ...blk
+                });
+                i = blk.endLine - 1;
+                continue;
+              }
+            }
+
+            // Check top-level function definition
+            const fnMatch = trimmed.match(new RegExp(`^(?:inline\\s+|static\\s+|const\\s+)*${CPP_TYPE_RE}\\s+([A-Za-z_]\\w*)\\s*\\([^;]*\\)\\s*\\{`));
+            if (fnMatch) {
+              const blk = extractBraceBlockFromIndex(lines, i);
+              if (blk) {
+                blocks.push({
+                  kind: 'function',
+                  name: fnMatch[1],
+                  ...blk
+                });
+                i = blk.endLine - 1;
+                continue;
+              }
+            }
+          }
+
+          for (let k = 0; k < cleaned.length; k++) {
+            if (cleaned[k] === '{') depth++;
+            else if (cleaned[k] === '}') depth = Math.max(0, depth - 1);
+          }
+        }
+
+        return blocks;
+      }
+
       function getActiveSplitSections(sketchSource) {
         const lines = sketchSource.split('\n');
+        const allBlocks = discoverTopLevelBlocks(lines);
         const sections = [];
 
-        const taskBlk = extractBraceBlock(lines, /^\s*void\s+motorControlTask\s*\(/);
-        if (taskBlk) {
-          sections.push({
-            id: 'split_task',
-            title: `motorControlTask()  [L${taskBlk.startLine}–L${taskBlk.endLine}]`,
-            subtitle: '50Hz Kinematics & Actuation',
-            startLine: taskBlk.startLine,
-            lines: taskBlk.lines
-          });
-        }
+        const hasTask = allBlocks.some((b) => b.kind === 'function' && /task/i.test(b.name));
 
-        const ratioBlk = extractBraceBlock(lines, /^\s*int\s+ratioToPWM\s*\(/);
-        if (ratioBlk) {
-          sections.push({
-            id: 'split_ratio',
-            title: `ratioToPWM()  [L${ratioBlk.startLine}–L${ratioBlk.endLine}]`,
-            subtitle: 'Deadband & PWM Scaling',
-            startLine: ratioBlk.startLine,
-            lines: ratioBlk.lines
-          });
-        }
+        // Prioritize primary control loop first, then helper functions, then structs
+        const ordered = [
+          ...allBlocks.filter((b) => b.kind === 'function' && (/task/i.test(b.name) || (!hasTask && b.name === 'loop'))),
+          ...allBlocks.filter((b) => b.kind === 'function' && b.name !== 'setup' && !/task/i.test(b.name) && b.name !== 'loop'),
+          ...allBlocks.filter((b) => b.kind === 'struct')
+        ];
 
-        const rampBlk = extractBraceBlock(lines, /^\s*int\s+rampPWM\s*\(/);
-        if (rampBlk) {
-          sections.push({
-            id: 'split_ramp',
-            title: `rampPWM()  [L${rampBlk.startLine}–L${rampBlk.endLine}]`,
-            subtitle: 'Logarithmic Slew-Rate Limiter',
-            startLine: rampBlk.startLine,
-            lines: rampBlk.lines
-          });
-        }
+        const subtitleMap = {
+          motorControlTask: '50Hz Kinematics & Actuation',
+          loop: '50Hz Main Control Loop',
+          ratioToPWM: 'Deadband & PWM Scaling',
+          rampPWM: 'Logarithmic Slew-Rate Limiter',
+          Motor: 'H-Bridge Drive & Active Brake'
+        };
 
-        const motorBlk = extractBraceBlock(lines, /^\s*struct\s+Motor\b/);
-        if (motorBlk) {
+        for (const blk of ordered) {
+          const isStruct = blk.kind === 'struct';
+          const label = isStruct ? `struct ${blk.name}` : `${blk.name}()`;
+          const subtitle = subtitleMap[blk.name] || (isStruct ? 'Custom Data Structure' : 'User Helper Function');
           sections.push({
-            id: 'split_motor',
-            title: `struct Motor  [L${motorBlk.startLine}–L${motorBlk.endLine}]`,
-            subtitle: 'H-Bridge Drive & Active Brake',
-            startLine: motorBlk.startLine,
-            lines: motorBlk.lines
+            id: `split_${blk.name}_${blk.startLine}`,
+            title: `${label}  [L${blk.startLine}–L${blk.endLine}]`,
+            subtitle,
+            startLine: blk.startLine,
+            lines: blk.lines
           });
         }
 
         return sections;
       }
 
-      // ==================== FULL-SKETCH C++ TO JS TRANSPILER ====================
-      let compiledStepFn = null;
-      let parsedMotorConfigs = {
-        A: { inverted: false, minPwm: 20, gain: 1.0 },
-        B: { inverted: false, minPwm: 20, gain: 1.0 },
-        C: { inverted: false, minPwm: 20, gain: 1.0 },
-        D: { inverted: false, minPwm: 20, gain: 1.0 }
-      };
+      // ==================== UNIVERSAL C++ TO JS TRANSPILER ====================
+      let compiledStepFn  = null;
+      let compiledSetupFn = null;
+      let runtimePersist  = {};
+      let runtimeStatics  = {};
+      let activeEntryLabel = 'TASK: 50Hz';
 
-      function transpileLineWithTrace(cardId, lineNo, rawLine, macrosMap) {
-        let line = rawLine;
-        const cmIdx = line.indexOf('//');
-        if (cmIdx !== -1) line = line.slice(0, cmIdx);
+      // Built-in Serial Monitor State
+      const serialMonitorBox = document.getElementById('serialMonitorBox');
+      const serialOutputLog  = document.getElementById('serialOutputLog');
+      const clearSerialBtn   = document.getElementById('clearSerialBtn');
+      let serialBufferLines  = [];
+      let lastSerialFlushMs  = 0;
 
-        const trimmed = line.trim();
-        if (!trimmed || trimmed.startsWith('#')) return '';
+      function pushSerialOutput(text, newLine = false) {
+        if (serialBufferLines.length === 0) serialBufferLines.push('');
+        serialBufferLines[serialBufferLines.length - 1] += String(text);
+        if (newLine) serialBufferLines.push('');
+        if (serialBufferLines.length > 60) {
+          serialBufferLines = serialBufferLines.slice(-60);
+        }
+        const now = performance.now();
+        if (now - lastSerialFlushMs >= 80) {
+          lastSerialFlushMs = now;
+          serialMonitorBox.classList.remove('hidden');
+          serialMonitorBox.classList.add('flex');
+          serialOutputLog.textContent = serialBufferLines.join('\n');
+          serialOutputLog.scrollTop = serialOutputLog.scrollHeight;
+        }
+      }
+
+      clearSerialBtn.addEventListener('click', () => {
+        serialBufferLines = [];
+        serialOutputLog.textContent = '';
+        serialMonitorBox.classList.add('hidden');
+        serialMonitorBox.classList.remove('flex');
+      });
+
+      // Mask block comments /* ... */ and string/char literals while preserving exact line count
+      function preprocessCommentsAndStrings(source) {
+        const strings = [];
+        let out = '';
+        let i = 0;
+        const n = source.length;
+
+        while (i < n) {
+          const ch = source[i];
+          const next = source[i + 1];
+
+          // Line comment // ...
+          if (ch === '/' && next === '/') {
+            while (i < n && source[i] !== '\n') {
+              i++;
+            }
+            continue;
+          }
+
+          // Block comment /* ... */ -> preserve newlines only
+          if (ch === '/' && next === '*') {
+            i += 2;
+            while (i < n && !(source[i] === '*' && source[i + 1] === '/')) {
+              if (source[i] === '\n') out += '\n';
+              i++;
+            }
+            i += 2;
+            continue;
+          }
+
+          // Double-quoted string literal "..."
+          if (ch === '"') {
+            let lit = '"';
+            i++;
+            while (i < n) {
+              const sc = source[i];
+              lit += sc;
+              if (sc === '\\' && i + 1 < n) {
+                i++;
+                lit += source[i];
+              } else if (sc === '"') {
+                i++;
+                break;
+              }
+              i++;
+            }
+            const token = `__STR_${strings.length}__`;
+            strings.push(lit);
+            out += token;
+            continue;
+          }
+
+          // Char literal 'A' -> numeric char code in C++
+          if (ch === '\'') {
+            let charVal = 0;
+            i++;
+            if (i < n && source[i] === '\\') {
+              i++;
+              const esc = source[i] || '\0';
+              const escMap = { n: 10, r: 13, t: 9, '0': 0, '\\': 92, '\'': 39 };
+              charVal = (esc in escMap) ? escMap[esc] : esc.charCodeAt(0);
+              i++;
+            } else if (i < n) {
+              charVal = source.charCodeAt(i);
+              i++;
+            }
+            if (i < n && source[i] === '\'') i++;
+            out += String(charVal);
+            continue;
+          }
+
+          out += ch;
+          i++;
+        }
+
+        return { cleanSource: out, strings };
+      }
+
+      function restoreStrings(code, strings) {
+        return code.replace(/__STR_(\d+)__/g, (_, idx) => strings[Number(idx)] ?? '""');
+      }
+
+      // Normalize C++ numeric literals, casts, and std:: functions
+      function normalizeCppTokens(expr, macrosMap) {
+        let s = expr;
 
         // Expand #define macros
         for (const [mName, mVal] of macrosMap.entries()) {
           const re = new RegExp(`\\b${mName}\\b`, 'g');
-          line = line.replace(re, `(${mVal})`);
+          s = s.replace(re, `(${mVal})`);
         }
 
-        // Strip float literal suffix 'f'
-        line = line.replace(/\b(\d+\.\d+|\d+\.|\.\d+)f\b/g, '$1');
+        // Convert C++ numeric literal suffixes: 100.0f, .5f, 1000UL, 400U, 100L
+        s = s.replace(/\b(\d+\.\d+|\d+\.|\.\d+)[fFlL]\b/g, '$1');
+        s = s.replace(/\b(0x[0-9a-fA-F]+|\d+)[uUlL]+\b/g, '$1');
 
-        // Convert C++ static_cast<...>(expr) & C-style casts
-        line = line.replace(/static_cast\s*<\s*(?:int|long|int8_t|uint8_t|int16_t|uint16_t|int32_t|uint32_t)\s*>/g, 'Math.trunc');
-        line = line.replace(/static_cast\s*<\s*(?:float|double)\s*>/g, '');
-        line = line.replace(/\(\s*(?:float|double)\s*\)/g, '');
-        line = line.replace(/\(\s*(?:int|long|int8_t|uint8_t|int16_t|uint16_t|int32_t|uint32_t)\s*\)/g, 'Math.trunc');
+        // Convert C++ casts: static_cast<...>(x) & C-style casts (int)x
+        s = s.replace(/(?:static_cast|reinterpret_cast|const_cast)\s*<\s*(?:int|long|short|int8_t|uint8_t|int16_t|uint16_t|int32_t|uint32_t|size_t)\s*>/g, 'Math.trunc');
+        s = s.replace(/(?:static_cast|reinterpret_cast|const_cast)\s*<\s*(?:float|double)\s*>/g, 'Number');
+        s = s.replace(/(?:static_cast|reinterpret_cast|const_cast)\s*<\s*(?:bool|boolean)\s*>/g, 'Boolean');
+        s = s.replace(/\(\s*(?:float|double)\s*\)/g, '');
+        s = s.replace(/\(\s*(?:bool|boolean)\s*\)/g, 'Boolean');
+        s = s.replace(/\(\s*(?:int|long|short|int8_t|uint8_t|int16_t|uint16_t|int32_t|uint32_t|size_t)\s*\)/g, 'Math.trunc');
+
+        // Convert std:: helpers & nullptr
+        s = s.replace(/\bstd::(min|max|abs|sin|cos|tan|atan2|sqrt|pow|log|log10|exp|floor|ceil|round|hypot|isnan|isinf)\b/g, '$1');
+        s = s.replace(/\bstd::fabs\b/g, 'fabs');
+        s = s.replace(/\bstd::clamp\b/g, 'constrain');
+        s = s.replace(/\bnullptr\b/g, 'null');
+
+        return s;
+      }
+
+      // Split top-level comma-separated declarators (respecting (), [], {})
+      function splitTopLevelCommas(str) {
+        const parts = [];
+        let cur = '';
+        let pDepth = 0, bDepth = 0, cDepth = 0;
+        for (let i = 0; i < str.length; i++) {
+          const ch = str[i];
+          if (ch === '(') pDepth++;
+          else if (ch === ')') pDepth--;
+          else if (ch === '[') bDepth++;
+          else if (ch === ']') bDepth--;
+          else if (ch === '{') cDepth++;
+          else if (ch === '}') cDepth--;
+
+          if (ch === ',' && pDepth === 0 && bDepth === 0 && cDepth === 0) {
+            parts.push(cur);
+            cur = '';
+          } else {
+            cur += ch;
+          }
+        }
+        if (cur.trim() !== '') parts.push(cur);
+        return parts;
+      }
+
+      function defaultValueForCppType(typeName) {
+        if (typeName === 'bool' || typeName === 'boolean') return 'false';
+        if (/^(?:int|float|double|long|short|char|byte|uint8_t|int8_t|uint16_t|int16_t|uint32_t|int32_t|size_t)$/.test(typeName)) {
+          return '0';
+        }
+        return `new ${typeName}()`;
+      }
+
+      function transpileCppDeclaration(indent, isStatic, typeName, restWithSemi, scopeId, lineNo) {
+        const noSemi = restWithSemi.replace(/;\s*$/, '');
+        const items = splitTopLevelCommas(noSemi);
+        const jsPieces = [];
+        const declaredNames = [];
+
+        for (const rawItem of items) {
+          const item = rawItem.trim();
+          if (!item) continue;
+
+          // Array declaration: name[N] = {a, b} OR name[N] OR name[] = {a, b}
+          const arrMatch = item.match(/^([A-Za-z_]\w*)\s*\[([^\]]*)\](?:\s*=\s*\{([\s\S]*)\})?$/);
+          if (arrMatch) {
+            const varName = arrMatch[1];
+            const sizeExpr = arrMatch[2].trim();
+            const initList = arrMatch[3];
+            declaredNames.push(varName);
+
+            let initJs;
+            if (initList !== undefined) {
+              initJs = `[${initList}]`;
+            } else if (sizeExpr) {
+              initJs = `new Array(Math.max(0, Math.trunc(${sizeExpr}))).fill(${defaultValueForCppType(typeName)})`;
+            } else {
+              initJs = '[]';
+            }
+
+            if (isStatic) {
+              const key = `${scopeId}_${lineNo}_${varName}`;
+              jsPieces.push(`let ${varName} = (__statics["${key}"] !== undefined ? __statics["${key}"] : (__statics["${key}"] = ${initJs}))`);
+            } else {
+              jsPieces.push(`let ${varName} = ${initJs}`);
+            }
+            continue;
+          }
+
+          // Scalar or Struct declaration: name = expr OR name{a, b} OR name
+          const eqIdx = item.indexOf('=');
+          const braceIdx = item.indexOf('{');
+          let varName = '';
+          let initJs = '';
+
+          if (eqIdx !== -1 && (braceIdx === -1 || eqIdx < braceIdx)) {
+            varName = item.slice(0, eqIdx).replace(/[&*]/g, '').trim();
+            let rhs = item.slice(eqIdx + 1).trim();
+            if (rhs.startsWith('{') && rhs.endsWith('}')) {
+              const inner = rhs.slice(1, -1).trim();
+              if (/^[A-Z]/.test(typeName)) {
+                initJs = `new ${typeName}(${inner})`;
+              } else {
+                initJs = `[${inner}]`;
+              }
+            } else {
+              initJs = rhs;
+            }
+          } else if (braceIdx !== -1 && item.endsWith('}')) {
+            varName = item.slice(0, braceIdx).replace(/[&*]/g, '').trim();
+            const inner = item.slice(braceIdx + 1, -1).trim();
+            initJs = /^[A-Z]/.test(typeName) ? `new ${typeName}(${inner})` : (inner || defaultValueForCppType(typeName));
+          } else {
+            varName = item.replace(/[&*]/g, '').trim();
+            initJs = defaultValueForCppType(typeName);
+          }
+
+          declaredNames.push(varName);
+          if (isStatic) {
+            const key = `${scopeId}_${lineNo}_${varName}`;
+            jsPieces.push(`let ${varName} = (__statics["${key}"] !== undefined ? __statics["${key}"] : (__statics["${key}"] = ${initJs}))`);
+          } else {
+            jsPieces.push(`let ${varName} = ${initJs}`);
+          }
+        }
+
+        return {
+          jsCode: `${indent}${jsPieces.join('; ')};`,
+          declaredNames
+        };
+      }
+
+      // Transpile struct / class block into a JS constructor function with live line-traced methods
+      function transpileStructBlock(structBlk, macrosMap) {
+        const structName = structBlk.name;
+        const fields = [];
+        const methodLines = [];
+
+        // Extract fields & methods inside struct body
+        let innerDepth = 0;
+        let currentMethod = null;
+
+        for (let idx = 1; idx < structBlk.lines.length - 1; idx++) {
+          const lineNo = structBlk.startLine + idx;
+          const raw = structBlk.lines[idx];
+          const trimmed = raw.trim();
+
+          if (!currentMethod) {
+            if (!trimmed || trimmed === 'public:' || trimmed === 'private:' || trimmed === 'protected:') continue;
+
+            // Check method header: void drive(int power) {
+            const mMatch = trimmed.match(new RegExp(`^(?:inline\\s+|static\\s+|const\\s+)*${CPP_TYPE_RE}\\s+([A-Za-z_]\\w*)\\s*\\(([^)]*)\\)\\s*\\{\\s*$`));
+            if (mMatch) {
+              currentMethod = {
+                name: mMatch[1],
+                params: mMatch[2].trim(),
+                startLineNo: lineNo,
+                body: []
+              };
+              innerDepth = 1;
+              continue;
+            }
+
+            // Otherwise field declaration: int in1; or float kp = 1.0f;
+            const fMatch = trimmed.match(new RegExp(`^(?:const\\s+|static\\s+)*${CPP_TYPE_RE}\\s+([A-Za-z_]\\w*)(?:\\s*=\\s*([^;]+))?\\s*;\\s*$`));
+            if (fMatch) {
+              const fName = fMatch[1];
+              const fDef = fMatch[2] ? normalizeCppTokens(fMatch[2].trim(), macrosMap) : '0';
+              fields.push({ name: fName, defaultVal: fDef });
+            }
+          } else {
+            for (let c = 0; c < raw.length; c++) {
+              if (raw[c] === '{') innerDepth++;
+              else if (raw[c] === '}') innerDepth--;
+            }
+            if (innerDepth <= 0) {
+              methodLines.push(currentMethod);
+              currentMethod = null;
+            } else {
+              currentMethod.body.push({ lineNo, text: raw });
+            }
+          }
+        }
+
+        const fieldNames = new Set(fields.map((f) => f.name));
+        const methodNames = new Set(methodLines.map((m) => m.name));
+
+        const ctorParams = fields.map((f, i) => `__a${i} = ${f.defaultVal}`).join(', ');
+        const ctorAssigns = fields.map((f, i) => `this.${f.name} = __a${i};`).join(' ');
+
+        const methodsJs = methodLines.map((m) => {
+          const paramList = m.params
+            ? m.params.split(',').map((p) => {
+                const noDef = p.split('=')[0].trim();
+                const parts = noDef.replace(/[&*]/g, ' ').trim().split(/\s+/);
+                return parts[parts.length - 1];
+              }).filter(Boolean)
+            : [];
+          const shadowed = new Set(paramList);
+
+          const bodyJs = m.body.map(({ lineNo, text }) => {
+            let line = transpileLineWithTrace('ino_full', lineNo, text, macrosMap, `struct_${structName}_${m.name}`, shadowed);
+            // Bind member fields and sibling methods to `this.`
+            for (const fn of fieldNames) {
+              if (!shadowed.has(fn)) {
+                line = line.replace(new RegExp(`(?<!\\.)\\b${fn}\\b`, 'g'), `this.${fn}`);
+              }
+            }
+            for (const mn of methodNames) {
+              if (!shadowed.has(mn)) {
+                line = line.replace(new RegExp(`(?<!\\.)\\b${mn}\\s*\\(`, 'g'), `this.${mn}(`);
+              }
+            }
+            return line;
+          }).join('\n');
+
+          return `this.${m.name} = function(${paramList.join(', ')}) { __trace("ino_full", ${m.startLineNo}, "CALL", "teal");\n${bodyJs}\n};`;
+        }).join('\n');
+
+        return `function ${structName}(${ctorParams}) { ${ctorAssigns}\n${methodsJs}\n}`;
+      }
+
+      // Transpile enum / enum class block
+      function transpileEnumBlock(enumBlk, macrosMap) {
+        const isScoped = /^enum\s+class\b/.test(enumBlk.lines[0].trim());
+        const bodyText = enumBlk.lines.slice(1, -1).join('\n');
+        const entries = splitTopLevelCommas(bodyText);
+        let nextVal = 0;
+        const linesOut = [];
+        const objProps = [];
+
+        for (const entry of entries) {
+          const clean = entry.trim();
+          if (!clean) continue;
+          const eq = clean.indexOf('=');
+          let name = clean;
+          if (eq !== -1) {
+            name = clean.slice(0, eq).trim();
+            const valExpr = normalizeCppTokens(clean.slice(eq + 1).trim(), macrosMap);
+            const num = Number(valExpr);
+            if (!Number.isNaN(num)) nextVal = num;
+            if (!isScoped) linesOut.push(`const ${name} = ${valExpr};`);
+            objProps.push(`${name}: ${valExpr}`);
+          } else {
+            if (!isScoped) linesOut.push(`const ${name} = ${nextVal};`);
+            objProps.push(`${name}: ${nextVal}`);
+          }
+          nextVal++;
+        }
+
+        if (isScoped) {
+          linesOut.push(`const ${enumBlk.name} = { ${objProps.join(', ')} };`);
+        }
+        return linesOut.join('\n');
+      }
+
+      function splitIfConditionAndTail(rawAfterIf) {
+        // Expects string starting right after `if (`
+        let depth = 1;
+        let idx = 0;
+        while (idx < rawAfterIf.length && depth > 0) {
+          if (rawAfterIf[idx] === '(') depth++;
+          else if (rawAfterIf[idx] === ')') depth--;
+          idx++;
+        }
+        if (depth !== 0) return null;
+        return {
+          condExpr: rawAfterIf.slice(0, idx - 1),
+          tail: rawAfterIf.slice(idx)
+        };
+      }
+
+      function transpileLineWithTrace(cardId, lineNo, rawLine, macrosMap, scopeId = 'global', localVars = null) {
+        const trimmedRaw = rawLine.trim();
+        if (!trimmedRaw || trimmedRaw.startsWith('#')) return '';
+
+        let line = normalizeCppTokens(rawLine, macrosMap);
 
         // Convert constexpr scalar declarations
-        line = line.replace(/^\s*constexpr\s+(?:int8_t|uint8_t|int16_t|uint16_t|int32_t|uint32_t|float|double|int|long|bool)\s+/, 'const ');
+        line = line.replace(
+          new RegExp(`^(\\s*)constexpr\\s+${CPP_TYPE_RE}\\s+([A-Za-z_]\\w*)(.*)$`),
+          (_, indent, vName, rest) => `${indent}const ${vName}${rest}`
+        );
 
         // Function signature
-        const fnMatch = line.match(/^\s*(?:inline\s+|static\s+|const\s+)*(?:void|int|float|double|long|short|bool|boolean|char|byte|uint8_t|int8_t|uint16_t|int16_t|uint32_t|int32_t|size_t)\s+([a-zA-Z_]\w*)\s*\(([^)]*)\)\s*\{\s*$/);
+        const fnMatch = line.match(
+          new RegExp(`^\\s*(?:inline\\s+|static\\s+|const\\s+)*${CPP_TYPE_RE}\\s+([A-Za-z_]\\w*)\\s*\\(([^)]*)\\)\\s*\\{\\s*$`)
+        );
         if (fnMatch) {
           const fnName = fnMatch[1];
           const rawParams = fnMatch[2].trim();
@@ -1379,58 +1845,87 @@
                 const noDefault = p.split('=')[0].trim();
                 const parts = noDefault.replace(/[&*]/g, ' ').trim().split(/\s+/);
                 return parts[parts.length - 1];
-              }).join(', ')
+              }).filter(Boolean).join(', ')
             : '';
           return `function ${fnName}(${cleanParams}) { __trace("${cardId}", ${lineNo}, "CALL", "teal");`;
         }
 
-        // Typed for-loop headers
-        line = line.replace(/for\s*\(\s*(?:const\s+)?(?:int|long|float|double|size_t|uint8_t|int8_t|uint16_t|int16_t|uint32_t|uint32_t)\s+/g, 'for (let ');
+        // Typed for-loop headers: for (int i = 0; ...)
+        line = line.replace(
+          new RegExp(`for\\s*\\(\\s*(?:const\\s+)?${CPP_TYPE_RE}\\s+`, 'g'),
+          'for (let '
+        );
 
-        // C++ typed variable declarations
-        let declaredVarName = null;
-        const declMatch = line.match(/^(\s*)(?:static\s+|const\s+|volatile\s+)*(?:int8_t|uint8_t|int16_t|uint16_t|int32_t|uint32_t|float|double|int|long|short|bool|boolean|byte|char|size_t)\s+([a-zA-Z_]\w*)(.*)$/);
-        if (declMatch) {
-          const indent = declMatch[1];
-          declaredVarName = declMatch[2];
-          let rest = declMatch[3];
-          if (/^\s*;/.test(rest)) rest = ' = 0' + rest;
-          line = `${indent}let ${declaredVarName}${rest}`;
-        }
-
-        // Loop guard
+        // Loop iteration guards for for / while / do-while
         if (/\b(?:while|for)\s*\(.*\)\s*\{\s*$/.test(line)) {
-          line = line.replace(/\{\s*$/, '{ if (++__ops > 6000) throw new Error("Loop iteration limit exceeded");');
+          line = line.replace(/\{\s*$/, '{ if (++__ops > 10000) throw new Error("Loop iteration limit exceeded");');
+        } else if (/\bdo\s*\{\s*$/.test(line)) {
+          line = line.replace(/\{\s*$/, '{ if (++__ops > 10000) throw new Error("Loop iteration limit exceeded");');
         }
 
-        // Wrap if (cond)
-        line = line.replace(/\bif\s*\((.+)\)(\s*\{?\s*(?:return\b.*)?)$/, (full, condExpr, tail) => {
-          let depth = 0;
-          let splitAt = -1;
-          for (let k = 0; k < condExpr.length; k++) {
-            if (condExpr[k] === '(') depth++;
-            else if (condExpr[k] === ')') {
-              depth--;
-              if (depth < 0) { splitAt = k; break; }
+        // C++ variable declarations (supports static, arrays, structs, multi-var)
+        let declaredVarName = null;
+        const declMatch = line.match(
+          new RegExp(`^(\\s*)(static\\s+)?(?:const\\s+|volatile\\s+)*(${CPP_TYPE_RE})\\s+([A-Za-z_]\\w*[\\s\\S]*;\\s*)$`)
+        );
+        if (declMatch && !/^(?:return|else|if|for|while|switch|case|break|continue)\b/.test(declMatch[3])) {
+          const indent = declMatch[1];
+          const isStatic = Boolean(declMatch[2]);
+          const typeName = declMatch[3];
+          const rest = declMatch[4];
+          const res = transpileCppDeclaration(indent, isStatic, typeName, rest, scopeId, lineNo);
+          line = res.jsCode;
+          if (res.declaredNames.length > 0) {
+            declaredVarName = res.declaredNames[0];
+            if (localVars) res.declaredNames.forEach((n) => localVars.add(n));
+          }
+        }
+
+        // Handle `if (...)` and `} else if (...)` cleanly (both braced and single-statement unbraced!)
+        const ifMatch = line.match(/^(\s*(?:\}\s*else\s+)?)\bif\s*\(([\s\S]*)$/);
+        if (ifMatch) {
+          const prefix = ifMatch[1];
+          const split = splitIfConditionAndTail(ifMatch[2]);
+          if (split) {
+            const { condExpr, tail } = split;
+            const trimTail = tail.trim();
+
+            // Case A: Braced block `if (cond) {`
+            if (trimTail.startsWith('{')) {
+              return `${prefix}if (__cond("${cardId}", ${lineNo}, Boolean(${condExpr})))${tail}`;
             }
+
+            // Case B: Single-line unbraced `if (cond) return expr;`
+            const retMatch = trimTail.match(/^return\s+([^;]+);\s*$/);
+            if (retMatch) {
+              return `${prefix}if (__cond("${cardId}", ${lineNo}, Boolean(${condExpr}))) { return __ret("${cardId}", ${lineNo}, (${retMatch[1]})); }`;
+            }
+            if (/^return\s*;\s*$/.test(trimTail)) {
+              return `${prefix}if (__cond("${cardId}", ${lineNo}, Boolean(${condExpr}))) { __trace("${cardId}", ${lineNo}, "void", "amber"); return; }`;
+            }
+
+            // Case C: Single-line unbraced statement `if (cond) stmt;`
+            if (trimTail.endsWith(';')) {
+              const assignM = trimTail.match(/^([A-Za-z_]\w*)\s*(?:\+|-|\*|\/|%|\||&)?=\s*[^=]/);
+              const traceInside = assignM
+                ? ` __trace("${cardId}", ${lineNo}, "${assignM[1]}:" + __fmt(${assignM[1]}), "teal");`
+                : ` __trace("${cardId}", ${lineNo}, "EXEC", "teal");`;
+              return `${prefix}if (__cond("${cardId}", ${lineNo}, Boolean(${condExpr}))) { ${trimTail}${traceInside} }`;
+            }
+
+            return `${prefix}if (__cond("${cardId}", ${lineNo}, Boolean(${condExpr})))${tail}`;
           }
-          if (splitAt !== -1) {
-            const realCond = condExpr.slice(0, splitAt);
-            const afterParen = condExpr.slice(splitAt + 1) + tail;
-            return `if (__cond("${cardId}", ${lineNo}, Boolean(${realCond})))${afterParen}`;
-          }
-          return `if (__cond("${cardId}", ${lineNo}, Boolean(${condExpr})))${tail}`;
-        });
+        }
 
         // Wrap return statements
         line = line.replace(/\breturn\s+([^;]+);/g, `return __ret("${cardId}", ${lineNo}, ($1));`);
         line = line.replace(/\breturn\s*;/g, `__trace("${cardId}", ${lineNo}, "void", "amber"); return;`);
 
-        // Statement probe
-        if (!line.includes('__ret(') && !/\b(?:for|while|if)\s*\(/.test(line) && /;\s*$/.test(line)) {
+        // Statement probe for ordinary statements
+        if (!line.includes('__ret(') && !/\b(?:for|while|if|switch)\s*\(/.test(line) && /;\s*$/.test(line)) {
           let probeVar = declaredVarName;
           if (!probeVar) {
-            const assignMatch = line.match(/^\s*([a-zA-Z_]\w*)\s*(?:\+|-|\*|\/)?=\s*[^=]/);
+            const assignMatch = line.match(/^\s*([A-Za-z_]\w*(?:\.[A-Za-z_]\w*)?)\s*(?:\+|-|\*|\/|%|\||&)?=\s*[^=]/);
             if (assignMatch) probeVar = assignMatch[1];
           }
           if (probeVar) {
@@ -1443,234 +1938,406 @@
         return line;
       }
 
+      function buildArduinoRuntimePrelude() {
+        return `
+          "use strict";
+          let __ops = 0;
+          const HIGH = 1, LOW = 0, OUTPUT = 1, INPUT = 0, INPUT_PULLUP = 2;
+          const PI = Math.PI, TWO_PI = Math.PI * 2, HALF_PI = Math.PI / 2, DEG_TO_RAD = Math.PI / 180, RAD_TO_DEG = 180 / Math.PI;
+          const constrain = (x, a, b) => Math.max(a, Math.min(b, x));
+          const map = (x, inMin, inMax, outMin, outMax) => (inMax === inMin) ? outMin : ((x - inMin) * (outMax - outMin) / (inMax - inMin) + outMin);
+          const max = (a, b) => Math.max(a, b);
+          const min = (a, b) => Math.min(a, b);
+          const abs = (x) => Math.abs(x);
+          const fabs = (x) => Math.abs(x);
+          const fabsf = (x) => Math.abs(x);
+          const round = (x) => Math.round(x);
+          const roundf = (x) => Math.round(x);
+          const floor = (x) => Math.floor(x);
+          const floorf = (x) => Math.floor(x);
+          const ceil = (x) => Math.ceil(x);
+          const ceilf = (x) => Math.ceil(x);
+          const sqrt = (x) => Math.sqrt(x);
+          const sqrtf = (x) => Math.sqrt(x);
+          const pow = (x, y) => Math.pow(x, y);
+          const powf = (x, y) => Math.pow(x, y);
+          const log = (x) => Math.log(x);
+          const logf = (x) => Math.log(x);
+          const log10 = (x) => Math.log10(x);
+          const log10f = (x) => Math.log10(x);
+          const exp = (x) => Math.exp(x);
+          const expf = (x) => Math.exp(x);
+          const sin = (x) => Math.sin(x);
+          const sinf = (x) => Math.sin(x);
+          const cos = (x) => Math.cos(x);
+          const cosf = (x) => Math.cos(x);
+          const tan = (x) => Math.tan(x);
+          const tanf = (x) => Math.tan(x);
+          const atan2 = (y, x) => Math.atan2(y, x);
+          const atan2f = (y, x) => Math.atan2(y, x);
+          const hypot = (x, y) => Math.hypot(x, y);
+          const hypotf = (x, y) => Math.hypot(x, y);
+          const fmod = (x, y) => x % y;
+          const fmodf = (x, y) => x % y;
+          const isnan = (x) => Number.isNaN(x);
+          const isinf = (x) => !Number.isFinite(x) && !Number.isNaN(x);
+          const sq = (x) => x * x;
+          const radians = (d) => d * (Math.PI / 180);
+          const degrees = (r) => r * (180 / Math.PI);
+          const random = (a, b) => (b === undefined) ? Math.floor(Math.random() * a) : Math.floor(a + Math.random() * (b - a));
+          const randomSeed = () => {};
+          const millis = () => Math.floor(__nowMs);
+          const micros = () => Math.floor(__nowMs * 1000);
+          const delay = () => {};
+          const delayMicroseconds = () => {};
+
+          // Hardware GPIO & LEDC / PWM State
+          const pinMode = () => {};
+          const digitalWrite = (pin, val) => { __hw.gpio[pin] = val ? 1 : 0; };
+          const digitalRead = (pin) => (__hw.gpio[pin] ? 1 : 0);
+          const ledcAttach = () => true;
+          const ledcSetup = () => 1000;
+          const ledcAttachPin = () => {};
+          const ledcWrite = (pin, duty) => { __hw.pwm[pin] = Number(duty) || 0; };
+          const ledcRead = (pin) => (__hw.pwm[pin] || 0);
+          const analogWrite = (pin, val) => { __hw.pwm[pin] = Number(val) || 0; };
+          const analogRead = (pin) => (__hw.analog[pin] || 0);
+
+          // Serial Monitor Bridge
+          const Serial = {
+            begin() {},
+            print(v = "") { __serial(v, false); },
+            println(v = "") { __serial(v, true); },
+            printf(fmt, ...args) {
+              let idx = 0;
+              const formatted = String(fmt).replace(/%[-+0 #]*\\d*(?:\\.\\d+)?[diuoxXfFeEgGaAcsp%]/g, (tok) => {
+                if (tok === "%%") return "%";
+                const val = args[idx++];
+                if (val === undefined) return tok;
+                const precM = tok.match(/\\.(\\d+)[fFeEgG]/);
+                if (precM && typeof val === "number") return val.toFixed(Number(precM[1]));
+                return String(val);
+              });
+              __serial(formatted, false);
+            }
+          };
+
+          // FreeRTOS & BLE Compatibility Primitives
+          const pdTRUE = 1, pdFALSE = 0, portMAX_DELAY = 0xffffffff;
+          const pdMS_TO_TICKS = (ms) => ms;
+          const xTaskGetTickCount = () => Math.floor(__nowMs);
+          const vTaskDelay = () => {};
+          const vTaskDelayUntil = () => {};
+          const xQueueCreate = () => ({});
+          const xQueueReceive = () => 0;
+          const xTaskCreatePinnedToCore = () => 1;
+          const initBLE = () => {};
+          const deviceConnected = { load: () => __alive, store: () => {} };
+          const lastMotorActiveMs = { store: () => {} };
+
+          // Exposed Input Variables (supports both activeCmd struct and direct variables)
+          const activeCmd = __in;
+          const cmd = __in;
+          const isAlive = __alive;
+          const cmdX = __in.x;
+          const cmdY = __in.y;
+          const cmdR = __in.r;
+          const btnFire = Boolean(__in.flags & 0x01);
+          const btnDefend = Boolean(__in.flags & 0x02);
+        `;
+      }
+
+      // Persistent hardware GPIO/PWM table across 50Hz ticks
+      let runtimeHwState = { gpio: {}, pwm: {}, analog: {} };
+
+      function decodeHBridgeWheel(motorObj, fallbackPins) {
+        const in1 = (motorObj && typeof motorObj.in1 === 'number') ? motorObj.in1 : fallbackPins.in1;
+        const in2 = (motorObj && typeof motorObj.in2 === 'number') ? motorObj.in2 : fallbackPins.in2;
+        const en  = (motorObj && typeof motorObj.en  === 'number') ? motorObj.en  : fallbackPins.en;
+
+        const s1 = runtimeHwState.gpio[in1] || 0;
+        const s2 = runtimeHwState.gpio[in2] || 0;
+        const duty = clamp(Math.round(runtimeHwState.pwm[en] || 0), 0, 255);
+
+        if (s1 === 1 && s2 === 1) {
+          return { pwm: 0, braking: true };
+        }
+        if (s1 === 1 && s2 === 0) {
+          return { pwm: duty, braking: false };
+        }
+        if (s1 === 0 && s2 === 1) {
+          return { pwm: -duty, braking: false };
+        }
+        return { pwm: 0, braking: false };
+      }
+
       function compileAllArduinoCode(silentToast = false) {
-        const statusPill = document.getElementById('compileStatusPill');
-        const errBanner  = document.getElementById('compileErrorBanner');
+        const statusPill     = document.getElementById('compileStatusPill');
+        const entryModeBadge = document.getElementById('entryModeBadge');
+        const errBanner      = document.getElementById('compileErrorBanner');
 
         try {
-          // 1. Collect #define macros from full .ino sketch
+          // 1. Mask comments & string literals while preserving exact line numbers
+          const { cleanSource, strings } = preprocessCommentsAndStrings(fullSketchCode);
+          const sketchLines = cleanSource.split('\n');
+
+          // 2. Collect #define macros
           const macrosMap = new Map();
-          for (const raw of fullSketchCode.split('\n')) {
-            const noCm = raw.split('//')[0].trim();
-            const m = noCm.match(/^#define\s+([A-Za-z_]\w*)\s+(.+)$/);
+          for (const raw of sketchLines) {
+            const trimmed = raw.trim();
+            const m = trimmed.match(/^#define\s+([A-Za-z_]\w*)\s+(.+)$/);
             if (m) {
-              const name = m[1];
-              const val = m[2].trim().replace(/\b(\d+\.\d+|\d+\.|\.\d+)f\b/g, '$1');
-              if (!val.startsWith('"')) macrosMap.set(name, val);
+              macrosMap.set(m[1], m[2].trim());
             }
           }
 
-          // 2. Parse Motor A/B/C/D struct initializers from fullSketchCode
-          const nextMotorConfigs = {
-            A: { inverted: false, minPwm: 20, gain: 1.0 },
-            B: { inverted: false, minPwm: 20, gain: 1.0 },
-            C: { inverted: false, minPwm: 20, gain: 1.0 },
-            D: { inverted: false, minPwm: 20, gain: 1.0 }
-          };
-          const motorRegex = /\bMotor\s+MOTOR_([ABCD])\s*=\s*\{\s*\d+\s*,\s*\d+\s*,\s*\d+\s*,\s*(true|false)\s*,\s*(\d+)\s*,\s*([0-9.]+)f?\s*\}/g;
-          let mMatch;
-          while ((mMatch = motorRegex.exec(fullSketchCode)) !== null) {
-            const key = mMatch[1];
-            nextMotorConfigs[key] = {
-              inverted: mMatch[2] === 'true',
-              minPwm: parseInt(mMatch[3], 10) || 20,
-              gain: parseFloat(mMatch[4]) || 1.0
-            };
+          // 3. Discover top-level structs, enums, and functions
+          const topBlocks = discoverTopLevelBlocks(sketchLines);
+          const structBlocks = topBlocks.filter((b) => b.kind === 'struct');
+          const enumBlocks   = topBlocks.filter((b) => b.kind === 'enum');
+          const funcBlocks   = topBlocks.filter((b) => b.kind === 'function');
+
+          // Find entry point: FreeRTOS control task (with infinite loop) OR Arduino loop()
+          const taskBlk = funcBlocks.find((b) => /task/i.test(b.name) && b.name !== 'bleMonitorTask')
+            || funcBlocks.find((b) => b.name !== 'setup' && b.name !== 'loop' && b.lines.some((l) => /\b(?:for\s*\(\s*;\s*;\s*\)|while\s*\(\s*(?:1|true)\s*\))/.test(l)));
+          const loopBlk  = funcBlocks.find((b) => b.name === 'loop');
+          const setupBlk = funcBlocks.find((b) => b.name === 'setup');
+
+          const activeEntryBlk = taskBlk || loopBlk || funcBlocks.find((b) => b.name !== 'setup');
+          if (!activeEntryBlk) {
+            throw new Error('No runnable control function found (define motorControlTask() or void loop())');
           }
 
-          // 3. Transpile top-level constexpr constants and helper functions (ratioToPWM, rampPWM, etc.)
-          //    plus the 50Hz loop body inside motorControlTask() with exact 1:1 line numbers from fullSketchCode
-          const sketchLines = fullSketchCode.split('\n');
-          const taskBlk = extractBraceBlock(sketchLines, /^\s*void\s+motorControlTask\s*\(/);
-          if (!taskBlk) {
-            throw new Error('Missing void motorControlTask(void* pvParameters) in mecanum_ble_robot.ino');
-          }
+          const isTaskWithInfiniteLoop = activeEntryBlk.lines.some((l) =>
+            /\b(?:for\s*\(\s*;\s*;\s*\)|while\s*\(\s*(?:1|true)\s*\))/.test(l)
+          );
 
-          const motorStructBlk = extractBraceBlock(sketchLines, /^\s*struct\s+Motor\b/);
-          const setupBlk       = extractBraceBlock(sketchLines, /^\s*void\s+setup\s*\(/);
-          const loopBlk        = extractBraceBlock(sketchLines, /^\s*void\s+loop\s*\(/);
+          // 4. Transpile enums, structs, global declarations, and helper functions
+          const excludedRanges = [
+            ...structBlocks,
+            ...enumBlocks,
+            activeEntryBlk,
+            setupBlk
+          ].filter(Boolean);
 
-          const excludedRanges = [taskBlk, motorStructBlk, setupBlk, loopBlk].filter(Boolean);
           const isLineExcluded = (lineNo) =>
             excludedRanges.some((rng) => lineNo >= rng.startLine && lineNo <= rng.endLine);
+
+          const globalScopeVars = new Set();
+          const enumsJs   = enumBlocks.map((eb) => transpileEnumBlock(eb, macrosMap)).join('\n');
+          const structsJs = structBlocks.map((sb) => transpileStructBlock(sb, macrosMap)).join('\n');
 
           const topLevelJs = [];
           for (let i = 0; i < sketchLines.length; i++) {
             const lineNo = i + 1;
             if (isLineExcluded(lineNo)) continue;
-            const raw = sketchLines[i];
-            if (/^\s*static\s+Motor\s+MOTOR_[ABCD]/.test(raw)) continue;
-            topLevelJs.push(transpileLineWithTrace('ino_full', lineNo, raw, macrosMap));
+            topLevelJs.push(transpileLineWithTrace('ino_full', lineNo, sketchLines[i], macrosMap, 'global', globalScopeVars));
           }
 
-          // Extract inner body of `for (;;)` inside motorControlTask
-          let forStartOffset = -1;
-          for (let k = 0; k < taskBlk.lines.length; k++) {
-            if (/\bfor\s*\(\s*;\s*;\s*\)/.test(taskBlk.lines[k])) {
-              forStartOffset = k;
-              break;
-            }
-          }
-          if (forStartOffset === -1) {
-            throw new Error('Missing for (;;) control loop inside motorControlTask()');
-          }
+          // 5. Build entry point prologue (persistent across ticks) & per-tick body
+          let prologueJs = '';
+          let stepBodyJs = '';
+          const persistVarNames = [];
 
-          const taskBodyJs = [];
-          for (let k = forStartOffset + 1; k < taskBlk.lines.length - 1; k++) {
-            const globalLineNo = taskBlk.startLine + k;
-            const raw = taskBlk.lines[k];
-            const trimmed = raw.trim();
-
-            if (
-              trimmed.startsWith('ControlCmd incoming') ||
-              trimmed.startsWith('if (xQueueReceive') ||
-              trimmed.startsWith('bool isAlive') ||
-              trimmed.startsWith('vTaskDelayUntil') ||
-              (trimmed === '}' && k === taskBlk.lines.length - 2)
-            ) {
-              continue;
-            }
-            taskBodyJs.push(transpileLineWithTrace('ino_full', globalLineNo, raw, macrosMap));
-          }
-
-          // Map Motor::brake() and Motor::drive() line numbers inside struct Motor for live tracing
-          let motorBrakeLine = 0;
-          let motorDriveLine = 0;
-          if (motorStructBlk) {
-            for (let k = 0; k < motorStructBlk.lines.length; k++) {
-              if (/\bvoid\s+brake\s*\(/.test(motorStructBlk.lines[k])) motorBrakeLine = motorStructBlk.startLine + k;
-              if (/\bvoid\s+drive\s*\(/.test(motorStructBlk.lines[k])) motorDriveLine = motorStructBlk.startLine + k;
-            }
-          }
-
-          const combinedBody = `
-            "use strict";
-            let __ops = 0;
-            const HIGH = 1, LOW = 0;
-            const constrain = (x, a, b) => Math.max(a, Math.min(b, x));
-            const map = (x, inMin, inMax, outMin, outMax) => (x - inMin) * (outMax - outMin) / (inMax - inMin) + outMin;
-            const max = (a, b) => Math.max(a, b);
-            const min = (a, b) => Math.min(a, b);
-            const abs = (x) => Math.abs(x);
-            const fabs = (x) => Math.abs(x);
-            const fabsf = (x) => Math.abs(x);
-            const round = (x) => Math.round(x);
-            const roundf = (x) => Math.round(x);
-            const floor = (x) => Math.floor(x);
-            const floorf = (x) => Math.floor(x);
-            const ceil = (x) => Math.ceil(x);
-            const ceilf = (x) => Math.ceil(x);
-            const sqrt = (x) => Math.sqrt(x);
-            const sqrtf = (x) => Math.sqrt(x);
-            const pow = (x, y) => Math.pow(x, y);
-            const powf = (x, y) => Math.pow(x, y);
-            const log = (x) => Math.log(x);
-            const logf = (x) => Math.log(x);
-            const log10 = (x) => Math.log10(x);
-            const log10f = (x) => Math.log10(x);
-            const exp = (x) => Math.exp(x);
-            const expf = (x) => Math.exp(x);
-            const sin = (x) => Math.sin(x);
-            const sinf = (x) => Math.sin(x);
-            const cos = (x) => Math.cos(x);
-            const cosf = (x) => Math.cos(x);
-            const tan = (x) => Math.tan(x);
-            const tanf = (x) => Math.tan(x);
-            const atan2 = (y, x) => Math.atan2(y, x);
-            const atan2f = (y, x) => Math.atan2(y, x);
-            const sq = (x) => x * x;
-            const radians = (d) => d * (Math.PI / 180);
-            const degrees = (r) => r * (180 / Math.PI);
-            const PI = Math.PI;
-            const TWO_PI = Math.PI * 2;
-            const HALF_PI = Math.PI / 2;
-            const millis = () => __nowMs;
-
-            let firePin = false;
-            let defendPin = false;
-            const digitalWrite = (pin, val) => {
-              if (pin === 19) firePin = Boolean(val);
-              if (pin === 13) defendPin = Boolean(val);
-            };
-            const lastMotorActiveMs = { store: () => {} };
-
-            const makeMotor = (cfg) => ({
-              inverted: cfg.inverted,
-              minPwm: cfg.minPwm,
-              gain: cfg.gain,
-              outPwm: 0,
-              isBraking: false,
-              coast() { this.outPwm = 0; this.isBraking = false; },
-              brake() {
-                this.outPwm = 0;
-                this.isBraking = true;
-                if (${motorBrakeLine} > 0) __trace("ino_full", ${motorBrakeLine}, "BRAKE", "red");
-              },
-              drive(power) {
-                let p = this.inverted ? -power : power;
-                const lim = (typeof MAX_PWM !== "undefined") ? MAX_PWM : 150;
-                p = constrain(Math.round(p), -lim, lim);
-                this.outPwm = p;
-                this.isBraking = false;
-                if (${motorDriveLine} > 0 && p !== 0) __trace("ino_full", ${motorDriveLine}, "pwm:" + p, "green");
+          if (isTaskWithInfiniteLoop) {
+            let loopHeaderOffset = -1;
+            for (let k = 1; k < activeEntryBlk.lines.length - 1; k++) {
+              if (/\b(?:for\s*\(\s*;\s*;\s*\)|while\s*\(\s*(?:1|true)\s*\))/.test(activeEntryBlk.lines[k])) {
+                loopHeaderOffset = k;
+                break;
               }
-            });
+            }
 
-            const MOTOR_A = makeMotor(__mCfg.A);
-            const MOTOR_B = makeMotor(__mCfg.B);
-            const MOTOR_C = makeMotor(__mCfg.C);
-            const MOTOR_D = makeMotor(__mCfg.D);
+            // Find matching closing brace of the infinite loop
+            let loopDepth = 0;
+            let loopEndOffset = activeEntryBlk.lines.length - 2;
+            for (let k = loopHeaderOffset; k < activeEntryBlk.lines.length; k++) {
+              const ln = activeEntryBlk.lines[k];
+              for (let c = 0; c < ln.length; c++) {
+                if (ln[c] === '{') loopDepth++;
+                else if (ln[c] === '}') loopDepth--;
+              }
+              if (k > loopHeaderOffset && loopDepth <= 0) {
+                loopEndOffset = k;
+                break;
+              }
+            }
 
-            const activeCmd = __in;
-            const isAlive   = __alive;
-            let curFL = __state.curFL, curFR = __state.curFR, curRL = __state.curRL, curRR = __state.curRR;
+            // Transpile pre-loop declarations into persistent variables
+            const preLines = [];
+            for (let k = 1; k < loopHeaderOffset; k++) {
+              const gLine = activeEntryBlk.startLine + k;
+              const raw = activeEntryBlk.lines[k];
+              const tr = raw.trim();
+              if (!tr || tr.startsWith('TickType_t') || tr.startsWith('const TickType_t')) continue;
 
+              const scopeVars = new Set();
+              const jsLine = transpileLineWithTrace('ino_full', gLine, raw, macrosMap, `task_${activeEntryBlk.name}`, scopeVars);
+              scopeVars.forEach((v) => {
+                if (!persistVarNames.includes(v)) persistVarNames.push(v);
+              });
+              preLines.push(jsLine);
+            }
+
+            // Transpile inner loop body
+            const innerLines = [];
+            for (let k = loopHeaderOffset + 1; k < loopEndOffset; k++) {
+              const gLine = activeEntryBlk.startLine + k;
+              const raw = activeEntryBlk.lines[k];
+              const tr = raw.trim();
+              if (
+                tr.startsWith('ControlCmd incoming') ||
+                tr.startsWith('if (xQueueReceive') ||
+                tr.startsWith('vTaskDelayUntil') ||
+                tr.startsWith('vTaskDelay(')
+              ) {
+                continue;
+              }
+              innerLines.push(transpileLineWithTrace('ino_full', gLine, raw, macrosMap, `task_${activeEntryBlk.name}`));
+            }
+
+            if (persistVarNames.length > 0) {
+              const loadCols = persistVarNames.map((v) => `let ${v} = __persist.${v};`).join(' ');
+              const saveCols = persistVarNames.map((v) => `__persist.${v} = ${v};`).join(' ');
+              prologueJs = `
+                ${loadCols}
+                if (!__persist.__inited) {
+                  ${preLines.join('\n')}
+                  ${saveCols}
+                  __persist.__inited = true;
+                }
+              `;
+              stepBodyJs = `
+                ${innerLines.join('\n')}
+                ${saveCols}
+              `;
+            } else {
+              prologueJs = preLines.join('\n');
+              stepBodyJs = innerLines.join('\n');
+            }
+          } else {
+            // Standard Arduino loop() without infinite loop wrapper
+            const loopLines = [];
+            for (let k = 1; k < activeEntryBlk.lines.length - 1; k++) {
+              const gLine = activeEntryBlk.startLine + k;
+              const raw = activeEntryBlk.lines[k];
+              const tr = raw.trim();
+              if (tr.startsWith('vTaskDelay(')) continue;
+              loopLines.push(transpileLineWithTrace('ino_full', gLine, raw, macrosMap, `fn_${activeEntryBlk.name}`));
+            }
+            stepBodyJs = loopLines.join('\n');
+          }
+
+          // 6. Optional setup() body
+          let setupBodyJs = '';
+          if (setupBlk) {
+            const sLines = [];
+            for (let k = 1; k < setupBlk.lines.length - 1; k++) {
+              const gLine = setupBlk.startLine + k;
+              sLines.push(transpileLineWithTrace('ino_full', gLine, setupBlk.lines[k], macrosMap, 'fn_setup'));
+            }
+            setupBodyJs = sLines.join('\n');
+          }
+
+          const sharedDefinitions = restoreStrings(`
+            ${buildArduinoRuntimePrelude()}
+            ${enumsJs}
+            ${structsJs}
             ${topLevelJs.join('\n')}
-            ${taskBodyJs.join('\n')}
+          `, strings);
+
+          const fullStepCode = restoreStrings(`
+            ${sharedDefinitions}
+            ${prologueJs}
+            ${stepBodyJs}
+
+            const firePinNum   = (typeof PIN_FIRE   !== "undefined") ? PIN_FIRE   : 19;
+            const defendPinNum = (typeof PIN_DEFEND !== "undefined") ? PIN_DEFEND : 13;
 
             return {
-              curFL, curFR, curRL, curRR,
-              driveFL: MOTOR_B.outPwm,
-              driveFR: MOTOR_A.outPwm,
-              driveRL: MOTOR_C.outPwm,
-              driveRR: MOTOR_D.outPwm,
-              brakeFL: MOTOR_B.isBraking,
-              brakeFR: MOTOR_A.isBraking,
-              brakeRL: MOTOR_C.isBraking,
-              brakeRR: MOTOR_D.isBraking,
-              firePin,
-              defendPin,
-              maxPwm: (typeof MAX_PWM !== "undefined") ? MAX_PWM : 150
+              motorA: (typeof MOTOR_A !== "undefined") ? MOTOR_A : ((typeof MOTOR_FR !== "undefined") ? MOTOR_FR : null),
+              motorB: (typeof MOTOR_B !== "undefined") ? MOTOR_B : ((typeof MOTOR_FL !== "undefined") ? MOTOR_FL : null),
+              motorC: (typeof MOTOR_C !== "undefined") ? MOTOR_C : ((typeof MOTOR_RL !== "undefined") ? MOTOR_RL : null),
+              motorD: (typeof MOTOR_D !== "undefined") ? MOTOR_D : ((typeof MOTOR_RR !== "undefined") ? MOTOR_RR : null),
+              firePin: Boolean(__hw.gpio[firePinNum]),
+              defendPin: Boolean(__hw.gpio[defendPinNum]),
+              maxPwm: (typeof MAX_PWM !== "undefined") ? Math.max(1, Number(MAX_PWM)) : 150
             };
-          `;
+          `, strings);
 
-          const factory = new Function('__in', '__alive', '__state', '__mCfg', '__nowMs', '__trace', '__cond', '__ret', '__fmt', combinedBody);
+          const fullSetupCode = restoreStrings(`
+            ${sharedDefinitions}
+            ${setupBodyJs}
+          `, strings);
 
-          // Dry-run validation
-          factory(
+          const stepFactory  = new Function('__in', '__alive', '__persist', '__statics', '__hw', '__nowMs', '__trace', '__cond', '__ret', '__fmt', '__serial', fullStepCode);
+          const setupFactory = new Function('__in', '__alive', '__persist', '__statics', '__hw', '__nowMs', '__trace', '__cond', '__ret', '__fmt', '__serial', fullSetupCode);
+
+          // Dry-run validation on isolated mock state
+          const testPersist = {};
+          const testStatics = {};
+          const testHw      = { gpio: {}, pwm: {}, analog: {} };
+          setupFactory(
             { x: 0, y: 0, r: 0, flags: 0, timestamp: 0 },
             false,
-            { curFL: 0, curFR: 0, curRL: 0, curRR: 0 },
-            nextMotorConfigs,
+            testPersist,
+            testStatics,
+            testHw,
             0,
             () => {},
             (_, __, b) => b,
             (_, __, v) => v,
-            (v) => v
+            (v) => v,
+            () => {}
+          );
+          stepFactory(
+            { x: 0, y: 0, r: 0, flags: 0, timestamp: 0 },
+            false,
+            testPersist,
+            testStatics,
+            testHw,
+            0,
+            () => {},
+            (_, __, b) => b,
+            (_, __, v) => v,
+            (v) => v,
+            () => {}
           );
 
-          compiledStepFn = factory;
-          parsedMotorConfigs = nextMotorConfigs;
+          // Commit new compiled build and reset runtime state
+          compiledStepFn  = stepFactory;
+          compiledSetupFn = setupFactory;
+          runtimePersist  = {};
+          runtimeStatics  = {};
+          runtimeHwState  = { gpio: {}, pwm: {}, analog: {} };
+
+          // Run setup() once on real state
+          compiledSetupFn(
+            { x: 0, y: 0, r: 0, flags: 0, timestamp: 0 },
+            false,
+            runtimePersist,
+            runtimeStatics,
+            runtimeHwState,
+            performance.now(),
+            () => {},
+            (_, __, b) => b,
+            (_, __, v) => v,
+            (v) => v,
+            (txt, nl) => pushSerialOutput(txt, nl)
+          );
+
+          activeEntryLabel = `${activeEntryBlk.name}() · 50Hz`;
+          entryModeBadge.textContent = activeEntryLabel;
 
           statusPill.textContent = 'COMPILED OK';
           statusPill.className = 'mono text-[10px] font-bold px-2 py-0.5 rounded bg-[#052e16] border border-[#22c55e] text-[#4ade80]';
           errBanner.classList.add('hidden');
-          if (!silentToast) showToast('Arduino sketch compiled & active (50Hz).');
+          if (!silentToast) showToast(`Compiled OK (${activeEntryBlk.name} @ 50Hz).`);
         } catch (err) {
           const errMsg = err && err.message ? err.message : String(err);
           statusPill.textContent = 'COMPILE ERROR';
           statusPill.className = 'mono text-[10px] font-bold px-2 py-0.5 rounded bg-[#1f0909] border border-[#ef4444] text-[#f87171]';
-          errBanner.textContent = `Compile / Runtime Error: ${errMsg} (Holding previous valid build)`;
+          errBanner.textContent = `Compiler Error: ${errMsg} (Holding previous valid build)`;
           errBanner.classList.remove('hidden');
           if (!silentToast) showToast('Compile error. Check red banner in code pane.');
         }
@@ -2066,7 +2733,6 @@
         if (!clientId || typeof clientId !== 'string') return;
         const clientObj = { clientId, transport, peerConn };
 
-        // 1. CLOSED MODE: Immediately reject all incoming connections
         if (accessMode === 'CLOSED') {
           blockedCount++;
           sendControlSignalToClient(clientObj, {
@@ -2081,7 +2747,6 @@
           return;
         }
 
-        // 2. HOST MODE: Verify private 4-digit PIN silently without any popup interruption
         if (accessMode === 'HOST') {
           const isValidPin = hostPinVault.verify(msg.pin);
           if (!isValidPin) {
@@ -2108,7 +2773,6 @@
           return;
         }
 
-        // 3. OPEN MODE: Immediately approve any client with matching Room Code
         if (approvedClient && approvedClient.clientId !== clientId) {
           kickCurrentApprovedClient('REPLACED BY NEW CLIENT');
         }
@@ -2132,7 +2796,6 @@
         showToast('Client disconnected.');
       });
 
-      // BroadcastChannel listener for Split View & same-browser tabs
       if (localBusChannel) {
         localBusChannel.onmessage = (ev) => {
           const msg = ev.data;
@@ -2156,6 +2819,7 @@
         isAlive: false,
         firePin: false,
         defendPin: false,
+        maxPwm: MAX_PWM,
         tgt: { fl: 0, fr: 0, rl: 0, rr: 0 },
         cur: { fl: 0, fr: 0, rl: 0, rr: 0 },
         braking: { fl: false, fr: false, rl: false, rr: false }
@@ -2321,6 +2985,26 @@
         robot.projectiles = [];
         core1.cur = { fl: 0, fr: 0, rl: 0, rr: 0 };
         core1.tgt = { fl: 0, fr: 0, rl: 0, rr: 0 };
+        runtimePersist = {};
+        runtimeStatics = {};
+        runtimeHwState = { gpio: {}, pwm: {}, analog: {} };
+        if (compiledSetupFn) {
+          try {
+            compiledSetupFn(
+              { x: 0, y: 0, r: 0, flags: 0, timestamp: 0 },
+              false,
+              runtimePersist,
+              runtimeStatics,
+              runtimeHwState,
+              performance.now(),
+              () => {},
+              (_, __, b) => b,
+              (_, __, v) => v,
+              (v) => v,
+              (txt, nl) => pushSerialOutput(txt, nl)
+            );
+          } catch {}
+        }
       }
       simEl.simResetBtn.addEventListener('click', resetCarPosition);
 
@@ -2388,6 +3072,9 @@
         if (typeof v === 'number') {
           return Number.isInteger(v) ? String(v) : v.toFixed(2);
         }
+        if (typeof v === 'object' && v !== null) {
+          return '{...}';
+        }
         return String(v);
       }
 
@@ -2453,36 +3140,46 @@
                 timestamp: core1.activeCmd.timestamp
               },
               isAlive,
-              {
-                curFL: core1.cur.fl,
-                curFR: core1.cur.fr,
-                curRL: core1.cur.rl,
-                curRR: core1.cur.rr
-              },
-              parsedMotorConfigs,
+              runtimePersist,
+              runtimeStatics,
+              runtimeHwState,
               now,
               onTrace,
               onCond,
               onRet,
-              formatTraceValue
+              formatTraceValue,
+              (txt, nl) => pushSerialOutput(txt, nl)
             );
 
-            core1.cur.fl = clamp(Math.round(out.curFL || 0), -255, 255);
-            core1.cur.fr = clamp(Math.round(out.curFR || 0), -255, 255);
-            core1.cur.rl = clamp(Math.round(out.curRL || 0), -255, 255);
-            core1.cur.rr = clamp(Math.round(out.curRR || 0), -255, 255);
+            // Decode hardware H-bridge GPIO & PWM outputs for FL (B), FR (A), RL (C), RR (D)
+            const wFL = decodeHBridgeWheel(out.motorB, { in1: 26, in2: 25, en: 14 });
+            const wFR = decodeHBridgeWheel(out.motorA, { in1: 32, in2: 33, en: 27 });
+            const wRL = decodeHBridgeWheel(out.motorC, { in1: 22, in2: 21, en: 23 });
+            const wRR = decodeHBridgeWheel(out.motorD, { in1: 16, in2: 17, en: 18 });
 
-            core1.braking.fl = Boolean(out.brakeFL);
-            core1.braking.fr = Boolean(out.brakeFR);
-            core1.braking.rl = Boolean(out.brakeRL);
-            core1.braking.rr = Boolean(out.brakeRR);
-            core1.firePin        = Boolean(out.firePin);
-            core1.defendPin      = Boolean(out.defendPin);
-          } catch {
+            core1.cur.fl = clamp(wFL.pwm, -255, 255);
+            core1.cur.fr = clamp(wFR.pwm, -255, 255);
+            core1.cur.rl = clamp(wRL.pwm, -255, 255);
+            core1.cur.rr = clamp(wRR.pwm, -255, 255);
+
+            core1.braking.fl = wFL.braking;
+            core1.braking.fr = wFR.braking;
+            core1.braking.rl = wRL.braking;
+            core1.braking.rr = wRR.braking;
+
+            core1.firePin   = Boolean(out.firePin);
+            core1.defendPin = Boolean(out.defendPin);
+            core1.maxPwm    = Math.max(1, Number(out.maxPwm) || MAX_PWM);
+          } catch (err) {
             core1.cur = { fl: 0, fr: 0, rl: 0, rr: 0 };
             core1.braking = { fl: true, fr: true, rl: true, rr: true };
             core1.firePin = false;
             core1.defendPin = false;
+            const errBanner = document.getElementById('compileErrorBanner');
+            if (errBanner && errBanner.classList.contains('hidden')) {
+              errBanner.textContent = `Runtime Error: ${err && err.message ? err.message : String(err)}`;
+              errBanner.classList.remove('hidden');
+            }
           }
         }
 
@@ -2513,10 +3210,11 @@
 
         // --- Mecanum Forward Kinematics & Arena Wall Clamping (WALL_PAD = 48) ---
         const dt = 0.02;
-        const nFL = core1.cur.fl / MAX_PWM;
-        const nFR = core1.cur.fr / MAX_PWM;
-        const nRL = core1.cur.rl / MAX_PWM;
-        const nRR = core1.cur.rr / MAX_PWM;
+        const pwmScale = core1.maxPwm || MAX_PWM;
+        const nFL = core1.cur.fl / pwmScale;
+        const nFR = core1.cur.fr / pwmScale;
+        const nRL = core1.cur.rl / pwmScale;
+        const nRR = core1.cur.rr / pwmScale;
 
         const targetVxLocal = ((nFL - nFR - nRL + nRR) / 4.0) * 240;
         const targetVyLocal = ((nFL + nFR + nRL + nRR) / 4.0) * 240;
@@ -2604,6 +3302,7 @@
           simEl.hudMotorState.style.borderColor = '#262626';
         }
 
+        const pwmScale = core1.maxPwm || MAX_PWM;
         const wheels = [
           { card: simEl.wheelCardFL, valEl: simEl.pwmValFL, barEl: simEl.pwmBarFL, pwm: core1.cur.fl, brk: core1.braking.fl },
           { card: simEl.wheelCardFR, valEl: simEl.pwmValFR, barEl: simEl.pwmBarFR, pwm: core1.cur.fr, brk: core1.braking.fr },
@@ -2624,7 +3323,7 @@
             w.card.style.borderColor = w.pwm !== 0 ? '#525252' : '#262626';
             w.valEl.textContent = w.pwm > 0 ? `+${w.pwm}` : `${w.pwm}`;
             w.valEl.style.color = '#ffffff';
-            const pct = clamp((Math.abs(w.pwm) / MAX_PWM) * 50, 0, 50);
+            const pct = clamp((Math.abs(w.pwm) / pwmScale) * 50, 0, 50);
             if (w.pwm >= 0) {
               w.barEl.style.left = '50%';
               w.barEl.style.width = `${pct}%`;
@@ -2935,7 +3634,6 @@
           pin: cleanPin
         };
 
-        // 1. Same-browser BroadcastChannel handshake (Split View & local tabs)
         if ('BroadcastChannel' in window) {
           try {
             if (ctrlBusChannel) ctrlBusChannel.close();
@@ -2945,7 +3643,6 @@
           } catch {}
         }
 
-        // 2. Remote PeerJS WebRTC handshake (external mobile phone)
         const isSamePageHost = (!isOpenedAsPhoneController && cleanDigits === simRoomDigits);
         if (!isSamePageHost && typeof Peer !== 'undefined') {
           try {
@@ -3004,7 +3701,6 @@
         }
       }
 
-      // Unified Pointer-Capture Touch Controls
       function getCtrlMaxTravel(el, thumb, lockX, lockY) {
         const rect = el.getBoundingClientRect();
         const thumbSize = thumb.offsetWidth || 42;
@@ -3252,3 +3948,5 @@
   </script>
 </body>
 </html>
+
+0
