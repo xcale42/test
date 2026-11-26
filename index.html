@@ -143,6 +143,12 @@
       overflow-x: auto;
       overflow-y: auto;
       flex: 1;
+      position: relative;
+    }
+
+    .ard-lines-wrap {
+      min-width: 100%;
+      width: max-content;
     }
 
     .arduino-textarea {
@@ -188,7 +194,7 @@
     .ard-row {
       display: flex;
       align-items: center;
-      justify-content: space-between;
+      width: 100%;
       min-height: 20px;
       padding-right: 8px;
       border-left: 3px solid transparent;
@@ -199,6 +205,9 @@
     }
 
     .ard-gutter {
+      position: sticky;
+      left: 0;
+      z-index: 2;
       background: #f8f9fa;
       color: #9ca3af;
       border-right: 1px solid #eceef1;
@@ -211,15 +220,18 @@
     }
 
     .ard-code {
-      flex: 1;
-      min-width: 0;
+      flex: 1 0 auto;
       color: #24292e;
       white-space: pre;
+      padding-right: 12px;
     }
 
     .ard-val {
+      position: sticky;
+      right: 8px;
+      z-index: 2;
       flex-shrink: 0;
-      margin-left: 8px;
+      margin-left: auto;
       font-size: 10px;
       font-weight: 600;
       padding: 0 5px;
@@ -227,7 +239,8 @@
       background: #f3f4f6;
       border: 1px solid #e5e7eb;
       color: #6b7280;
-      transition: all 0.07s ease;
+      box-shadow: -4px 0 6px -3px rgba(0, 0, 0, 0.14);
+      transition: background-color 0.07s ease, border-color 0.07s ease, color 0.07s ease;
     }
 
     /* Arduino IDE 2.x Authentic Syntax Highlighting */
@@ -2813,9 +2826,71 @@ ${globalCode.join('\n')}
           }
           rt.lround = rt.lroundf = (x) => rt.round(x);
 
+          const COLOR_RANK = { teal: 1, green: 2, amber: 3, red: 4 };
+          function formatLineHits(rec) {
+            const { hits, count, last } = rec;
+            if (count <= 1) {
+              const h = hits[0];
+              return { text: h.text, color: h.color, title: h.text };
+            }
+            let color = 'teal';
+            const allSamples = last ? [...hits, last] : hits;
+            for (const h of allSamples) {
+              if ((COLOR_RANK[h.color] || 0) > (COLOR_RANK[color] || 0)) color = h.color;
+            }
+            const fullTitle = hits.map((h, i) => `#${i + 1}: ${h.text}`).join(' | ')
+              + (count > hits.length ? ` | … (#${count}: ${last ? last.text : hits[hits.length - 1].text})` : '');
+
+            const firstText = hits[0].text;
+            if (allSamples.every((h) => h.text === firstText)) {
+              return { text: `${firstText} ×${count}`, color, title: fullTitle };
+            }
+
+            if (allSamples.every((h) => h.text === 'true' || h.text === 'false')) {
+              const tCount = hits.filter((h) => h.text === 'true').length;
+              const fCount = hits.filter((h) => h.text === 'false').length;
+              const suffix = count > hits.length ? ` (×${count})` : '';
+              return { text: `true×${tCount} | false×${fCount}${suffix}`, color, title: fullTitle };
+            }
+
+            const kvMatch = firstText.match(/^([A-Za-z_]\w*:)(.+)$/);
+            if (kvMatch) {
+              const prefix = kvMatch[1];
+              if (allSamples.every((h) => h.text.startsWith(prefix))) {
+                const vals = hits.map((h) => h.text.slice(prefix.length));
+                if (count <= 4) {
+                  return { text: `${prefix}${vals.join(' | ')}`, color, title: fullTitle };
+                }
+                const lastVal = (last ? last.text : hits[hits.length - 1].text).slice(prefix.length);
+                return { text: `${prefix}${vals[0]} | ${vals[1]} | … | ${lastVal} (×${count})`, color, title: fullTitle };
+              }
+            }
+
+            const texts = hits.map((h) => h.text);
+            if (count <= 4) {
+              return { text: texts.join(' | '), color, title: fullTitle };
+            }
+            const lastText = last ? last.text : texts[texts.length - 1];
+            return { text: `${texts[0]} | ${texts[1]} | … | ${lastText} (×${count})`, color, title: fullTitle };
+          }
+
           let ops = 0;
           let trace = new Map();
-          const put = (line, text, color) => { if (text === 'EXEC' && trace.get(line)?.text === 'true') return; trace.set(line, { text, color }); };
+          const put = (line, text, color) => {
+            let rec = trace.get(line);
+            if (!rec) {
+              rec = { hits: [], count: 0, last: null };
+              trace.set(line, rec);
+            }
+            const prev = rec.hits[rec.hits.length - 1];
+            if (text === 'EXEC' && prev && (prev.text === 'true' || prev.text === 'false')) return;
+            rec.count++;
+            if (rec.hits.length < 32) {
+              rec.hits.push({ text, color });
+            } else {
+              rec.last = { text, color };
+            }
+          };
           const helpers = {
             __rt: rt, __S: S,
             __t: put,
@@ -2892,8 +2967,25 @@ ${globalCode.join('\n')}
               rt.now = Math.max(rt.now, target);
             },
             traces() {
+              const merged = new Map();
+              for (const th of rt.threads) {
+                for (const [k, rec] of th.trace) {
+                  let dst = merged.get(k);
+                  if (!dst) {
+                    dst = { hits: rec.hits.slice(), count: rec.count, last: rec.last };
+                    merged.set(k, dst);
+                  } else {
+                    for (const h of rec.hits) {
+                      if (dst.hits.length < 32) dst.hits.push(h);
+                    }
+                    dst.count += rec.count;
+                    if (rec.last) dst.last = rec.last;
+                    else if (rec.count > 0 && dst.hits.length >= 32) dst.last = rec.hits[rec.hits.length - 1];
+                  }
+                }
+              }
               const all = new Map();
-              for (const th of rt.threads) for (const [k, v] of th.trace) all.set(k, v);
+              for (const [k, rec] of merged) all.set(k, formatLineHits(rec));
               return all;
             },
             // host -> firmware: latest control packet
@@ -3060,11 +3152,12 @@ ${globalCode.join('\n')}
       }
 
       function renderTraceRowsWithOffset(lines, startLineNo) {
-        return lines.map((lineText, idx) => {
+        const rowsHtml = lines.map((lineText, idx) => {
           const lineNo = startLineNo + idx;
           const highlighted = highlightArduinoLine(lineText);
           return `<div data-ino-line="${lineNo}" class="ard-row"><span class="ard-gutter">${lineNo}</span><span class="ard-code">${highlighted || ' '}</span><span class="ard-val" data-ino-val="${lineNo}">-</span></div>`;
         }).join('');
+        return `<div class="ard-lines-wrap">${rowsHtml}</div>`;
       }
 
       function updateSketchHeaderToolbar() {
@@ -3760,14 +3853,16 @@ ${globalCode.join('\n')}
           if (!valEl) continue;
           let entry = traceMap.get(`ino_full:${ln}`);
           const nowMs = performance.now();
-          if (entry && entry.text === 'true') { rowEl._holdUntil = nowMs + 300; rowEl._held = entry; }
+          if (entry && entry.color === 'amber') { rowEl._holdUntil = nowMs + 300; rowEl._held = entry; }
           else if (rowEl._holdUntil > nowMs) entry = rowEl._held;
           if (entry) {
             rowEl.className = `ard-row exec-${entry.color}`;
             valEl.textContent = entry.text;
+            valEl.title = entry.title || entry.text;
           } else {
             rowEl.className = 'ard-row';
             valEl.textContent = '-';
+            valEl.title = '';
           }
         }
       }
